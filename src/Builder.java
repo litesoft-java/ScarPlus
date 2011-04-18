@@ -24,16 +24,19 @@ public class Builder
     private static final String DEV_ROOT_DIR = "DevRootDir"; //. . Relative Path to the Dev Root Dir (where litesoft and zGlobal) can be found.   Default: blank    Only required if "depends"="litesoft" / mode="GWT" is specified.
     private static final String MODE = "mode"; //. . . . . . . . . Mode of this Project.   Default: JAR   for options, see below...
     // Mode options are (case ignored):
-    //      make regular JAR
-    //      mode=1JAR
-    //      mode=War
-    //      mode=GWT
-    //      mode=GWT:Detail
-    //      mode=GWT:DEBUG
-    //      mode=GWT:OBF,WARN
-
-
-
+    //      JAR - package this project into a regular JAR
+    //      1JAR - package this project into a Single JAR (including the contents of all the dependant JARs)
+    //      Web - package this project into a WAR folder
+    //      War - package this project into a WAR file (Web implied)
+    //      GWT(xxx) - package this project into a WAR file, AND include the GWT support code.  The "xxx" indicates the path and name of the xxx.gwt.xml file.
+    //          After the closing ')' you can optionally specify one from each (comma separated) of the following groups (first listed is the default):
+    //              LogLevel:                               Style:
+    //              WARN                                    OBF
+    //              DEBUG                                   PRETTY
+    //                                                      DETAIL
+    //  a full GWT example:
+    //
+    //      mode=GWT(org.sample.MyGwtApplication)Debug,Detail
 
     private boolean mBuilt = false;
     private Builder mParent = null;
@@ -68,6 +71,10 @@ public class Builder
 
     public void build()
     {
+        for ( Builder zDependent : mDependents )
+        {
+            zDependent.build();
+        }
         System.out.println( "build: " + mName );
     }
 

@@ -59,13 +59,13 @@
     <favorites_list name="ScarPlus" />
   </component>
   <component name="FileEditorManager">
-    <splitter split-orientation="vertical" split-proportion="0.5">
+    <splitter split-orientation="horizontal" split-proportion="0.5">
       <split-first>
         <leaf>
-          <file leaf-file-name="Builder.java" pinned="false" current="true" current-in-tab="true">
+          <file leaf-file-name="Builder.java" pinned="false" current="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/src/Builder.java">
               <provider selected="true" editor-type-id="text-editor">
-                <state line="23" column="63" selection-start="1979" selection-end="1979" vertical-scroll-proportion="0.4541231">
+                <state line="39" column="25" selection-start="3283" selection-end="3283" vertical-scroll-proportion="0.5730594">
                   <folding>
                     <element signature="imports" expanded="true" />
                   </folding>
@@ -77,19 +77,19 @@
       </split-first>
       <split-second>
         <leaf>
-          <file leaf-file-name="Scar.java" pinned="false" current="false" current-in-tab="false">
+          <file leaf-file-name="Scar.java" pinned="false" current="true" current-in-tab="true">
             <entry file="jar://$PROJECT_DIR$/../libs/scar/scar-src.zip!/com/esotericsoftware/scar/Scar.java">
               <provider selected="true" editor-type-id="text-editor">
-                <state line="140" column="142" selection-start="4408" selection-end="4408" vertical-scroll-proportion="0.0">
+                <state line="134" column="11" selection-start="4133" selection-end="4133" vertical-scroll-proportion="-2.813927">
                   <folding />
                 </state>
               </provider>
             </entry>
           </file>
-          <file leaf-file-name="Project.java" pinned="false" current="false" current-in-tab="true">
+          <file leaf-file-name="Project.java" pinned="false" current="false" current-in-tab="false">
             <entry file="jar://$PROJECT_DIR$/../libs/scar/scar-src.zip!/com/esotericsoftware/scar/Project.java">
               <provider selected="true" editor-type-id="text-editor">
-                <state line="53" column="16" selection-start="1653" selection-end="1653" vertical-scroll-proportion="0.5823799">
+                <state line="28" column="20" selection-start="865" selection-end="869" vertical-scroll-proportion="53.04">
                   <folding />
                 </state>
               </provider>
@@ -142,8 +142,8 @@
       <sortByType />
     </navigator>
     <panes>
-      <pane id="Favorites" />
       <pane id="Scope" />
+      <pane id="Favorites" />
       <pane id="PackagesPane" />
       <pane id="ProjectPane">
         <subPane>
@@ -160,20 +160,6 @@
             </PATH_ELEMENT>
             <PATH_ELEMENT>
               <option name="myItemId" value="ScarPlus" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-          </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="ScarPlus" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="ScarPlus" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="src" />
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
           </PATH>
@@ -195,8 +181,8 @@
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="MemberChooser.showClasses" value="true" />
     <property name="GoToClass.includeLibraries" value="false" />
-    <property name="options.splitter.details.proportions" value="0.2" />
     <property name="options.searchVisible" value="true" />
+    <property name="options.splitter.details.proportions" value="0.2" />
   </component>
   <component name="RecentsManager">
     <key name="IntroduceConstantDialog.RECENTS_KEY">
@@ -213,6 +199,7 @@
       <method>
         <option name="AntTarget" enabled="false" />
         <option name="BuildArtifacts" enabled="false" />
+        <option name="Maven.BeforeRunTask" enabled="false" />
       </method>
     </configuration>
     <configuration default="true" type="Applet" factoryName="Applet">
@@ -230,6 +217,7 @@
         <option name="AntTarget" enabled="false" />
         <option name="BuildArtifacts" enabled="false" />
         <option name="Make" enabled="true" />
+        <option name="Maven.BeforeRunTask" enabled="false" />
       </method>
     </configuration>
     <configuration default="true" type="Application" factoryName="Application">
@@ -249,6 +237,7 @@
         <option name="AntTarget" enabled="false" />
         <option name="BuildArtifacts" enabled="false" />
         <option name="Make" enabled="true" />
+        <option name="Maven.BeforeRunTask" enabled="false" />
       </method>
     </configuration>
     <configuration default="true" type="JUnit" factoryName="JUnit">
@@ -274,6 +263,7 @@
         <option name="AntTarget" enabled="false" />
         <option name="BuildArtifacts" enabled="false" />
         <option name="Make" enabled="true" />
+        <option name="Maven.BeforeRunTask" enabled="false" />
       </method>
     </configuration>
     <list size="0" />
@@ -310,24 +300,25 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="1598" y="-301" width="1203" height="1925" extended-state="0" />
+    <frame x="-553" y="-1028" width="2565" height="1032" extended-state="0" />
     <editor active="true" />
     <layout>
       <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Palette" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="11" side_tool="false" content_ui="tabs" />
-      <window_info id="Structure" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="FLOATING" visible="true" weight="0.2498618" sideWeight="0.5" order="12" side_tool="false" content_ui="tabs" x="877" y="1" width="349" height="1148" />
+      <window_info id="Structure" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="FLOATING" visible="true" weight="0.2498618" sideWeight="0.5" order="12" side_tool="false" content_ui="tabs" x="745" y="0" width="349" height="870" />
+      <window_info id="Commander" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="14" side_tool="false" content_ui="tabs" />
+      <window_info id="Maven Projects" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="13" side_tool="false" content_ui="tabs" />
       <window_info id="Dependency Viewer" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="FLOATING" visible="true" weight="0.24934839" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" x="1227" y="1" width="372" height="628" />
+      <window_info id="Project" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="FLOATING" visible="true" weight="0.24934839" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" x="1091" y="0" width="348" height="870" />
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
-      <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
     </layout>
   </component>
@@ -366,31 +357,29 @@
   <component name="editorHistoryManager">
     <entry file="jar://$PROJECT_DIR$/../libs/scar/scar-src.zip!/com/esotericsoftware/minlog/Log.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="34" column="100" selection-start="1352" selection-end="1352" vertical-scroll-proportion="0.6224256">
+        <state line="34" column="100" selection-start="1352" selection-end="1352" vertical-scroll-proportion="0.6224256" />
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/Builder.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="39" column="25" selection-start="3283" selection-end="3283" vertical-scroll-proportion="0.5730594">
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="jar://$PROJECT_DIR$/../libs/scar/scar-src.zip!/com/esotericsoftware/scar/Project.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="28" column="20" selection-start="865" selection-end="869" vertical-scroll-proportion="53.04">
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="jar://$PROJECT_DIR$/../libs/scar/scar-src.zip!/com/esotericsoftware/scar/Scar.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="140" column="142" selection-start="4408" selection-end="4408" vertical-scroll-proportion="0.0">
+        <state line="134" column="11" selection-start="4133" selection-end="4133" vertical-scroll-proportion="-2.813927">
           <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="jar://$PROJECT_DIR$/../libs/scar/scar-src.zip!/com/esotericsoftware/scar/Project.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="53" column="16" selection-start="1653" selection-end="1653" vertical-scroll-proportion="0.5823799">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/Builder.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="23" column="63" selection-start="1979" selection-end="1979" vertical-scroll-proportion="0.4541231">
-          <folding>
-            <element signature="imports" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
