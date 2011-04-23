@@ -62,13 +62,40 @@
     <splitter split-orientation="horizontal" split-proportion="0.5">
       <split-first>
         <leaf>
-          <file leaf-file-name="Builder.java" pinned="false" current="false" current-in-tab="true">
-            <entry file="file://$PROJECT_DIR$/src/Builder.java">
+          <file leaf-file-name="Scar.java" pinned="false" current="false" current-in-tab="true">
+            <entry file="file://$PROJECT_DIR$/src/com/esotericsoftware/scar/Scar.java">
               <provider selected="true" editor-type-id="text-editor">
-                <state line="39" column="25" selection-start="3283" selection-end="3283" vertical-scroll-proportion="0.5730594">
+                <state line="31" column="0" selection-start="513" selection-end="719" vertical-scroll-proportion="0.35252643">
                   <folding>
                     <element signature="imports" expanded="true" />
                   </folding>
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="Paths.java" pinned="false" current="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/src/com/esotericsoftware/wildcard/Paths.java">
+              <provider selected="true" editor-type-id="text-editor">
+                <state line="77" column="36" selection-start="2998" selection-end="2998" vertical-scroll-proportion="-43.52">
+                  <folding />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="String.java" pinned="false" current="false" current-in-tab="false">
+            <entry file="jar://C:/Program Files/Java/jdk1.6.0_23/src.zip!/java/lang/String.java">
+              <provider selected="true" editor-type-id="text-editor">
+                <state line="2291" column="21" selection-start="88056" selection-end="88056" vertical-scroll-proportion="0.0">
+                  <folding />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="Pattern.java" pinned="false" current="false" current-in-tab="false">
+            <entry file="jar://C:/Program Files/Java/jdk1.6.0_23/src.zip!/java/util/regex/Pattern.java">
+              <provider selected="true" editor-type-id="text-editor">
+                <state line="56" column="127" selection-start="2055" selection-end="2055" vertical-scroll-proportion="0.0">
+                  <folding />
                 </state>
               </provider>
             </entry>
@@ -77,20 +104,22 @@
       </split-first>
       <split-second>
         <leaf>
-          <file leaf-file-name="Scar.java" pinned="false" current="true" current-in-tab="true">
-            <entry file="jar://$PROJECT_DIR$/../libs/scar/scar-src.zip!/com/esotericsoftware/scar/Scar.java">
+          <file leaf-file-name="Project.java" pinned="false" current="true" current-in-tab="true">
+            <entry file="file://$PROJECT_DIR$/src/com/esotericsoftware/scar/Project.java">
               <provider selected="true" editor-type-id="text-editor">
-                <state line="134" column="11" selection-start="4133" selection-end="4133" vertical-scroll-proportion="-2.813927">
+                <state line="32" column="81" selection-start="1106" selection-end="1106" vertical-scroll-proportion="0.3633296">
                   <folding />
                 </state>
               </provider>
             </entry>
           </file>
-          <file leaf-file-name="Project.java" pinned="false" current="false" current-in-tab="false">
-            <entry file="jar://$PROJECT_DIR$/../libs/scar/scar-src.zip!/com/esotericsoftware/scar/Project.java">
+          <file leaf-file-name="Utils.java" pinned="false" current="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/src/com/esotericsoftware/scar/Utils.java">
               <provider selected="true" editor-type-id="text-editor">
-                <state line="28" column="20" selection-start="865" selection-end="869" vertical-scroll-proportion="53.04">
-                  <folding />
+                <state line="369" column="0" selection-start="14041" selection-end="14041" vertical-scroll-proportion="0.0">
+                  <folding>
+                    <element signature="imports" expanded="true" />
+                  </folding>
                 </state>
               </provider>
             </entry>
@@ -109,12 +138,35 @@
       <list>
         <option value="$PROJECT_DIR$/src/ScanPlus.java" />
         <option value="$PROJECT_DIR$/src/Builder.java" />
+        <option value="$PROJECT_DIR$/src/com/esotericsoftware/scar/Scar.java" />
+        <option value="$PROJECT_DIR$/src/com/esotericsoftware/scar/Utils.java" />
+        <option value="$PROJECT_DIR$/src/com/esotericsoftware/wildcard/Paths.java" />
+        <option value="$PROJECT_DIR$/src/com/esotericsoftware/scar/Project.java" />
       </list>
     </option>
   </component>
   <component name="ModuleEditorState">
     <option name="LAST_EDITED_MODULE_NAME" />
     <option name="LAST_EDITED_TAB_NAME" />
+  </component>
+  <component name="ProjectInspectionProfilesVisibleTreeState">
+    <entry key="Project Default">
+      <profile-state>
+        <expanded-state>
+          <State>
+            <id>Declaration Redundancy</id>
+          </State>
+          <State>
+            <id>Inspections</id>
+          </State>
+        </expanded-state>
+        <selected-state>
+          <State>
+            <id>UnusedDeclaration</id>
+          </State>
+        </selected-state>
+      </profile-state>
+    </entry>
   </component>
   <component name="ProjectLevelVcsManager" settingsEditedManually="false">
     <OptionsSetting value="true" id="Add" />
@@ -163,13 +215,53 @@
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
           </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="ScarPlus" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="ScarPlus" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="src" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="esotericsoftware" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="ScarPlus" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="ScarPlus" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="src" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="esotericsoftware" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="scar" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
         </subPane>
       </pane>
     </panes>
   </component>
   <component name="PropertiesComponent">
     <property name="GoToFile.includeJavaFiles" value="false" />
-    <property name="project.structure.last.edited" value="Modules" />
+    <property name="project.structure.last.edited" value="Project" />
     <property name="OverrideImplement.combined" value="true" />
     <property name="project.structure.proportion" value="0.15" />
     <property name="options.splitter.main.proportions" value="0.3" />
@@ -301,23 +393,24 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="-553" y="-1028" width="2565" height="1032" extended-state="0" />
-    <editor active="true" />
+    <editor active="false" />
     <layout>
       <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Palette" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
-      <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="11" side_tool="false" content_ui="tabs" />
-      <window_info id="Structure" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="FLOATING" visible="true" weight="0.2498618" sideWeight="0.5" order="12" side_tool="false" content_ui="tabs" x="745" y="0" width="349" height="870" />
-      <window_info id="Commander" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="14" side_tool="false" content_ui="tabs" />
-      <window_info id="Maven Projects" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="13" side_tool="false" content_ui="tabs" />
-      <window_info id="Dependency Viewer" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="FLOATING" visible="true" weight="0.24934839" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" x="1091" y="0" width="348" height="870" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32969433" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32969433" sideWeight="0.5" order="-1" side_tool="false" content_ui="tabs" />
+      <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
+      <window_info id="Structure" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="FLOATING" visible="true" weight="0.2498618" sideWeight="0.5" order="12" side_tool="false" content_ui="tabs" x="745" y="0" width="349" height="870" />
+      <window_info id="Maven Projects" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="13" side_tool="false" content_ui="tabs" />
+      <window_info id="Commander" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="14" side_tool="false" content_ui="tabs" />
+      <window_info id="Project" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="FLOATING" visible="true" weight="0.24934839" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" x="1091" y="0" width="348" height="870" />
+      <window_info id="Dependency Viewer" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
-      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
     </layout>
@@ -354,31 +447,67 @@
   <component name="XDebuggerManager">
     <breakpoint-manager />
   </component>
+  <component name="antWorkspaceConfiguration">
+    <option name="IS_AUTOSCROLL_TO_SOURCE" value="false" />
+    <option name="FILTER_TARGETS" value="false" />
+  </component>
   <component name="editorHistoryManager">
-    <entry file="jar://$PROJECT_DIR$/../libs/scar/scar-src.zip!/com/esotericsoftware/minlog/Log.java">
+    <entry file="jar://$PROJECT_DIR$/../libs/scar/scar-src.zip!/com/esotericsoftware/yamlbeans/YamlReader.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="34" column="100" selection-start="1352" selection-end="1352" vertical-scroll-proportion="0.6224256" />
+        <state line="69" column="72" selection-start="2774" selection-end="2774" vertical-scroll-proportion="0.3633296">
+          <folding />
+        </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/Builder.java">
+    <entry file="jar://$PROJECT_DIR$/../libs/scar/scar-src.zip!/com/esotericsoftware/minlog/Log.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="39" column="25" selection-start="3283" selection-end="3283" vertical-scroll-proportion="0.5730594">
+        <state line="59" column="23" selection-start="2144" selection-end="2144" vertical-scroll-proportion="0.33295837">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/com/esotericsoftware/scar/Utils.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="369" column="0" selection-start="14041" selection-end="14041" vertical-scroll-proportion="0.0">
           <folding>
             <element signature="imports" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="jar://$PROJECT_DIR$/../libs/scar/scar-src.zip!/com/esotericsoftware/scar/Project.java">
+    <entry file="jar://C:/Program Files/Java/jdk1.6.0_23/src.zip!/java/lang/String.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="28" column="20" selection-start="865" selection-end="869" vertical-scroll-proportion="53.04">
+        <state line="2291" column="21" selection-start="88056" selection-end="88056" vertical-scroll-proportion="0.0">
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="jar://$PROJECT_DIR$/../libs/scar/scar-src.zip!/com/esotericsoftware/scar/Scar.java">
+    <entry file="jar://C:/Program Files/Java/jdk1.6.0_23/src.zip!/java/util/regex/Pattern.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="134" column="11" selection-start="4133" selection-end="4133" vertical-scroll-proportion="-2.813927">
+        <state line="56" column="127" selection-start="2055" selection-end="2055" vertical-scroll-proportion="0.0">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/com/esotericsoftware/wildcard/Paths.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="77" column="36" selection-start="2998" selection-end="2998" vertical-scroll-proportion="-43.52">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/com/esotericsoftware/scar/Scar.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="31" column="0" selection-start="513" selection-end="719" vertical-scroll-proportion="0.35252643">
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/com/esotericsoftware/scar/Project.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="32" column="81" selection-start="1106" selection-end="1106" vertical-scroll-proportion="0.3633296">
           <folding />
         </state>
       </provider>
@@ -441,6 +570,7 @@
             <option name="proportions">
               <list>
                 <option value="0.2" />
+                <option value="0.5" />
               </list>
             </option>
           </splitter-proportions>
