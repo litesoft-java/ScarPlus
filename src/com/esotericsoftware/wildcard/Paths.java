@@ -75,7 +75,7 @@ public class Paths implements Iterable<String> {
 	public void glob (String dir, String... patterns) {
 		if (dir == null) dir = ".";
 		if (patterns != null && patterns.length == 0) {
-			String[] split = dir.split("\\|");
+			String[] split = dir.split("\\|"); // split on a '|'
 			if (split.length > 1) {
 				dir = split[0];
 				patterns = new String[split.length - 1];
@@ -86,8 +86,8 @@ public class Paths implements Iterable<String> {
 		File dirFile = new File(dir);
 		if (!dirFile.exists()) return;
 
-		List<String> includes = new ArrayList();
-		List<String> excludes = new ArrayList();
+		List<String> includes = new ArrayList<String>();
+		List<String> excludes = new ArrayList<String>();
 		if (patterns != null) {
 			for (String pattern : patterns) {
 				if (pattern.charAt(0) == '!')

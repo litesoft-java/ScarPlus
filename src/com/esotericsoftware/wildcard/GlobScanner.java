@@ -9,32 +9,22 @@ import java.util.List;
 
 class GlobScanner {
 	private final File rootDir;
-	private final List<String> matches = new ArrayList(128);
+	private final List<String> matches = new ArrayList<String>(128);
 
 	public GlobScanner (File rootDir, List<String> includes, List<String> excludes) {
 		if (rootDir == null) throw new IllegalArgumentException("rootDir cannot be null.");
-		if (!rootDir.exists()) throw new IllegalArgumentException("Directory does not exist: " + rootDir);
-		if (!rootDir.isDirectory()) throw new IllegalArgumentException("File must be a directory: " + rootDir);
+		if (!rootDir.exists()) throw new IllegalArgumentException("rootDir does not exist: " + rootDir);
+		if (!rootDir.isDirectory()) throw new IllegalArgumentException("rootDir not a directory: " + rootDir);
 		try {
-			rootDir = rootDir.getCanonicalFile();
+			this.rootDir = rootDir.getCanonicalFile();
 		} catch (IOException ex) {
 			throw new RuntimeException("OS error determining canonical path: " + rootDir, ex);
 		}
-		this.rootDir = rootDir;
 
-		if (includes == null) throw new IllegalArgumentException("includes cannot be null.");
-		if (excludes == null) throw new IllegalArgumentException("excludes cannot be null.");
+		List<Pattern> includePatterns = buildPatterns( "includes", includes, "**");
+		List<Pattern> allExcludePatterns = buildPatterns( "", excludes, null );
 
-		if (includes.isEmpty()) includes.add("**");
-		List<Pattern> includePatterns = new ArrayList(includes.size());
-		for (String include : includes)
-			includePatterns.add(new Pattern(include));
-
-		List<Pattern> allExcludePatterns = new ArrayList(excludes.size());
-		for (String exclude : excludes)
-			allExcludePatterns.add(new Pattern(exclude));
-
-		scanDir(rootDir, includePatterns);
+		scanDir(this.rootDir, includePatterns);
 
 		if (!allExcludePatterns.isEmpty()) {
 			// For each file, see if any exclude patterns match.
@@ -42,7 +32,7 @@ class GlobScanner {
 			//
 			for (Iterator matchIter = matches.iterator(); matchIter.hasNext();) {
 				String filePath = (String)matchIter.next();
-				List<Pattern> excludePatterns = new ArrayList(allExcludePatterns);
+				List<Pattern> excludePatterns = new ArrayList<Pattern>(allExcludePatterns);
 				try {
 					// Shortcut for excludes that are "**/XXX", just check file name.
 					for (Iterator excludeIter = excludePatterns.iterator(); excludeIter.hasNext();) {
@@ -50,7 +40,7 @@ class GlobScanner {
 						if (exclude.values.length == 2 && exclude.values[0].equals("**")) {
 							exclude.incr();
 							String fileName = filePath.substring(filePath.lastIndexOf(File.separatorChar) + 1);
-							if (exclude.matches(fileName)) {
+							if (exclude.matchesFilePath( fileName )) {
 								matchIter.remove();
 								continue outerLoop;
 							}
@@ -62,7 +52,7 @@ class GlobScanner {
 					for (String fileName : fileNames) {
 						for (Iterator excludeIter = excludePatterns.iterator(); excludeIter.hasNext();) {
 							Pattern exclude = (Pattern)excludeIter.next();
-							if (!exclude.matches(fileName)) {
+							if (!exclude.matchesFilePath( fileName )) {
 								excludeIter.remove();
 								continue;
 							}
@@ -84,7 +74,20 @@ class GlobScanner {
 		}
 	}
 
-	private void scanDir (File dir, List<Pattern> includes) {
+    private List<Pattern> buildPatterns( String what, List<String> list, String defaultIfEmpty )
+    {
+        if (list == null) throw new IllegalArgumentException(what + " cannot be null.");
+        List<Pattern> patterns = new ArrayList<Pattern>(Math.max(1, list.size()));
+        if ( !list.isEmpty() ){
+            for (String entry : list)
+                patterns.add(new Pattern(entry));
+        } else if (defaultIfEmpty != null) {
+            patterns.add( new Pattern(defaultIfEmpty) );
+        }
+        return patterns;
+    }
+
+    private void scanDir (File dir, List<Pattern> includes) {
 		if (!dir.canRead()) return;
 
 		// See if patterns are specific enough to avoid scanning every file in the directory.
@@ -98,7 +101,7 @@ class GlobScanner {
 
 		if (!scanAll) {
 			// If not scanning all the files, we know exactly which ones to include.
-			List matchingIncludes = new ArrayList(1);
+			List<Pattern> matchingIncludes = new ArrayList<Pattern>(1);
 			for (Pattern include : includes) {
 				if (matchingIncludes.isEmpty())
 					matchingIncludes.add(include);
@@ -110,9 +113,9 @@ class GlobScanner {
 			// Scan every file.
 			for (String fileName : dir.list()) {
 				// Get all include patterns that match.
-				List<Pattern> matchingIncludes = new ArrayList(includes.size());
+				List<Pattern> matchingIncludes = new ArrayList<Pattern>(includes.size());
 				for (Pattern include : includes)
-					if (include.matches(fileName)) matchingIncludes.add(include);
+					if (include.matchesFilePath( fileName )) matchingIncludes.add(include);
 				if (matchingIncludes.isEmpty()) continue;
 				process(dir, fileName, matchingIncludes);
 			}
@@ -122,7 +125,7 @@ class GlobScanner {
 	private void process (File dir, String fileName, List<Pattern> matchingIncludes) {
 		// Increment patterns that need to move to the next token.
 		boolean isFinalMatch = false;
-		List<Pattern> incrementedPatterns = new ArrayList();
+		List<Pattern> incrementedPatterns = new ArrayList<Pattern>();
 		for (Iterator iter = matchingIncludes.iterator(); iter.hasNext();) {
 			Pattern include = (Pattern)iter.next();
 			if (include.incr(fileName)) {
@@ -155,120 +158,12 @@ class GlobScanner {
 		return rootDir;
 	}
 
-	static class Pattern {
-		String value;
-		final String[] values;
-
-		private int index;
-
-		Pattern (String pattern) {
-			pattern = pattern.replace('\\', '/');
-			pattern = pattern.replaceAll("\\*\\*[^/]", "**/*");
-			pattern = pattern.replaceAll("[^/]\\*\\*", "*/**");
-			// pattern = pattern.toLowerCase();
-			values = pattern.split("/");
-			value = values[0];
-		}
-
-		boolean matches (String fileName) {
-			if (value.equals("**")) return true;
-
-			// fileName = fileName.toLowerCase();
-
-			// Shortcut if no wildcards.
-			if (value.indexOf('*') == -1 && value.indexOf('?') == -1) return fileName.equals(value);
-
-			int i = 0, j = 0;
-			while (i < fileName.length() && j < value.length() && value.charAt(j) != '*') {
-				if (value.charAt(j) != fileName.charAt(i) && value.charAt(j) != '?') return false;
-				i++;
-				j++;
-			}
-
-			// If reached end of pattern without finding a * wildcard, the match has to fail if not same length.
-			if (j == value.length()) return fileName.length() == value.length();
-
-			int cp = 0;
-			int mp = 0;
-			while (i < fileName.length()) {
-				if (j < value.length() && value.charAt(j) == '*') {
-					if (j++ >= value.length()) return true;
-					mp = j;
-					cp = i + 1;
-				} else if (j < value.length() && (value.charAt(j) == fileName.charAt(i) || value.charAt(j) == '?')) {
-					j++;
-					i++;
-				} else {
-					j = mp;
-					i = cp++;
-				}
-			}
-
-			// Handle trailing asterisks.
-			while (j < value.length() && value.charAt(j) == '*')
-				j++;
-
-			return j >= value.length();
-		}
-
-		String nextValue () {
-			if (index + 1 == values.length) return null;
-			return values[index + 1];
-		}
-
-		boolean incr (String fileName) {
-			if (value.equals("**")) {
-				if (index == values.length - 1) return false;
-				incr();
-				if (matches(fileName))
-					incr();
-				else {
-					decr();
-					return false;
-				}
-			} else
-				incr();
-			return true;
-		}
-
-		void incr () {
-			index++;
-			if (index >= values.length)
-				value = null;
-			else
-				value = values[index];
-		}
-
-		void decr () {
-			index--;
-			if (index > 0 && values[index - 1].equals("**")) index--;
-			value = values[index];
-		}
-
-		void reset () {
-			index = 0;
-			value = values[0];
-		}
-
-		boolean isExhausted () {
-			return index >= values.length;
-		}
-
-		boolean isLast () {
-			return index >= values.length - 1;
-		}
-
-		boolean wasFinalMatch () {
-			return isExhausted() || (isLast() && value.equals("**"));
-		}
-	}
-
 	public static void main (String[] args) {
 		// System.out.println(new Paths("C:\\Java\\ls", "**"));
-		List<String> includes = new ArrayList();
+		List<String> includes = new ArrayList<String>();
 		includes.add("website/in*");
 		// includes.add("**/lavaserver/**");
-		List<String> excludes = new ArrayList();
+		List<String> excludes = new ArrayList<String>();
 		// excludes.add("**/*.php");
 		// excludes.add("website/**/doc**");
 		long start = System.nanoTime();
