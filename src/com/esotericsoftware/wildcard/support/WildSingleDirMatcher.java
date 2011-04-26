@@ -4,7 +4,7 @@ import com.esotericsoftware.wildcard.*;
 
 public class WildSingleDirMatcher implements DirMatcher
 {
-    private FilePathPartMatcher mFilePathPartMatcher;
+    private final FilePathPartMatcher mFilePathPartMatcher;
 
     public WildSingleDirMatcher( String pDirPath )
     {

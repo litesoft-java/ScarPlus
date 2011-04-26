@@ -21,11 +21,31 @@ class GlobScanner {
 			throw new RuntimeException("OS error determining canonical path: " + rootDir, ex);
 		}
 
-		List<Pattern> includePatterns = buildPatterns( "includes", includes, "**");
-		List<Pattern> allExcludePatterns = buildPatterns( "", excludes, null );
+        new Scanner( buildPatterns( "includes", includes, "**"), buildPatterns( "excludes", excludes, null ) ).scanDir( this.rootDir );
+    }
 
-		scanDir(this.rootDir, includePatterns);
+    private class Scanner
+    {
+        private List<Pattern> includePatterns, excludePatterns;
 
+        public Scanner( List<Pattern> pIncludePatterns, List<Pattern> pExcludePatterns )
+        {
+            includePatterns = pIncludePatterns;
+            excludePatterns = pExcludePatterns;
+        }
+
+        public void scanDir (File dir ) {
+            scanDir( "", dir );
+        }
+
+        private void scanDir (String pParentPath, File dir ) {
+            if (!dir.canRead()) return;
+        }
+    }
+
+
+
+    {
 		if (!allExcludePatterns.isEmpty()) {
 			// For each file, see if any exclude patterns match.
 			outerLoop:

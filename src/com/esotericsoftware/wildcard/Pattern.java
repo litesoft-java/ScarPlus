@@ -4,21 +4,14 @@ import com.esotericsoftware.wildcard.support.*;
 
 public class Pattern
 {
-    public static final java.util.regex.Pattern SLASH = java.util.regex.Pattern.compile( "/" );
-
     private final String mPattern;
     private final DirMatcher mDirMatcher;
     private final FileNameMatcher mFileNameMatcher;
-    final String[] values;
-
-    String value;
-
-    private int index;
 
     public Pattern( String pattern )
     {
         mPattern = clean( pattern.replace( '\\', '/' ).trim() );
-        int lastSep = pattern.lastIndexOf( '/' );
+        int lastSep = mPattern.lastIndexOf( '/' );
         if ( lastSep == -1 )
         {
             mDirMatcher = CurrentDirMatcher.INSTANCE;
@@ -29,11 +22,6 @@ public class Pattern
             mDirMatcher = createDirMatcher( mPattern.substring( 0, lastSep ).trim() );
             mFileNameMatcher = createFileNameMatcher( mPattern.substring( lastSep + 1 ).trim() );
         }
-
-        // ************************************ OLD ************************************
-        values = SLASH.split( pattern, 0 );
-        value = values[0];
-        System.out.println( "Pattern (" + values.length + "): " + pattern );
     }
 
     public static String clean( String pattern )
@@ -106,13 +94,18 @@ public class Pattern
         {
             return new ExactDirMatcher( pDirPattern );
         }
-        String[] zDirParts = SLASH.split( pDirPattern, 0 );
+        String[] zDirParts = FilePathPartMatcher.SLASH.split( pDirPattern, 0 );
         return (zDirParts.length == 1) ? new WildSingleDirMatcher( pDirPattern ) : new WildMultiDirMatcher( zDirParts );
     }
 
     private static FileNameMatcher createFileNameMatcher( String pFileNamePattern )
     {
-        return null;  // todo: To change body of created methods use File | Settings | File Templates.
+        pFileNamePattern = pFileNamePattern.trim();
+        if ( !pFileNamePattern.contains( "*" ) && !pFileNamePattern.contains( "?" ) )
+        {
+            return new ExactFileNameMatcher( pFileNamePattern );
+        }
+        return new WildFileNameMatcher( pFileNamePattern );
     }
 
     /**
@@ -150,155 +143,7 @@ public class Pattern
             dirPath = filePath.substring( 0, lastSep );
             fileName = filePath.substring( lastSep + 1 );
         }
-        if ( !mDirMatcher.acceptable( dirPath ) )
-        {
-            return false;
-        }
-        if ( mFileNameMatcher != null )
-        {
-            return mFileNameMatcher.acceptable( fileName );
-        }
-        if ( value.equals( "**" ) )
-        {
-            return true;
-        }
-
-        // filePath = filePath.toLowerCase();
-
-        // Shortcut if no wildcards.
-        if ( value.indexOf( '*' ) == -1 && value.indexOf( '?' ) == -1 )
-        {
-            return filePath.equals( value );
-        }
-
-        int i = 0, j = 0;
-        while ( i < filePath.length() && j < value.length() && value.charAt( j ) != '*' )
-        {
-            if ( value.charAt( j ) != filePath.charAt( i ) && value.charAt( j ) != '?' )
-            {
-                return false;
-            }
-            i++;
-            j++;
-        }
-
-        // If reached end of mPattern without finding a * wildcard, the match has to fail if not same length.
-        if ( j == value.length() )
-        {
-            return filePath.length() == value.length();
-        }
-
-        int cp = 0;
-        int mp = 0;
-        while ( i < filePath.length() )
-        {
-            if ( j < value.length() && value.charAt( j ) == '*' )
-            {
-                if ( j++ >= value.length() )
-                {
-                    return true;
-                }
-                mp = j;
-                cp = i + 1;
-            }
-            else if ( j < value.length() && (value.charAt( j ) == filePath.charAt( i ) || value.charAt( j ) == '?') )
-            {
-                j++;
-                i++;
-            }
-            else
-            {
-                j = mp;
-                i = cp++;
-            }
-        }
-
-        // Handle trailing asterisks.
-        while ( j < value.length() && value.charAt( j ) == '*' )
-        {
-            j++;
-        }
-
-        return j >= value.length();
-    }
-
-    String nextValue()
-    {
-        if ( index + 1 == values.length )
-        {
-            return null;
-        }
-        return values[index + 1];
-    }
-
-    boolean incr( String fileName )
-    {
-        if ( value.equals( "**" ) )
-        {
-            if ( index == values.length - 1 )
-            {
-                return false;
-            }
-            incr();
-            if ( matchesFilePath( fileName ) )
-            {
-                incr();
-            }
-            else
-            {
-                decr();
-                return false;
-            }
-        }
-        else
-        {
-            incr();
-        }
-        return true;
-    }
-
-    void incr()
-    {
-        index++;
-        if ( index >= values.length )
-        {
-            value = null;
-        }
-        else
-        {
-            value = values[index];
-        }
-    }
-
-    void decr()
-    {
-        index--;
-        if ( index > 0 && values[index - 1].equals( "**" ) )
-        {
-            index--;
-        }
-        value = values[index];
-    }
-
-    void reset()
-    {
-        index = 0;
-        value = values[0];
-    }
-
-    boolean isExhausted()
-    {
-        return index >= values.length;
-    }
-
-    boolean isLast()
-    {
-        return index >= values.length - 1;
-    }
-
-    boolean wasFinalMatch()
-    {
-        return isExhausted() || (isLast() && value.equals( "**" ));
+        return mDirMatcher.acceptable( dirPath ) && mFileNameMatcher.acceptable( fileName );
     }
 
     @Override

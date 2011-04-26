@@ -9,7 +9,7 @@ public class PatternTest
     private static final String[] DIRS = {"when/ever", //
                                           "what/ever", //
                                           "too/be/or/not/too/be", //
-                                          "be/too", //
+                                          "be/too/what", //
                                           "bad"};
 
     @Test
@@ -19,7 +19,7 @@ public class PatternTest
         assertEquals( "**/*", Pattern.clean( "**" ) );
         assertEquals( "**/*TA", Pattern.clean( "**TA" ) );
         assertEquals( "**/*TA*/**/*", Pattern.clean( "**TA**" ) );
-        assertEquals( "**/*TA/**/*", Pattern.clean( "**/**/*TA/**/**" ) );
+        assertEquals( "**/*TA/**/*", Pattern.clean( "** / ** / *TA /**/**" ) );
     }
 
     @Test
@@ -102,7 +102,7 @@ public class PatternTest
     @Test
     public void matchesMultiWildJava()
     {
-        testPattern( "**/be/**/too/**/*.java", justFile( false, false ), //
+        testPattern( "**/be/**/too/*/*.java", justFile( false, false ), //
                      dir0( true, false, false ), //
                      dir1( true, false, false ), //
                      dir2( true, true, true ), //
