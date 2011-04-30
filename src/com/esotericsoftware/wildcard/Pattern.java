@@ -1,5 +1,6 @@
 package com.esotericsoftware.wildcard;
 
+import com.esotericsoftware.utils.*;
 import com.esotericsoftware.wildcard.support.*;
 
 public class Pattern
@@ -7,6 +8,7 @@ public class Pattern
     private final String mPattern;
     private final DirMatcher mDirMatcher;
     private final FileNameMatcher mFileNameMatcher;
+    private final boolean mAllFiles;
 
     public Pattern( String pattern )
     {
@@ -22,33 +24,33 @@ public class Pattern
             mDirMatcher = createDirMatcher( mPattern.substring( 0, lastSep ).trim() );
             mFileNameMatcher = createFileNameMatcher( mPattern.substring( lastSep + 1 ).trim() );
         }
+        mAllFiles = AllFileNameMatcher.INSTANCE == mFileNameMatcher;
     }
 
     public static String clean( String pattern )
     {
-        if ( pattern.length() == 0 )
-        {
-            pattern = "*";
-        }
-        pattern = replace( pattern, " /", "/" );
-        pattern = replace( pattern, "/ ", "/" );
-        pattern = replace( pattern, "/./", "//" );
-        pattern = replace( pattern, "//", "/" );
-
         pattern = pattern.startsWith( "/" ) ? "." + pattern : "./" + pattern;
-        if ( pattern.endsWith( "**" ) )
+        String newPattern = pattern;
+        newPattern = Util.replace( newPattern, "?*", "*" );
+        newPattern = Util.replace( newPattern, "*?", "*" );
+        newPattern = Util.replace( newPattern, " /", "/" );
+        newPattern = Util.replace( newPattern, "/ ", "/" );
+        newPattern = Util.replace( newPattern, "/./", "//" );
+        newPattern = Util.replace( newPattern, "//", "/" );
+
+        if ( newPattern.endsWith( "**" ) )
         {
-            pattern += "/";
+            newPattern += "/";
         }
-        if ( pattern.endsWith( "/" ) )
+        if ( newPattern.endsWith( "/" ) )
         {
-            pattern += "*";
+            newPattern += "*";
         }
-        String newPattern = processNonSlashedStarStar( pattern );
-        newPattern = replace( newPattern, "/**/**/", "/**/" );
+        newPattern = processNonSlashedStarStar( newPattern );
+        newPattern = Util.replace( newPattern, "/**/**/", "/**/" );
         if ( !newPattern.equals( pattern ) )
         {
-            System.out.println( "Pattern '" + pattern + "' -> '" + newPattern + "'" );
+            System.out.println( "Pattern '" + pattern.substring( 2 ) + "' -> '" + newPattern.substring( 2 ) + "'" );
         }
         return newPattern.substring( 2 );
     }
@@ -67,15 +69,6 @@ public class Pattern
                 pPattern = pPattern.substring( 0, at ) + "*/" + pPattern.substring( at );
                 at += 2;
             }
-        }
-        return pPattern;
-    }
-
-    private static String replace( String pPattern, String pOfInterest, String pReplaceWith )
-    {
-        for ( int at; -1 != (at = pPattern.indexOf( pOfInterest )); )
-        {
-            pPattern = pPattern.substring( 0, at ) + pReplaceWith + pPattern.substring( at + pOfInterest.length() );
         }
         return pPattern;
     }
@@ -101,6 +94,10 @@ public class Pattern
     private static FileNameMatcher createFileNameMatcher( String pFileNamePattern )
     {
         pFileNamePattern = pFileNamePattern.trim();
+        if ( pFileNamePattern.equals( "*.*" ) || pFileNamePattern.equals( "*" ) )
+        {
+            return AllFileNameMatcher.INSTANCE;
+        }
         if ( !pFileNamePattern.contains( "*" ) && !pFileNamePattern.contains( "?" ) )
         {
             return new ExactFileNameMatcher( pFileNamePattern );
@@ -126,6 +123,16 @@ public class Pattern
     public boolean acceptableDirPath( String dirPath )
     {
         return mDirMatcher.acceptable( dirPath );
+    }
+
+    /**
+     * return True if the directory specified with <code>dirPath</code> <i>could</i> host files <b>directly</b> that are acceptable to this Pattern AND this pattern will include all child files (optionally at any depth)
+     *
+     * @param dirPath !null and path separators converted to '/'
+     */
+    public boolean matchesDirPathAndChildren( String dirPath )
+    {
+        return mAllFiles && acceptableDirPath( dirPath );
     }
 
     /**

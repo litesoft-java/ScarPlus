@@ -15,12 +15,6 @@ public class StarStarFilePathPartMatcher implements FilePathPartMatcher
     }
 
     @Override
-    public boolean acceptsAnything()
-    {
-        return true;
-    }
-
-    @Override
     public boolean acceptable( String pFilePathPart )
     {
         return true;

@@ -6,147 +6,148 @@ import static org.junit.Assert.*;
 
 public class PatternTest
 {
-    private static final String[] DIRS = {"when/ever", //
-                                          "what/ever", //
-                                          "too/be/or/not/too/be", //
-                                          "be/too/what", //
-                                          "bad"};
-
     @Test
     public void clean()
     {
+        assertEquals( "*", Pattern.clean( "" ) );
         assertEquals( "*", Pattern.clean( "*" ) );
         assertEquals( "**/*", Pattern.clean( "**" ) );
         assertEquals( "**/*TA", Pattern.clean( "**TA" ) );
         assertEquals( "**/*TA*/**/*", Pattern.clean( "**TA**" ) );
         assertEquals( "**/*TA/**/*", Pattern.clean( "** / ** / *TA /**/**" ) );
+        assertEquals( "**/*TA/**/*", Pattern.clean( "**? / ** / ?*TA /**?/??*?" ) );
+    }
+
+    @Test
+    public void excludeDirFileSupport()
+    {
+        Pattern zPattern = new Pattern( "**/be/**/*.java" );
+        new ExcludeAnswers( "Dude.java", false, false ).test( zPattern );
+        new ExcludeAnswers( "when/ever/Dude.java", false, false, false ).test( zPattern );
+        new ExcludeAnswers( "what/ever/Dude.java", false, false, false ).test( zPattern );
+        new ExcludeAnswers( "too/be/or/not/too/be/Dude.java", false, false, false, false, false, false, true ).test( zPattern );
+        new ExcludeAnswers( "be/too/what/Dude.java", false, false, false, true ).test( zPattern );
+        new ExcludeAnswers( "bad/Dude.java", false, false ).test( zPattern );
+    }
+
+    @Test
+    public void excludeFileSupport()
+    {
+        Pattern zPattern = new Pattern( "**/*.java" );
+        new ExcludeAnswers( "Dude.java", false, true ).test( zPattern );
+        new ExcludeAnswers( "when/ever/Dude.java", false, false, true ).test( zPattern );
+        new ExcludeAnswers( "what/ever/Dude.java", false, false, true ).test( zPattern );
+        new ExcludeAnswers( "too/be/or/not/too/be/Dude.java", false, false, false, false, false, false, true ).test( zPattern );
+        new ExcludeAnswers( "be/too/what/Dude.java", false, false, false, true ).test( zPattern );
+        new ExcludeAnswers( "bad/Dude.java", false, true ).test( zPattern );
+    }
+
+    @Test
+    public void excludeDirSupport()
+    {
+        Pattern zPattern = new Pattern( "**/be/**" );
+        new ExcludeAnswers( "Dude.java", false, false ).test( zPattern );
+        new ExcludeAnswers( "when/ever/Dude.java", false, false, false ).test( zPattern );
+        new ExcludeAnswers( "what/ever/Dude.java", false, false, false ).test( zPattern );
+        new ExcludeAnswers( "too/be/or/not/too/be/Dude.java", false, true ).test( zPattern );
+        new ExcludeAnswers( "be/too/what/Dude.java", true ).test( zPattern );
+        new ExcludeAnswers( "bad/Dude.java", false, false ).test( zPattern );
     }
 
     @Test
     public void matchesEveryThing()
     {
-        testPattern( "**/*", justFile( true, true ), //
-                     dir0( true, true, true ), //
-                     dir1( true, true, true ), //
-                     dir2( true, true, true ), //
-                     dir3( true, true, true ), //
-                     dir4( true, true ) );
+        Pattern zPattern = new Pattern( "**/*" );
+        new Answers( "Dude.java", null, true, true ).test( zPattern );
+        new Answers( "when/ever/Dude.java", true, true, true ).test( zPattern );
+        new Answers( "what/ever/Dude.java", true, true, true ).test( zPattern );
+        new Answers( "too/be/or/not/too/be/Dude.java", true, true, true ).test( zPattern );
+        new Answers( "be/too/what/Dude.java", true, true, true ).test( zPattern );
+        new Answers( "bad/Dude.java", null, true, true ).test( zPattern );
     }
 
     @Test
     public void matchesJava()
     {
-        testPattern( "**/*.java", justFile( true, true ), //
-                     dir0( true, true, true ), //
-                     dir1( true, true, true ), //
-                     dir2( true, true, true ), //
-                     dir3( true, true, true ), //
-                     dir4( true, true ));
+        Pattern zPattern = new Pattern( "**/*.java" );
+        new Answers( "Dude.java", null, true, true ).test( zPattern );
+        new Answers( "when/ever/Dude.java", true, true, true ).test( zPattern );
+        new Answers( "what/ever/Dude.java", true, true, true ).test( zPattern );
+        new Answers( "too/be/or/not/too/be/Dude.java", true, true, true ).test( zPattern );
+        new Answers( "be/too/what/Dude.java", true, true, true ).test( zPattern );
+        new Answers( "bad/Dude.java", null, true, true ).test( zPattern );
     }
 
     @Test
     public void matchesBaStar_Java()
     {
-        testPattern( "ba*/*.java", justFile( false, false ), //
-                     dir0( false, false, false ), //
-                     dir1( false, false, false ), //
-                     dir2( false, false, false ), //
-                     dir3( false, false, false ), //
-                     dir4( true, true ));
+        Pattern zPattern = new Pattern( "ba*/*.java" );
+        new Answers( "Dude.java", null, false, false ).test( zPattern );
+        new Answers( "when/ever/Dude.java", false, false, false ).test( zPattern );
+        new Answers( "what/ever/Dude.java", false, false, false ).test( zPattern );
+        new Answers( "too/be/or/not/too/be/Dude.java", false, false, false ).test( zPattern );
+        new Answers( "be/too/what/Dude.java", false, false, false ).test( zPattern );
+        new Answers( "bad/Dude.java", null, true, true ).test( zPattern );
     }
 
     @Test
     public void matchesBa_Java()
     {
-        testPattern( "ba?/*.java", justFile( false, false ), //
-                     dir0( false, false, false ), //
-                     dir1( false, false, false ), //
-                     dir2( false, false, false ), //
-                     dir3( false, false, false ), //
-                     dir4( true, true ));
+        Pattern zPattern = new Pattern( "ba?/*.java" );
+        new Answers( "Dude.java", null, false, false ).test( zPattern );
+        new Answers( "when/ever/Dude.java", false, false, false ).test( zPattern );
+        new Answers( "what/ever/Dude.java", false, false, false ).test( zPattern );
+        new Answers( "too/be/or/not/too/be/Dude.java", false, false, false ).test( zPattern );
+        new Answers( "be/too/what/Dude.java", false, false, false ).test( zPattern );
+        new Answers( "bad/Dude.java", null, true, true ).test( zPattern );
     }
 
     @Test
     public void matchesEver()
     {
-        testPattern( "**/ever/**", justFile( false, false ), //
-                     dir0( true, true, true ), //
-                     dir1( true, true, true ), //
-                     dir2( true, false, false ), //
-                     dir3( true, false, false ), //
-                     dir4( false, false ) );
+        Pattern zPattern = new Pattern( "**/ever/**" );
+        new Answers( "Dude.java", null, false, false ).test( zPattern );
+        new Answers( "when/ever/Dude.java", true, true, true ).test( zPattern );
+        new Answers( "what/ever/Dude.java", true, true, true ).test( zPattern );
+        new Answers( "too/be/or/not/too/be/Dude.java", true, false, false ).test( zPattern );
+        new Answers( "be/too/what/Dude.java", true, false, false ).test( zPattern );
+        new Answers( "bad/Dude.java", null, false, false ).test( zPattern );
     }
 
     @Test
     public void matchesWhen_Java()
     {
-        testPattern( "when/**/*.java", justFile( false, false ), //
-                     dir0( true, true, true ), //
-                     dir1( false, false, false ), //
-                     dir2( false, false, false ), //
-                     dir3( false, false, false ), //
-                     dir4( false, false ) );
+        Pattern zPattern = new Pattern( "when/**/*.java" );
+        new Answers( "Dude.java", null, false, false ).test( zPattern );
+        new Answers( "when/ever/Dude.java", true, true, true ).test( zPattern );
+        new Answers( "what/ever/Dude.java", false, false, false ).test( zPattern );
+        new Answers( "too/be/or/not/too/be/Dude.java", false, false, false ).test( zPattern );
+        new Answers( "be/too/what/Dude.java", false, false, false ).test( zPattern );
+        new Answers( "bad/Dude.java", null, false, false ).test( zPattern );
     }
 
     @Test
     public void matchesWhenEverJava()
     {
-        testPattern( "when/ever/*.java", justFile( false, false ), //
-                     dir0( true, true, true ), //
-                     dir1( false, false, false ), //
-                     dir2( false, false, false ), //
-                     dir3( false, false, false ), //
-                     dir4( false, false ) );
+        Pattern zPattern = new Pattern( "when/ever/*.java" );
+        new Answers( "Dude.java", null, false, false ).test( zPattern );
+        new Answers( "when/ever/Dude.java", true, true, true ).test( zPattern );
+        new Answers( "what/ever/Dude.java", false, false, false ).test( zPattern );
+        new Answers( "too/be/or/not/too/be/Dude.java", false, false, false ).test( zPattern );
+        new Answers( "be/too/what/Dude.java", false, false, false ).test( zPattern );
+        new Answers( "bad/Dude.java", null, false, false ).test( zPattern );
     }
 
     @Test
     public void matchesMultiWildJava()
     {
-        testPattern( "**/be/**/too/*/*.java", justFile( false, false ), //
-                     dir0( true, false, false ), //
-                     dir1( true, false, false ), //
-                     dir2( true, true, true ), //
-                     dir3( true, true, true ), //
-                     dir4( false, false ) );
-    }
-
-    private Answers justFile( boolean pDirPathAnswer, boolean pFileNameAnswer )
-    {
-        return new Answers( null, pDirPathAnswer, pFileNameAnswer, "Dude.java" );
-    }
-
-    private Answers dir0( boolean pParentDirsPathAnswer, boolean pDirPathAnswer, boolean pFileNameAnswer )
-    {
-        return new Answers( pParentDirsPathAnswer, pDirPathAnswer, pFileNameAnswer, DIRS[0] + "/Dude.java" );
-    }
-
-    private Answers dir1( boolean pParentDirsPathAnswer, boolean pDirPathAnswer, boolean pFileNameAnswer )
-    {
-        return new Answers( pParentDirsPathAnswer, pDirPathAnswer, pFileNameAnswer, DIRS[1] + "/Dude.java" );
-    }
-
-    private Answers dir2( boolean pParentDirsPathAnswer, boolean pDirPathAnswer, boolean pFileNameAnswer )
-    {
-        return new Answers( pParentDirsPathAnswer, pDirPathAnswer, pFileNameAnswer, DIRS[2] + "/Dude.java" );
-    }
-
-    private Answers dir3( boolean pParentDirsPathAnswer, boolean pDirPathAnswer, boolean pFileNameAnswer )
-    {
-        return new Answers( pParentDirsPathAnswer, pDirPathAnswer, pFileNameAnswer, DIRS[3] + "/Dude.java" );
-    }
-
-    private Answers dir4( boolean pDirPathAnswer, boolean pFileNameAnswer )
-    {
-        return new Answers( null, pDirPathAnswer, pFileNameAnswer, DIRS[4] + "/Dude.java" );
-    }
-
-    private void testPattern( String pPattern, Answers... pAnswers )
-    {
-        Pattern zPattern = new Pattern( pPattern );
-        for ( Answers zAnswer : pAnswers )
-        {
-            zAnswer.test( zPattern );
-        }
+        Pattern zPattern = new Pattern( "**/be/**/too/*/*.java" );
+        new Answers( "Dude.java", null, false, false ).test( zPattern );
+        new Answers( "when/ever/Dude.java", true, false, false ).test( zPattern );
+        new Answers( "what/ever/Dude.java", true, false, false ).test( zPattern );
+        new Answers( "too/be/or/not/too/be/Dude.java", true, true, true ).test( zPattern );
+        new Answers( "be/too/what/Dude.java", true, true, true ).test( zPattern );
+        new Answers( "bad/Dude.java", null, false, false ).test( zPattern );
     }
 
     private static class Answers
@@ -156,7 +157,7 @@ public class PatternTest
         private final boolean mFileNameAnswer;
         private final String[] mFilePathParts;
 
-        public Answers( Boolean pParentDirsPathAnswer, boolean pDirPathAnswer, boolean pFileNameAnswer, String pFilePath )
+        public Answers( String pFilePath, Boolean pParentDirsPathAnswer, boolean pDirPathAnswer, boolean pFileNameAnswer )
         {
             mParentDirsPathAnswer = pParentDirsPathAnswer;
             mDirPathAnswer = pDirPathAnswer;
@@ -180,7 +181,7 @@ public class PatternTest
                     boolean zActual = zPattern.acceptableParentDirPath( filePath );
                     if ( mParentDirsPathAnswer != zActual )
                     {
-                        fail( "Expected " + mParentDirsPathAnswer + ", but got " + zActual + " w/ Pattern( \"" + zPattern + "\" ).acceptableParentDirPath( \"" + filePath + "\" )" );
+                        fail( i + " Expected " + mParentDirsPathAnswer + ", but got " + zActual + " w/ Pattern( \"" + zPattern + "\" ).acceptableParentDirPath( \"" + filePath + "\" )" );
                     }
                 }
             }
@@ -188,13 +189,58 @@ public class PatternTest
             boolean zActual = zPattern.acceptableDirPath( filePath );
             if ( mDirPathAnswer != zActual )
             {
-                fail( "Expected " + mDirPathAnswer + ", but got " + zActual + " w/ Pattern( \"" + zPattern + "\" ).acceptableDirPath( \"" + filePath + "\" )" );
+                fail( i + " Expected " + mDirPathAnswer + ", but got " + zActual + " w/ Pattern( \"" + zPattern + "\" ).acceptableDirPath( \"" + filePath + "\" )" );
             }
             filePath = append( filePath, mFilePathParts[i] );
             zActual = zPattern.matchesFilePath( filePath );
             if ( mFileNameAnswer != zActual )
             {
                 fail( "Expected " + mFileNameAnswer + ", but got " + zActual + " w/ Pattern( \"" + zPattern + "\" ).matchesFilePath( \"" + filePath + "\" )" );
+            }
+        }
+
+        private String append( String pPath, String pPart )
+        {
+            return (pPath.length() == 0) ? pPart : pPath + "/" + pPart;
+        }
+    }
+
+    private static class ExcludeAnswers
+    {
+        private final String[] mFilePathParts;
+        private final boolean[] mPathAndOptionalFileAnswer;
+
+        public ExcludeAnswers( String pFilePath, boolean... pPathAndOptionalFileAnswer )
+        {
+            mFilePathParts = pFilePath.contains( "/" ) ? pFilePath.split( "/" ) : new String[]{"", pFilePath};
+            mPathAndOptionalFileAnswer = pPathAndOptionalFileAnswer;
+        }
+
+        public void test( Pattern zPattern )
+        {
+            boolean zActual, zExpected;
+            String filePath = "";
+            int i = 0;
+            for (; i < (mFilePathParts.length - 1); i++ )
+            {
+                zExpected = mPathAndOptionalFileAnswer[i];
+                filePath = append( filePath, mFilePathParts[i] );
+                zActual = zPattern.matchesDirPathAndChildren( filePath );
+                if ( zExpected != zActual )
+                {
+                    fail( i + " Expected " + zExpected + ", but got " + zActual + " w/ Pattern( \"" + zPattern + "\" ).matchesDirPathAndChildren( \"" + filePath + "\" )" );
+                }
+                if ( zExpected )
+                {
+                    return;
+                }
+            }
+            zExpected = mPathAndOptionalFileAnswer[i];
+            filePath = append( filePath, mFilePathParts[i] );
+            zActual = zPattern.matchesFilePath( filePath );
+            if ( zExpected != zActual )
+            {
+                fail( "Expected " + zExpected + ", but got " + zActual + " w/ Pattern( \"" + zPattern + "\" ).matchesFilePath( \"" + filePath + "\" )" );
             }
         }
 

@@ -8,7 +8,7 @@ public class WildMultiDirMatcher implements DirMatcher
     private final boolean mFirstPartIsStarStar;
     private final int mMinimumParts;
 
-    public WildMultiDirMatcher( String[] zDirParts )
+    public WildMultiDirMatcher( String... zDirParts )
     {
         int requiredParts = 0;
         mMatchers = new FilePathPartMatcher[zDirParts.length];
@@ -84,7 +84,7 @@ public class WildMultiDirMatcher implements DirMatcher
                     return true;
                 }
                 // Check n skipped parts
-                for ( int i = pPartsIndex + 1; i < pDirParts.length; i++ )
+                for ( int i = pPartsIndex + 1; i <= pDirParts.length; i++ )
                 {
                     if ( checkAcceptable( pMatcherIndex + 1, pDirParts, i ) )
                     {

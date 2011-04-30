@@ -6,7 +6,5 @@ public interface FilePathPartMatcher
 
     public boolean acceptsAnyNumberOfParts();
 
-    public boolean acceptsAnything();
-
     public boolean acceptable( String pFilePathPart );
 }

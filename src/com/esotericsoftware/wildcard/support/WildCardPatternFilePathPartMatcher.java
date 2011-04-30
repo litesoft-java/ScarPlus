@@ -52,12 +52,6 @@ public class WildCardPatternFilePathPartMatcher implements FilePathPartMatcher
     }
 
     @Override
-    public boolean acceptsAnything()
-    {
-        return mAcceptsAnything;
-    }
-
-    @Override
     public boolean acceptable( String pFilePathPart )
     {
         return mAcceptsAnything || mPattern.matcher( pFilePathPart ).matches();

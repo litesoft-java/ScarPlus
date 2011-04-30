@@ -10,6 +10,7 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.esotericsoftware.utils.*;
 import com.esotericsoftware.wildcard.Paths;
 import com.esotericsoftware.yamlbeans.YamlException;
 import com.esotericsoftware.yamlbeans.YamlReader;
@@ -42,7 +43,7 @@ public class Project {
 	 * Creates an empty project, without any default properties, and then loads the specified YAML files.
 	 */
 	public Project (String path, String... paths) throws IOException {
-		if (paths == null) throw new IllegalArgumentException("paths cannot be null.");
+        Util.assertNotNull( "paths", paths );
 
 		load(path);
 		for (String mergePath : paths)
@@ -60,7 +61,7 @@ public class Project {
 			path += ".yaml";
 			file = new File(path);
 		}
-		if (!file.exists()) throw new IllegalArgumentException("Project not found: " + file.getAbsolutePath());
+        Util.assertExists( "Project", file );
 		if (file.isDirectory()) {
 			file = new File(file, "project.yaml");
 			if (file.exists())
@@ -117,26 +118,24 @@ public class Project {
 	 * affected.
 	 */
 	public void replace (Project project) throws IOException {
-		if (project == null) throw new IllegalArgumentException("project cannot be null.");
+        Util.assertNotNull( "project", project );
 		data.putAll(project.data);
 		document = project.document;
 		dir = project.dir;
 	}
 
 	public boolean has (Object key) {
-		if (key == null) throw new IllegalArgumentException("key cannot be null.");
+        Util.assertNotNull( "key", key );
 		return data.get(key) != null;
 	}
 
 	public Object getObject (Object key) {
-		return getObject(key, null);
+        Util.assertNotNull( "key", key );
+		return data.get(key);
 	}
 
 	public Object getObject (Object key, Object defaultValue) {
-		if (key == null) throw new IllegalArgumentException("key cannot be null.");
-		Object object = data.get(key);
-		if (object == null) return defaultValue;
-		return object;
+        return Util.deNull( getObject( key ), defaultValue );
 	}
 
 	public String get (Object key) {
@@ -274,7 +273,7 @@ public class Project {
 	}
 
 	public void set (Object key, Object object) {
-		if (key == null) throw new IllegalArgumentException("key cannot be null.");
+        Util.assertNotNull( "key", key );
 		data.put(key, object);
 	}
 

@@ -19,12 +19,6 @@ public class ExactFilePathPartMatcher implements FilePathPartMatcher
     }
 
     @Override
-    public boolean acceptsAnything()
-    {
-        return false;
-    }
-
-    @Override
     public boolean acceptable( String pFilePathPart )
     {
         return mPart.equals( pFilePathPart );
