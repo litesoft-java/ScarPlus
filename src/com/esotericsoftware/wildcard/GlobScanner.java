@@ -1,52 +1,73 @@
-
 package com.esotericsoftware.wildcard;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import java.io.*;
+import java.util.*;
 
 import com.esotericsoftware.filesupport.*;
 
-class GlobScanner {
-	private final IFile rootDir;
-	private final List<String> matches = new ArrayList<String>(128);
+class GlobScanner
+{
+    private final IFile rootDir;
+    private final List<String> matches = new ArrayList<String>( 128 );
 
-    public GlobScanner (File rootDir, List<String> includes, List<String> excludes) {
-       this( new IFileFileProxy(rootDir), includes, excludes);
+    public GlobScanner( File rootDir, List<String> includes, List<String> excludes )
+    {
+        this( new IFileFileProxy( rootDir ), includes, excludes );
     }
 
-    public GlobScanner (IFile rootDir, List<String> includes, List<String> excludes) {
-		if (rootDir == null) throw new IllegalArgumentException("rootDir cannot be null.");
-		if (!rootDir.exists()) throw new IllegalArgumentException("rootDir does not exist: " + rootDir);
-		if (!rootDir.isDirectory()) throw new IllegalArgumentException("rootDir not a directory: " + rootDir);
-		try {
-			this.rootDir = rootDir.getCanonicalFile();
-		} catch (IOException ex) {
-			throw new RuntimeException("OS error determining canonical path: " + rootDir, ex);
-		}
+    public GlobScanner( IFile rootDir, List<String> includes, List<String> excludes )
+    {
+        if ( rootDir == null )
+        {
+            throw new IllegalArgumentException( "rootDir cannot be null." );
+        }
+        if ( !rootDir.exists() )
+        {
+            throw new IllegalArgumentException( "rootDir does not exist: " + rootDir );
+        }
+        if ( !rootDir.isDirectory() )
+        {
+            throw new IllegalArgumentException( "rootDir not a directory: " + rootDir );
+        }
+        try
+        {
+            this.rootDir = rootDir.getCanonicalFile();
+        }
+        catch ( IOException ex )
+        {
+            throw new RuntimeException( "OS error determining canonical path: " + rootDir, ex );
+        }
 
-        new Scanner( buildPatterns( "includes", includes, "**"), buildPatterns( "excludes", excludes, null ) ).scanDir( this.rootDir );
+        new Scanner( buildPatterns( "includes", includes, "**" ), buildPatterns( "excludes", excludes, null ) ).scanDir( this.rootDir );
     }
 
-    public List<String> matches () {
+    public List<String> matches()
+    {
         return matches;
     }
 
-    public IFile rootDir () {
+    public IFile rootDir()
+    {
         return rootDir;
     }
 
     private List<Pattern> buildPatterns( String what, List<String> list, String defaultIfEmpty )
     {
-        if (list == null) throw new IllegalArgumentException(what + " cannot be null.");
-        List<Pattern> patterns = new ArrayList<Pattern>(Math.max(1, list.size()));
-        if ( !list.isEmpty() ){
-            for (String entry : list)
-                patterns.add(new Pattern(entry));
-        } else if (defaultIfEmpty != null) {
-            patterns.add( new Pattern(defaultIfEmpty) );
+        if ( list == null )
+        {
+            throw new IllegalArgumentException( what + " cannot be null." );
+        }
+        List<Pattern> patterns = new ArrayList<Pattern>( Math.max( 1, list.size() ) );
+        if ( !list.isEmpty() )
+        {
+            for ( String entry : list )
+            {
+                patterns.add( new Pattern( entry ) );
+            }
+        }
+        else if ( defaultIfEmpty != null )
+        {
+            patterns.add( new Pattern( defaultIfEmpty ) );
         }
         return patterns;
     }
@@ -61,16 +82,19 @@ class GlobScanner {
             excludePatterns = pExcludePatterns;
         }
 
-        public void scanDir (IFile dir ) {
+        public void scanDir( IFile dir )
+        {
             scanDir( "", dir );
         }
 
-        private void scanDir (String pParentPath, IFile dir ) {
-            if (!dir.canRead()) return;
+        private void scanDir( String pParentPath, IFile dir )
+        {
+            if ( !dir.canRead() )
+            {
+                return;
+            }
         }
     }
-
-
 
 //    {
 //		if (!allExcludePatterns.isEmpty()) {

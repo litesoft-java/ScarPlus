@@ -11,6 +11,7 @@ public interface DirMatcher
 
     /**
      * return True if the directory specified with <code>dirPath</code> is acceptable
+     *
      * @param dirPath !null and path separators converted to '/'
      */
     public boolean acceptable( String dirPath );

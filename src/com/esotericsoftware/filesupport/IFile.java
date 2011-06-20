@@ -12,6 +12,6 @@ public interface IFile
 
     String getPath();
 
-    IFile getCanonicalFile() throws IOException;
-
+    IFile getCanonicalFile()
+            throws IOException;
 }
