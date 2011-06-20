@@ -33,7 +33,7 @@ public class Scar extends Utils implements ProjectFactory
 
     protected static final Logger LOGGER = LoggerFactory.getLogger( Scar.class );
 
-    protected final Map<String, Project> mProjectCache = new HashMap<String, Project>();
+    protected final ProjectCache mProjectCache = new ProjectCache();
 
     /**
      * The command line arguments Scar was started with. Empty if Scar was started with no arguments or Scar was not started from
@@ -55,16 +55,22 @@ public class Scar extends Utils implements ProjectFactory
     public Project project( String pPath )
             throws IOException
     {
-        File zFile = new File( canonical( Util.assertNotEmpty( "Path", pPath ) ) );
+        String zPath = canonical( Util.assertNotEmpty( "Path", pPath ) );
+        Project zProject = mProjectCache.getByPath( zPath );
+        if ( zProject != null )
+        {
+            return zProject;
+        }
+        File zFile = new File( zPath );
         try
         {
             if ( zFile.isFile() ) // Assume Project Build File
             {
-                return initialize( createProject( zFile, zFile.getParentFile() ) );
+                return mProjectCache.initialize( this, zPath, createProject( zFile, zFile.getParentFile() ) );
             }
             if ( zFile.isDirectory() ) // Assume Project Dir
             {
-                return initialize( createProject( findBuildFile( zFile ), zFile, zFile.getName() ) );
+                return mProjectCache.initialize( this, zPath, createProject( findBuildFile( zFile ), zFile, zFile.getName() ) );
             }
         }
         catch ( IOException e )
@@ -72,21 +78,6 @@ public class Scar extends Utils implements ProjectFactory
             throw new IOException( pPath, e );
         }
         throw new IllegalArgumentException( "Project is Neither a Project File, nor a Project Directory: " + zFile );
-    }
-
-    private Project initialize( Project pProject )
-    {
-        synchronized ( mProjectCache )
-        {
-            Project zProject = mProjectCache.get( pProject.getName() );
-            if ( zProject != null )
-            {
-                return zProject;
-            }
-            mProjectCache.put( pProject.getName(), pProject );
-        }
-        pProject.initialize( this );
-        return pProject;
     }
 
     protected File findBuildFile( File pProjectDir )
@@ -1787,5 +1778,34 @@ public class Scar extends Utils implements ProjectFactory
         }
 
         public static final FileFilter INSTANCE = new BuildFileFilter();
+    }
+
+    private static class ProjectCache
+    {
+        private Map<String, Project> mProjectByName = new HashMap<String, Project>();
+        private Map<String, Project> mProjectByPath = new HashMap<String, Project>();
+
+        public synchronized Project getByPath( String pPath )
+        {
+            return mProjectByPath.get( pPath );
+        }
+
+        private Project initialize( ProjectFactory pFactory, String pPath, Project pProject )
+        {
+            synchronized ( this )
+            {
+                String zName = pProject.getName();
+                Project zProject = mProjectByName.get( zName );
+                if ( zProject != null )
+                {
+                    mProjectByPath.put( pPath, zProject );
+                    return zProject;
+                }
+                mProjectByPath.put( pPath, pProject );
+                mProjectByName.put( zName, pProject );
+            }
+            pProject.initialize( pFactory );
+            return pProject;
+        }
     }
 }
