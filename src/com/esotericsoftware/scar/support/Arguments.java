@@ -11,6 +11,27 @@ import com.esotericsoftware.utils.*;
 @SuppressWarnings({"UnusedDeclaration"})
 public class Arguments
 {
+    public static class NameValuePair
+    {
+        private String mName, mValue;
+
+        public NameValuePair( String pName, String pValue )
+        {
+            mName = pName;
+            mValue = pValue;
+        }
+
+        public String getName()
+        {
+            return mName;
+        }
+
+        public String getValue()
+        {
+            return mValue;
+        }
+    }
+
     private final Map<String, String> mParameters = new LinkedHashMap<String, String>();
 
     public Arguments()
@@ -19,13 +40,12 @@ public class Arguments
 
     public Arguments( String[] pArgs )
     {
-        for ( int i = 0; i < pArgs.length; i++ )
+        for ( String zArg : pArgs )
         {
-            String zArg = pArgs[i];
             int at = zArg.indexOf( '=' );
             if ( at == -1 )
             {
-                set( zArg );
+                set( zArg, "" );
             }
             else
             {
@@ -34,20 +54,44 @@ public class Arguments
         }
     }
 
-    /**
-     * Get the value assocciated w/ pName, and remove the entry if found.
-     *
-     * Returns the value of the argument with the specified Name, or "" if the argument was specified without a value or null if it was not
-     * specified.
-     */
-    public String get( String pName )
+    private void set( String pName, String pValue )
     {
-        return mParameters.get( normalizeName( pName ) );
+        mParameters.put( normalizeName( pName ), pValue );
     }
 
     /**
-     * Returns the value of the argument with the specified Name, or the specified default value if the argument was specified
-     * without a value or was not specified.
+     * Get (and remove if there) the 'Next' Name/Value.
+     *
+     * Returns null means no more.
+     */
+    public NameValuePair getNext()
+    {
+        if ( mParameters.isEmpty() )
+        {
+            return null;
+        }
+        String zName = mParameters.keySet().iterator().next();
+        return new NameValuePair( zName, get( zName ) );
+    }
+
+    /**
+     * Get (and remove if there) the value assocciated w/ pName.
+     *
+     * Returns the value of the argument with the specified Name,
+     *      or "" if the argument was specified without a value,
+     *      or null if it was not specified.
+     */
+    public String get( String pName )
+    {
+        return mParameters.remove( normalizeName( pName ) );
+    }
+
+    /**
+     * Get (and remove if there) the value assocciated w/ pName.
+     *
+     * Returns the value of the argument with the specified Name,
+     *      or "" if the argument was specified without a value,
+     *      or pDefaultValue if it was not specified.
      */
     public String get( String pName, String pDefaultValue )
     {
@@ -55,29 +99,9 @@ public class Arguments
         return (zValue != null) ? zValue : pDefaultValue;
     }
 
-    public void set( String pName, String pValue )
-    {
-        mParameters.put( normalizeName( pName ), pValue );
-    }
-
-    public String remove( String pName )
-    {
-        return mParameters.remove( normalizeName( pName ) );
-    }
-
     public int count()
     {
         return mParameters.size();
-    }
-
-    public void clear()
-    {
-        mParameters.clear();
-    }
-
-    public void set( String pName )
-    {
-        set( pName, "" );
     }
 
     private String normalizeName( String pName )
@@ -96,7 +120,7 @@ public class Arguments
             }
             buffer.append( param );
             String value = get( param );
-            if ( value != null )
+            if ( "".equals( value ) )
             {
                 buffer.append( '=' );
                 buffer.append( value );

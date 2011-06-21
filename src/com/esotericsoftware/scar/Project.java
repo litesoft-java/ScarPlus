@@ -82,6 +82,11 @@ public class Project implements ProjectParameters
         return mDirectory;
     }
 
+    public List<String> getDependencies()
+    {
+        return getList( DEPENDENCIES.getName() );
+    }
+
     public synchronized void set( Object key, Object object )
     {
         if ( key instanceof String )
@@ -89,7 +94,7 @@ public class Project implements ProjectParameters
             key = Util.noEmpty( key.toString().toLowerCase() );
             if ( NAME.getName().equals( key ) )
             {
-                throw new IllegalArgumentException( NAME.getName() + " not updateable!");
+                throw new IllegalArgumentException( NAME.getName() + " not updateable!" );
             }
         }
         Util.assertNotNull( "key", key );
@@ -397,6 +402,56 @@ public class Project implements ProjectParameters
     static private final Pattern formatPattern = Pattern.compile( "([^\\$]*)\\$([^\\$]+)\\$([^\\$]*)" );
 
     /**
+     * Executes the buildDependencies, clean, compile, jar, and dist utility metshods.
+     */
+    public void build()
+            throws IOException
+    {
+        System.out.println( "build: " + this );
+        buildDependencies();
+//        clean( project );
+//        compile( project );
+//        jar( project );
+//        dist( project );
+//
+//        builtProjects.add( project.get( "name" ) );
+    }
+
+    /**
+     * Calls {@link #build(Project)} for each dependency project in the specified project.
+     */
+    public void buildDependencies()
+            throws IOException
+    {
+//        for ( String dependency : project.getDependencies() )
+//        {
+//            Project dependencyProject = project( project.path( dependency ) );
+//
+//            if ( builtProjects.contains( dependencyProject.get( "name" ) ) )
+//            {
+//                LOGGER.debug.log( "Dependency project already built: ", dependencyProject );
+//                return;
+//            }
+//
+//            String jarFile;
+//            if ( dependencyProject.has( "version" ) )
+//            {
+//                jarFile = dependencyProject.path( "$target$/$name$-$version$.jar" );
+//            }
+//            else
+//            {
+//                jarFile = dependencyProject.path( "$target$/$name$.jar" );
+//            }
+//
+//            LOGGER.debug.log( "Building dependency: ", dependencyProject );
+//            if ( !executeDocument( dependencyProject ) )
+//            {
+//                build( dependencyProject );
+//            }
+//        }
+    }
+
+    /**
      * Creates an empty project, without any default properties, and then loads the specified YAML files.
      */
 //    public Project( String path, ProjectFactory pFactory, String... paths )
@@ -520,7 +575,6 @@ public class Project implements ProjectParameters
 //        document = project.document;
 //        dir = project.dir;
 //    }
-
     public synchronized void initialize( ProjectFactory pProjectFactory )
     {
 //        Project defaults = new Project();
@@ -556,7 +610,7 @@ public class Project implements ProjectParameters
 //        // Remove dependency if a JAR of the same name is on the classpath.
 //        Paths classpath = project.getPaths( "classpath" );
 //        classpath.add( dependencyClasspaths( project, classpath, false, false ) );
-//        for ( String dependency : project.getList( "dependencies" ) )
+//        for ( String dependency : project.getDependencies() )
 //        {
 //            String dependencyName = project( project.path( dependency ) ).get( "name" );
 //            for ( String classpathFile : classpath )

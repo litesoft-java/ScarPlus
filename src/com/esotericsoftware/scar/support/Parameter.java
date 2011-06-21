@@ -2,14 +2,19 @@ package com.esotericsoftware.scar.support;
 
 public class Parameter
 {
-    public static Parameter def( String pName, Class<?> pType, String pDescription )
+    public enum Form
     {
-        return def( pName, pType, pDescription, null );
+        STRING, STRING_LIST
     }
 
-    public static Parameter def( String pName, Class<?> pType, String pDescription, String pDescriptionForDefaulting )
+    public static Parameter def( String pName, Form pForm, String pDescription, String pDescriptionForDefaulting )
     {
-        return new Parameter( pName, pType, pDescription, pDescriptionForDefaulting );
+        return new Parameter( pName, pForm, pDescription, pDescriptionForDefaulting );
+    }
+
+    public static Parameter def( String pName, Form pForm, String pDescription )
+    {
+        return def( pName, pForm, pDescription, null );
     }
 
     public String getName()
@@ -17,9 +22,9 @@ public class Parameter
         return mName;
     }
 
-    public Class<?> getType()
+    public Form getForm()
     {
-        return mType;
+        return mForm;
     }
 
     public String getDescription()
@@ -33,14 +38,14 @@ public class Parameter
     }
 
     private final String mName;
-    private final Class<?> mType;
+    private final Form mForm;
     private final String mDescription;
     private final String mDescriptionForDefaulting;
 
-    private Parameter( String pName, Class<?> pType, String pDescription, String pDescriptionForDefaulting )
+    private Parameter( String pName, Form pForm, String pDescription, String pDescriptionForDefaulting )
     {
         mName = pName;
-        mType = pType;
+        mForm = pForm;
         mDescription = pDescription;
         mDescriptionForDefaulting = pDescriptionForDefaulting;
     }

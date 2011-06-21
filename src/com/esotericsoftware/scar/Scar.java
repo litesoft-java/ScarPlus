@@ -333,7 +333,7 @@ public class Scar extends Utils implements ProjectFactory
         String[] zLevels = LoggerLevel.LEVELS;
         for ( int i = 0; i < zLevels.length; i++ )
         {
-            if ( args.has( zLevels[i] ) )
+            if ( null != args.get( zLevels[i] ) )
             {
                 zLevel = i;
                 break;
@@ -438,7 +438,7 @@ public class Scar extends Utils implements ProjectFactory
             throws IOException
     {
         Util.assertNotNull( "Project", project );
-        for ( String dependency : project.getList( "dependencies" ) )
+        for ( String dependency : project.getDependencies() )
         {
             Project dependencyProject = project( project.path( dependency ) );
             String dependencyTarget = dependencyProject.path( "$target$/" );
@@ -701,7 +701,7 @@ public class Scar extends Utils implements ProjectFactory
     {
         Util.assertNotNull( "Project", project );
 
-        for ( String dependency : project.getList( "dependencies" ) )
+        for ( String dependency : project.getDependencies() )
         {
             Project dependencyProject = project( project.path( dependency ) );
             String dependencyTarget = dependencyProject.path( "$target$/" );
@@ -1667,51 +1667,6 @@ public class Scar extends Utils implements ProjectFactory
     }
 
     /**
-     * Calls {@link #build(Project)} for each dependency project in the specified project.
-     */
-    public void buildDependencies( Project project )
-            throws IOException
-    {
-        Util.assertNotNull( "Project", project );
-
-        for ( String dependency : project.getList( "dependencies" ) )
-        {
-            Project dependencyProject = project( project.path( dependency ) );
-
-            if ( builtProjects.contains( dependencyProject.get( "name" ) ) )
-            {
-                LOGGER.debug.log( "Dependency project already built: ", dependencyProject );
-                return;
-            }
-
-            String jarFile;
-            if ( dependencyProject.has( "version" ) )
-            {
-                jarFile = dependencyProject.path( "$target$/$name$-$version$.jar" );
-            }
-            else
-            {
-                jarFile = dependencyProject.path( "$target$/$name$.jar" );
-            }
-
-            LOGGER.debug.log( "Building dependency: ", dependencyProject );
-            if ( !executeDocument( dependencyProject ) )
-            {
-                build( dependencyProject );
-            }
-        }
-    }
-
-    /**
-     * Calls {@link #project(String)} and then {@link #build(Project)}.
-     */
-    public void build( String path )
-            throws IOException
-    {
-        build( project( path ) );
-    }
-
-    /**
      * Executes Java code in the specified project's document, if any.
      *
      * @return true if code was executed.
@@ -1799,24 +1754,6 @@ public class Scar extends Utils implements ProjectFactory
         scar.initLoggerFactory();
 
         Project project = scar.project( arguments.get( "file", "." ) );
-        scar.build( project );
+        project.build();
     }
-
-    /**
-     * Executes the buildDependencies, clean, compile, jar, and dist utility metshods.
-     */
-    public void build( Project project )
-            throws IOException
-    {
-        Util.assertNotNull( "Project", project );
-
-        buildDependencies( project );
-        clean( project );
-        compile( project );
-        jar( project );
-        dist( project );
-
-        builtProjects.add( project.get( "name" ) );
-    }
-
 }
