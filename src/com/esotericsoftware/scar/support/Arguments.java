@@ -19,14 +19,9 @@ public class Arguments
 
     public Arguments( String[] pArgs )
     {
-        this( pArgs, 0 );
-    }
-
-    public Arguments( String[] pArgs, int pIndex )
-    {
-        while ( pIndex < pArgs.length )
+        for ( int i = 0; i < pArgs.length; i++ )
         {
-            String zArg = pArgs[pIndex++];
+            String zArg = pArgs[i];
             int at = zArg.indexOf( '=' );
             if ( at == -1 )
             {
@@ -40,20 +35,24 @@ public class Arguments
     }
 
     /**
-     * Returns true if the argument was specified.
-     */
-    public boolean has( String pName )
-    {
-        return mParameters.containsKey( normalizeName( pName ) );
-    }
-
-    /**
-     * Returns the value of the argument with the specified Name, or null if the argument was specified without a value or was not
+     * Get the value assocciated w/ pName, and remove the entry if found.
+     *
+     * Returns the value of the argument with the specified Name, or "" if the argument was specified without a value or null if it was not
      * specified.
      */
     public String get( String pName )
     {
         return mParameters.get( normalizeName( pName ) );
+    }
+
+    /**
+     * Returns the value of the argument with the specified Name, or the specified default value if the argument was specified
+     * without a value or was not specified.
+     */
+    public String get( String pName, String pDefaultValue )
+    {
+        String zValue = get( pName );
+        return (zValue != null) ? zValue : pDefaultValue;
     }
 
     public void set( String pName, String pValue )
@@ -76,19 +75,9 @@ public class Arguments
         mParameters.clear();
     }
 
-    /**
-     * Returns the value of the argument with the specified Name, or the specified default value if the argument was specified
-     * without a value or was not specified.
-     */
-    public String get( String pName, String pDefaultValue )
-    {
-        String zValue = get( pName );
-        return (zValue != null) ? zValue : pDefaultValue;
-    }
-
     public void set( String pName )
     {
-        set( pName, null );
+        set( pName, "" );
     }
 
     private String normalizeName( String pName )

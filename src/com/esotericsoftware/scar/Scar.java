@@ -1,6 +1,7 @@
 package com.esotericsoftware.scar;
 
 import java.io.*;
+import java.lang.reflect.*;
 import java.net.*;
 import java.util.*;
 import java.util.Map.*;
@@ -183,19 +184,28 @@ public class Scar extends Utils implements ProjectFactory
 
     protected Project instantiate( Class<? extends Project> pClass, File pProjectDir, String pProjectName, Map<Object, Object> pData )
     {
-        Project zProject = instantiate( pClass, pProjectDir, pProjectName );
-        zProject.setDirectory( pProjectDir );
-        zProject.setName( pProjectName );
-        zProject.setData( pData );
-        return zProject;
+        return instantiate( pClass, new Project.Parameters( pProjectName, pProjectDir, pData ) );
     }
 
-    protected Project instantiate( Class<? extends Project> pClass, File pProjectDir, String pProjectName )
+    protected Project instantiate( Class<? extends Project> pClass, Project.Parameters pParameters )
     {
         Throwable zCause;
         try
         {
-            return pClass.newInstance();
+            Constructor zConstructor = pClass.getConstructor( Project.Parameters.class );
+            return (Project) zConstructor.newInstance( pParameters );
+        }
+        catch ( NoSuchMethodException e )
+        {
+            zCause = e;
+        }
+        catch ( InvocationTargetException e )
+        {
+            zCause = e;
+        }
+        catch ( ClassCastException e )
+        {
+            zCause = e;
         }
         catch ( InstantiationException e )
         {
@@ -209,7 +219,7 @@ public class Scar extends Utils implements ProjectFactory
         {
             zCause = e;
         }
-        throw new RuntimeException( "Unable to Instantiate Project Class for Project: " + pProjectName + " in dir " + pProjectDir, zCause );
+        throw new RuntimeException( "Unable to Instantiate Project Class for Project: " + pParameters.getName() + " in dir " + pParameters.getDirectory(), zCause );
     }
 
     protected Class<? extends Project> createYamlProjectClass()
@@ -1702,23 +1712,6 @@ public class Scar extends Utils implements ProjectFactory
     }
 
     /**
-     * Executes the buildDependencies, clean, compile, jar, and dist utility metshods.
-     */
-    public void build( Project project )
-            throws IOException
-    {
-        Util.assertNotNull( "Project", project );
-
-        buildDependencies( project );
-        clean( project );
-        compile( project );
-        jar( project );
-        dist( project );
-
-        builtProjects.add( project.get( "name" ) );
-    }
-
-    /**
      * Executes Java code in the specified project's document, if any.
      *
      * @return true if code was executed.
@@ -1735,17 +1728,6 @@ public class Scar extends Utils implements ProjectFactory
         parameters.put( "project", project );
         executeCode( project, code, parameters );
         return true;
-    }
-
-    public static void main( String[] args )
-            throws Exception
-    {
-        Arguments arguments = new Arguments( args );
-        Scar scar = new Scar( arguments );
-        scar.initLoggerFactory();
-
-        Project project = scar.project( arguments.get( "file", "." ) );
-        scar.build( project );
     }
 
     /**
@@ -1808,4 +1790,33 @@ public class Scar extends Utils implements ProjectFactory
             return pProject;
         }
     }
+
+    public static void main( String[] args )
+            throws Exception
+    {
+        Arguments arguments = new Arguments( args );
+        Scar scar = new Scar( arguments );
+        scar.initLoggerFactory();
+
+        Project project = scar.project( arguments.get( "file", "." ) );
+        scar.build( project );
+    }
+
+    /**
+     * Executes the buildDependencies, clean, compile, jar, and dist utility metshods.
+     */
+    public void build( Project project )
+            throws IOException
+    {
+        Util.assertNotNull( "Project", project );
+
+        buildDependencies( project );
+        clean( project );
+        compile( project );
+        jar( project );
+        dist( project );
+
+        builtProjects.add( project.get( "name" ) );
+    }
+
 }

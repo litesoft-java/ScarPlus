@@ -15,24 +15,66 @@ import com.esotericsoftware.wildcard.*;
  * Generic Data structure that contains information needed to perform tasks.
  */
 @SuppressWarnings("UnusedDeclaration")
-public class Project
+public class Project implements ProjectParameters
 {
+    public static class Parameters
+    {
+        private final String mName;
+        private final File mDirectory;
+        private final Map<Object, Object> mData = new HashMap<Object, Object>();
+
+        public Parameters( String pName, File pDirectory, Map<Object, Object> pData )
+        {
+            mDirectory = pDirectory;
+            if ( pData != null )
+            {
+                for ( Object key : pData.keySet() )
+                {
+                    Object zValue = pData.get( key );
+                    if ( key instanceof String )
+                    {
+                        key = key.toString().toLowerCase();
+                    }
+                    mData.put( key, zValue );
+                }
+            }
+            Object zObjName = mData.get( NAME.getName() );
+            String zName = (zObjName == null) ? null : Util.noEmpty( zObjName.toString() );
+            mData.put( NAME.getName(), mName = (zName != null) ? zName : pName );
+        }
+
+        public String getName()
+        {
+            return mName;
+        }
+
+        public File getDirectory()
+        {
+            return mDirectory;
+        }
+
+        public Map<Object, Object> getData()
+        {
+            return mData;
+        }
+    }
+
     protected static final Logger LOGGER = LoggerFactory.getLogger( Project.class );
 
-    public static final String NAME = "name";
+    protected final String mName;
+    protected final File mDirectory;
+    protected final Map<Object, Object> mData;
 
-    private String mName;
-    private File mDirectory;
-    private Map<Object, Object> mData;
+    public Project( Parameters pParameters )
+    {
+        mName = pParameters.getName();
+        mDirectory = pParameters.getDirectory();
+        mData = pParameters.getData();
+    }
 
     public synchronized String getName()
     {
         return mName;
-    }
-
-    public synchronized void setName( String pName )
-    {
-        mName = pName;
     }
 
     public synchronized File getDirectory()
@@ -40,19 +82,16 @@ public class Project
         return mDirectory;
     }
 
-    public synchronized void setDirectory( File pDirectory )
-    {
-        mDirectory = pDirectory;
-    }
-
-    public synchronized void setData( Map<Object, Object> pData )
-    {
-        mData = (pData != null) ? pData : new HashMap<Object, Object>();
-        setName( get( NAME, getName() ) );
-    }
-
     public synchronized void set( Object key, Object object )
     {
+        if ( key instanceof String )
+        {
+            key = Util.noEmpty( key.toString().toLowerCase() );
+            if ( NAME.getName().equals( key ) )
+            {
+                throw new IllegalArgumentException( NAME.getName() + " not updateable!");
+            }
+        }
         Util.assertNotNull( "key", key );
         mData.put( key, object );
     }
@@ -86,6 +125,7 @@ public class Project
     public synchronized void clear()
     {
         mData.clear();
+        mData.put( NAME.getName(), getName() );
     }
 
     public synchronized Object[] keys()
@@ -93,33 +133,10 @@ public class Project
         return mData.keySet().toArray();
     }
 
-    public synchronized void lowercaseKeys()
-    {
-        for ( Object key : keys() )
-        {
-            if ( key != null )
-            {
-                String sKey = key.toString();
-                if ( key.equals( sKey ) )
-                {
-                    String lcKey = sKey.toLowerCase();
-                    if ( !lcKey.equals( sKey ) )
-                    {
-                        mData.put( lcKey, mData.remove( key ) );
-                    }
-                }
-            }
-        }
-    }
-
     @Override
     public synchronized String toString()
     {
-        if ( has( "name" ) )
-        {
-            return get( "name" );
-        }
-        return mData.toString();
+        return getName();
     }
 
     public synchronized boolean has( Object key )
@@ -503,6 +520,7 @@ public class Project
 //        document = project.document;
 //        dir = project.dir;
 //    }
+
     public synchronized void initialize( ProjectFactory pProjectFactory )
     {
 //        Project defaults = new Project();

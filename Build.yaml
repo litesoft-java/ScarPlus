@@ -1,0 +1,3 @@
+source: src|**.java
+target: build
+main: com.esotericsoftware.scar.Scar
