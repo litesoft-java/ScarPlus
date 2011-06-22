@@ -1,10 +1,13 @@
 package com.esotericsoftware.scar.support;
 
+import java.util.*;
+
+@SuppressWarnings({"UnusedDeclaration"})
 public class Parameter
 {
     public enum Form
     {
-        STRING, STRING_LIST
+        STRING, STRING_LIST, PATHS
     }
 
     public static Parameter def( String pName, Form pForm, String pDescription, String pDescriptionForDefaulting )
@@ -15,6 +18,11 @@ public class Parameter
     public static Parameter def( String pName, Form pForm, String pDescription )
     {
         return def( pName, pForm, pDescription, null );
+    }
+
+    public static Set<String> reservedNames()
+    {
+        return Collections.unmodifiableSet( RESERVED_NAMES );
     }
 
     public String getName()
@@ -48,5 +56,9 @@ public class Parameter
         mForm = pForm;
         mDescription = pDescription;
         mDescriptionForDefaulting = pDescriptionForDefaulting;
+
+        RESERVED_NAMES.add( pName );
     }
+
+    private static final Set<String> RESERVED_NAMES = new HashSet<String>();
 }

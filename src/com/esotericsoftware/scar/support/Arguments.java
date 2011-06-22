@@ -6,7 +6,7 @@ import com.esotericsoftware.utils.*;
 
 /**
  * Stores command line arguments as 'String' name/value pairs. Arguments containing an equals sign are considered a name/value pair. All
- * other arguments are stored as a name/value pair with a null value.
+ * other arguments are stored as a name/value pair with a "" value.
  */
 @SuppressWarnings({"UnusedDeclaration"})
 public class Arguments

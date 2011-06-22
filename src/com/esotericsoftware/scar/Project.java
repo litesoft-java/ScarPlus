@@ -2,108 +2,33 @@ package com.esotericsoftware.scar;
 
 import java.io.*;
 import java.util.*;
-import java.util.regex.*;
-import java.util.regex.Pattern;
 
 import org.litesoft.logger.*;
 
 import com.esotericsoftware.scar.support.*;
 import com.esotericsoftware.utils.*;
-import com.esotericsoftware.wildcard.*;
 
 /**
  * Generic Data structure that contains information needed to perform tasks.
  */
 @SuppressWarnings("UnusedDeclaration")
-public class Project implements ProjectParameters
+public class Project extends ProjectParameters
 {
-    public static class Parameters
-    {
-        private final String mName;
-        private final File mDirectory;
-        private final Map<Object, Object> mData = new HashMap<Object, Object>();
-
-        public Parameters( String pName, File pDirectory, Map<Object, Object> pData )
-        {
-            mDirectory = pDirectory;
-            if ( pData != null )
-            {
-                for ( Object key : pData.keySet() )
-                {
-                    Object zValue = pData.get( key );
-                    if ( key instanceof String )
-                    {
-                        key = key.toString().toLowerCase();
-                    }
-                    mData.put( key, zValue );
-                }
-            }
-            Object zObjName = mData.get( NAME.getName() );
-            String zName = (zObjName == null) ? null : Util.noEmpty( zObjName.toString() );
-            mData.put( NAME.getName(), mName = (zName != null) ? zName : pName );
-        }
-
-        public String getName()
-        {
-            return mName;
-        }
-
-        public File getDirectory()
-        {
-            return mDirectory;
-        }
-
-        public Map<Object, Object> getData()
-        {
-            return mData;
-        }
-    }
-
     protected static final Logger LOGGER = LoggerFactory.getLogger( Project.class );
 
-    protected final String mName;
-    protected final File mDirectory;
-    protected final Map<Object, Object> mData;
-
-    public Project( Parameters pParameters )
+    public Project( ProjectParameters pParameters )
     {
-        mName = pParameters.getName();
-        mDirectory = pParameters.getDirectory();
-        mData = pParameters.getData();
-    }
-
-    public synchronized String getName()
-    {
-        return mName;
-    }
-
-    public synchronized File getDirectory()
-    {
-        return mDirectory;
-    }
-
-    public List<String> getDependencies()
-    {
-        return getList( DEPENDENCIES.getName() );
+        super( pParameters.getName(), pParameters.getDirectory(), pParameters.mData );
     }
 
     public synchronized void set( Object key, Object object )
     {
-        if ( key instanceof String )
-        {
-            key = Util.noEmpty( key.toString().toLowerCase() );
-            if ( NAME.getName().equals( key ) )
-            {
-                throw new IllegalArgumentException( NAME.getName() + " not updateable!" );
-            }
-        }
-        Util.assertNotNull( "key", key );
-        mData.put( key, object );
+        mData.put( updatableKey( key ), object );
     }
 
     public synchronized void remove( Object key )
     {
-        mData.remove( key );
+        mData.remove( updatableKey( key ) );
     }
 
     /**
@@ -112,14 +37,14 @@ public class Project implements ProjectParameters
      */
     public synchronized void remove( Object key, Object value )
     {
-        Object object = mData.get( key );
+        Object object = mData.get( key = updatableKey( key ) );
         if ( object instanceof Map )
         {
-            ((Map) object).remove( object );
+            ((Map) object).remove( value );
         }
         else if ( object instanceof List )
         {
-            ((List) object).remove( object );
+            ((List) object).remove( value );
         }
         else
         {
@@ -127,280 +52,20 @@ public class Project implements ProjectParameters
         }
     }
 
-    public synchronized void clear()
+    private Object updatableKey( Object pKey )
     {
-        mData.clear();
-        mData.put( NAME.getName(), getName() );
-    }
-
-    public synchronized Object[] keys()
-    {
-        return mData.keySet().toArray();
-    }
-
-    @Override
-    public synchronized String toString()
-    {
-        return getName();
-    }
-
-    public synchronized boolean has( Object key )
-    {
-        Util.assertNotNull( "key", key );
-        return mData.get( key ) != null;
-    }
-
-    public synchronized Object getObject( Object key )
-    {
-        Util.assertNotNull( "key", key );
-        return mData.get( key );
-    }
-
-    public Object getObject( Object key, Object defaultValue )
-    {
-        return Util.deNull( getObject( key ), defaultValue );
-    }
-
-    public String get( Object key )
-    {
-        return get( key, null );
-    }
-
-    public String get( Object key, String defaultValue )
-    {
-        Object value = getObject( key );
-        return (value != null) ? value.toString() : defaultValue;
-    }
-
-    public int getInt( Object key )
-    {
-        return getInt( key, 0 );
-    }
-
-    public int getInt( Object key, int defaultValue )
-    {
-        Object value = getObject( key );
-        if ( value == null )
+        if ( pKey instanceof String )
         {
-            return defaultValue;
-        }
-        if ( value instanceof Number )
-        {
-            return ((Number) value).intValue();
-        }
-        return Integer.parseInt( value.toString() );
-    }
-
-    public float getFloat( Object key )
-    {
-        return getFloat( key, 0 );
-    }
-
-    public float getFloat( Object key, float defaultValue )
-    {
-        Object value = getObject( key );
-        if ( value == null )
-        {
-            return defaultValue;
-        }
-        if ( value instanceof Number )
-        {
-            return ((Number) value).floatValue();
-        }
-        return Float.parseFloat( value.toString() );
-    }
-
-    public boolean getBoolean( Object key )
-    {
-        return getBoolean( key, false );
-    }
-
-    public boolean getBoolean( Object key, boolean defaultValue )
-    {
-        Object value = getObject( key );
-        if ( value == null )
-        {
-            return defaultValue;
-        }
-        if ( value instanceof Boolean )
-        {
-            return (Boolean) value;
-        }
-        return Boolean.parseBoolean( value.toString() );
-    }
-
-    /**
-     * Returns a list of strings under the specified key. If the key is a single value, it is placed in a list and returned. If the
-     * key does not exist, an empty list is returned.
-     */
-    public List<String> getList( Object key, String... defaultValues )
-    {
-        Object object = getObject( key );
-        if ( object instanceof List )
-        {
-            List src = (List) object;
-            List<String> rv = new ArrayList<String>( src.size() );
-            for ( Object entry : src )
+            String zStrKey = Util.noEmpty( pKey.toString().toLowerCase() );
+            if ( Parameter.reservedNames().contains( zStrKey ) )
             {
-                rv.add( entry.toString() );
+                throw new IllegalArgumentException( zStrKey + " not updatable!" );
             }
-            return rv;
+            pKey = zStrKey;
         }
-        if ( object != null )
-        {
-            return Arrays.asList( object.toString() );
-        }
-        if ( defaultValues != null )
-        {
-            return Arrays.asList( defaultValues );
-        }
-        return null;
+        Util.assertNotNull( "key", pKey );
+        return pKey;
     }
-
-    /**
-     * Returns a list of objects under the specified key. If the key is a single value, it is placed in a list and returned. If the
-     * key does not exist, an empty list is returned.
-     */
-    public List getObjectList( Object key, Object... defaultValues )
-    {
-        Object object = getObject( key );
-        if ( object instanceof List )
-        {
-            return (List) object;
-        }
-        if ( object != null )
-        {
-            return Arrays.asList( object );
-        }
-        if ( defaultValues != null )
-        {
-            return Arrays.asList( defaultValues );
-        }
-        return null;
-    }
-
-    public Map<String, String> getMap( Object key, String... defaultValues )
-    {
-        Util.assertPairedEntries( "defaultValues", defaultValues );
-        Map<String, String> map = getAsMap( key );
-        if ( map == null )
-        {
-            if ( defaultValues != null )
-            {
-                map = new HashMap<String, String>();
-                for ( int i = 0; i < defaultValues.length; )
-                {
-                    String defaultKey = defaultValues[i++];
-                    String defaultValue = defaultValues[i++];
-                    map.put( defaultKey, defaultValue );
-                }
-            }
-        }
-        return map;
-    }
-
-    public Map getObjectMap( Object key, Object... defaultValues )
-    {
-        Util.assertPairedEntries( "defaultValues", defaultValues );
-        Map<Object, Object> map = getAsMap( key );
-        if ( map == null )
-        {
-            if ( defaultValues != null )
-            {
-                map = new HashMap<Object, Object>();
-                for ( int i = 0; i < defaultValues.length; )
-                {
-                    Object defaultKey = defaultValues[i++];
-                    Object defaultValue = defaultValues[i++];
-                    map.put( defaultKey, defaultValue );
-                }
-            }
-        }
-        return map;
-    }
-
-    @SuppressWarnings({"unchecked"})
-    private <T> Map<T, T> getAsMap( Object pKey )
-    {
-        Object zValue = getObject( pKey );
-        return (zValue instanceof Map) ? (Map<T, T>) zValue : null;
-    }
-
-    /**
-     * Uses the strings under the specified key to {@link Paths#glob(String, String...) glob} paths.
-     */
-    public Paths getPaths( String key )
-    {
-        Paths paths = new Paths();
-        Object object = getObject( key );
-        if ( object instanceof List )
-        {
-            for ( Object dirPattern : (List) object )
-            {
-                paths.glob( path( (String) dirPattern ) );
-            }
-        }
-        else if ( object instanceof String )
-        {
-            paths.glob( path( (String) object ) );
-        }
-        return paths;
-    }
-
-    /**
-     * Returns the specified path if it is an absolute path, otherwise returns the path relative to this project's directory.
-     */
-    public String path( String path )
-    {
-        path = format( path );
-        int pipeIndex = path.indexOf( '|' );
-        if ( pipeIndex > -1 )
-        {
-            // Handle wildcard search patterns.
-            return path( path.substring( 0, pipeIndex ) ) + path.substring( pipeIndex );
-        }
-        if ( new File( path ).isAbsolute() )
-        {
-            return path;
-        }
-        return new File( getDirectory(), path ).getAbsolutePath();
-    }
-
-    /**
-     * Replaces property names surrounded by curly braces with the value from this project.
-     */
-    public String format( String text )
-    {
-        Matcher matcher = formatPattern.matcher( text );
-        StringBuilder buffer = new StringBuilder( 128 );
-        while ( matcher.find() )
-        {
-            buffer.append( matcher.group( 1 ) );
-            String name = matcher.group( 2 );
-            Object value = getObject( name );
-            if ( value instanceof String )
-            {
-                buffer.append( format( (String) value ) );
-            }
-            else if ( value != null )
-            {
-                buffer.append( value );
-            }
-            else
-            {
-                buffer.append( name );
-            }
-            buffer.append( matcher.group( 3 ) );
-        }
-        if ( buffer.length() == 0 )
-        {
-            return text;
-        }
-        return buffer.toString();
-    }
-
-    static private final Pattern formatPattern = Pattern.compile( "([^\\$]*)\\$([^\\$]+)\\$([^\\$]*)" );
-
     /**
      * Executes the buildDependencies, clean, compile, jar, and dist utility metshods.
      */
@@ -414,7 +79,7 @@ public class Project implements ProjectParameters
 //        jar( project );
 //        dist( project );
 //
-//        builtProjects.add( project.get( "name" ) );
+//        builtProjects.add( project.getName() );
     }
 
     /**
@@ -427,14 +92,14 @@ public class Project implements ProjectParameters
 //        {
 //            Project dependencyProject = project( project.path( dependency ) );
 //
-//            if ( builtProjects.contains( dependencyProject.get( "name" ) ) )
+//            if ( builtProjects.contains( dependencyProject.getName() ) )
 //            {
 //                LOGGER.debug.log( "Dependency project already built: ", dependencyProject );
 //                return;
 //            }
 //
 //            String jarFile;
-//            if ( dependencyProject.has( "version" ) )
+//            if ( dependencyProject.hasVersion() )
 //            {
 //                jarFile = dependencyProject.path( "$target$/$name$-$version$.jar" );
 //            }
@@ -612,7 +277,7 @@ public class Project implements ProjectParameters
 //        classpath.add( dependencyClasspaths( project, classpath, false, false ) );
 //        for ( String dependency : project.getDependencies() )
 //        {
-//            String dependencyName = project( project.path( dependency ) ).get( "name" );
+//            String dependencyName = project( project.path( dependency ) ).getName();
 //            for ( String classpathFile : classpath )
 //            {
 //                String name = fileWithoutExtension( classpathFile );

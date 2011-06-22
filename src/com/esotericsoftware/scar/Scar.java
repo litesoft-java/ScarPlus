@@ -184,15 +184,15 @@ public class Scar extends Utils implements ProjectFactory
 
     protected Project instantiate( Class<? extends Project> pClass, File pProjectDir, String pProjectName, Map<Object, Object> pData )
     {
-        return instantiate( pClass, new Project.Parameters( pProjectName, pProjectDir, pData ) );
+        return instantiate( pClass, new ProjectParameters( pProjectName, pProjectDir, pData ) );
     }
 
-    protected Project instantiate( Class<? extends Project> pClass, Project.Parameters pParameters )
+    protected Project instantiate( Class<? extends Project> pClass, ProjectParameters pParameters )
     {
         Throwable zCause;
         try
         {
-            Constructor zConstructor = pClass.getConstructor( Project.Parameters.class );
+            Constructor zConstructor = pClass.getConstructor( ProjectParameters.class );
             return (Project) zConstructor.newInstance( pParameters );
         }
         catch ( NoSuchMethodException e )
@@ -546,10 +546,10 @@ public class Scar extends Utils implements ProjectFactory
 
         String classesDir = project.path( "$target$/classes/" );
         new Paths( classesDir, "**/*.class" ).copyTo( jarDir );
-        project.getPaths( "resources" ).copyTo( jarDir );
+        project.getResources().copyTo( jarDir );
 
         String jarFile;
-        if ( project.has( "version" ) )
+        if ( project.hasVersion() )
         {
             jarFile = project.path( "$target$/$name$-$version$.jar" );
         }
@@ -1321,7 +1321,7 @@ public class Scar extends Utils implements ProjectFactory
 
             // JAR with main class first.
             String projectJarName;
-            if ( project.has( "version" ) )
+            if ( project.hasVersion() )
             {
                 projectJarName = project.format( "$name$-$version$.jar" );
             }
@@ -1437,9 +1437,9 @@ public class Scar extends Utils implements ProjectFactory
             writer.write( "<head><title>Applet</title></head>\n" );
             writer.write( "<body>\n" );
             writer.write( "<applet code='org.lwjgl.util.applet.AppletLoader' archive='lwjgl_util_applet.jar, lzma.jar' codebase='.' width='640' height='480'>\n" );
-            if ( project.has( "version" ) )
+            if ( project.hasVersion() )
             {
-                writer.write( "<param name='al_version' value='" + project.getInt( "version" ) + "'>\n" );
+                writer.write( "<param name='al_version' value='" + project.getVersion() + "'>\n" );
             }
             writer.write( "<param name='al_title' value='" + project + "'>\n" );
             writer.write( "<param name='al_main' value='" + project.get( "main" ) + "'>\n" );
@@ -1514,7 +1514,7 @@ public class Scar extends Utils implements ProjectFactory
         String onejarDir = mkdir( project.path( "$target$/onejar/" ) );
         String distDir = project.path( "$target$/dist/" );
         String projectJarName;
-        if ( project.has( "version" ) )
+        if ( project.hasVersion() )
         {
             projectJarName = project.format( "$name$-$version$.jar" );
         }
@@ -1541,7 +1541,7 @@ public class Scar extends Utils implements ProjectFactory
         unzip( distDir + projectJarName, onejarDir );
 
         String onejarFile;
-        if ( project.has( "version" ) )
+        if ( project.hasVersion() )
         {
             onejarFile = project.path( "$target$/dist/onejar/$name$-$version$-all.jar" );
         }
