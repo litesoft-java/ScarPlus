@@ -394,7 +394,7 @@ public class Scar extends Utils implements ProjectFactory
 //            parent = parent.getParentFile();
 //        }
 //
-//        for ( String include : actualProject.getList( "include" ) )
+//        for ( String include : actualProject.getInclude() )
 //        {
 //            try
 //            {
@@ -426,7 +426,7 @@ public class Scar extends Utils implements ProjectFactory
             throws IOException
     {
         Util.assertNotNull( "Project", project );
-        Paths classpath = project.getPaths( "classpath" );
+        Paths classpath = project.getClasspath();
         classpath.add( dependencyClasspaths( project, classpath, true, errorIfDependenciesNotBuilt ) );
         return classpath;
     }
@@ -468,7 +468,7 @@ public class Scar extends Utils implements ProjectFactory
     {
         Util.assertNotNull( "Project", project );
         Paths classpath = classpath( project, true );
-        Paths source = project.getPaths( "source" );
+        Paths source = project.getSource();
 
         String classesDir = mkdir( project.path( "$target$/classes/" ) );
 
@@ -565,10 +565,10 @@ public class Scar extends Utils implements ProjectFactory
             mkdir( manifestFile.getParent() );
             Manifest manifest = new Manifest();
             manifest.getMainAttributes().putValue( Attributes.Name.MANIFEST_VERSION.toString(), "1.0" );
-            if ( project.has( "main" ) )
+            if ( project.hasMain() )
             {
-                LOGGER.debug.log( "Main class: ", project.get( "main" ) );
-                manifest.getMainAttributes().putValue( Attributes.Name.MAIN_CLASS.toString(), project.get( "main" ) );
+                LOGGER.debug.log( "Main class: ", project.getMain() );
+                manifest.getMainAttributes().putValue( Attributes.Name.MAIN_CLASS.toString(), project.getMain() );
                 StringBuilder buffer = new StringBuilder( 512 );
                 buffer.append( fileName( jarFile ) );
                 buffer.append( " ." );
@@ -689,7 +689,7 @@ public class Scar extends Utils implements ProjectFactory
 
         String distDir = mkdir( project.path( "$target$/dist/" ) );
         classpath( project, true ).copyTo( distDir );
-        Paths distPaths = project.getPaths( "dist" );
+        Paths distPaths = project.getDist();
         dependencyDistPaths( project, distPaths );
         distPaths.copyTo( distDir );
         new Paths( project.path( "$target$" ), "*.jar" ).copyTo( distDir );
@@ -1281,7 +1281,7 @@ public class Scar extends Utils implements ProjectFactory
             LOGGER.info.log( "JNLP: ", project );
         }
 
-        if ( !project.has( "main" ) )
+        if ( !project.hasMain() )
         {
             throw new RuntimeException( "Unable to generate JNLP: project has no main class" );
         }
@@ -1370,7 +1370,7 @@ public class Scar extends Utils implements ProjectFactory
                 writer.write( "\t<nativelib href='" + path + nativePaths.getNames().get( 0 ) + "'/>\n" );
                 writer.write( "</resources>\n" );
             }
-            writer.write( "<application-desc main-class='" + project.get( "main" ) + "'/>\n" );
+            writer.write( "<application-desc main-class='" + project.getMain() + "'/>\n" );
             writer.write( "</jnlp>" );
         }
         finally
@@ -1424,7 +1424,7 @@ public class Scar extends Utils implements ProjectFactory
         {
             return appletDir;
         }
-        if ( !project.has( "main" ) )
+        if ( !project.hasMain() )
         {
             LOGGER.debug.log( "Unable to generate applet.html: project has no main class" );
             return appletDir;
@@ -1442,7 +1442,7 @@ public class Scar extends Utils implements ProjectFactory
                 writer.write( "<param name='al_version' value='" + project.getVersion() + "'>\n" );
             }
             writer.write( "<param name='al_title' value='" + project + "'>\n" );
-            writer.write( "<param name='al_main' value='" + project.get( "main" ) + "'>\n" );
+            writer.write( "<param name='al_main' value='" + project.getMain() + "'>\n" );
             writer.write( "<param name='al_jars' value='" );
             int i = 0;
             for ( String name : new Paths( appletDir, "*.jar.pack.lzma" ).getNames() )

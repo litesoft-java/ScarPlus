@@ -26,18 +26,18 @@ public class ProjectParameters
     public static final Parameter RESOURCES = def( "resources", Form.PATHS, "Wildcard patterns for the files to include in the JAR.", //
                                                    "Default: 'resources' or 'src/main/resources'." );
 
-    public static final Parameter DIST = def( "dist", null, "Wildcard patterns for the files to include in the distribution, outside the JAR.", //
+    public static final Parameter DIST = def( "dist", Form.PATHS, "Wildcard patterns for the files to include in the distribution, outside the JAR.", //
                                               "Default: 'dist'." );
 
-    public static final Parameter SOURCE = def( "source", null, "Wildcard patterns for the Java files to compile.", //
+    public static final Parameter SOURCE = def( "source", Form.PATHS, "Wildcard patterns for the Java files to compile.", //
                                                 "Default: 'src|**/*.java' or 'src/main/java|**/*.java'." );
 
-    public static final Parameter CLASSPATH = def( "classpath", null, "Wildcard patterns for the files to include on the classpath.", //
+    public static final Parameter CLASSPATH = def( "classpath", Form.PATHS, "Wildcard patterns for the files to include on the classpath.", //
                                                    "Default: 'lib|**/*.jar'." );
 
     public static final Parameter DEPENDENCIES = def( "dependencies", Form.STRING_LIST, "Relative or absolute paths to dependency project directories or YAML files." );
 
-    public static final Parameter INCLUDE = def( "include", null, "Relative or absolute paths to project files to inherit properties from." );
+    public static final Parameter INCLUDE = def( "include", Form.STRING_LIST, "Relative or absolute paths to project files to inherit properties from." );
 
     public static final Parameter MAIN = def( "main", Form.STRING, "Name of the main class." );
 
@@ -119,19 +119,19 @@ public class ProjectParameters
         return getPaths( RESOURCES.getName() );
     }
 
-    public String getDist()
+    public Paths getDist()
     {
-
+        return getPaths( DIST.getName() );
     }
 
-    public String getSource()
+    public Paths getSource()
     {
-
+        return getPaths( SOURCE.getName() );
     }
 
-    public String getClasspath()
+    public Paths getClasspath()
     {
-
+        return getPaths( CLASSPATH.getName() );
     }
 
     public List<String> getDependencies()
@@ -139,14 +139,19 @@ public class ProjectParameters
         return getList( DEPENDENCIES.getName() );
     }
 
-    public String getInclude()
+    public List<String> getInclude()
     {
+        return getList( INCLUDE.getName() );
+    }
 
+    public boolean hasMain()
+    {
+        return (null != getMain());
     }
 
     public String getMain()
     {
-
+        return get( MAIN.getName() );
     }
 
     // Below here are the accessors for the underlying Data (map)
