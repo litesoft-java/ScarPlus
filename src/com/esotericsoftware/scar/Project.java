@@ -72,7 +72,6 @@ public class Project extends ProjectParameters
     public void build()
             throws IOException
     {
-        System.out.println( "build: " + this );
         buildDependencies();
 //        clean( project );
 //        compile( project );
@@ -80,6 +79,7 @@ public class Project extends ProjectParameters
 //        dist( project );
 //
 //        builtProjects.add( project.getName() );
+        System.out.println( "build: " + this );
     }
 
     /**
@@ -242,6 +242,9 @@ public class Project extends ProjectParameters
 //    }
     public synchronized void initialize( ProjectFactory pProjectFactory )
     {
+
+//        mDependantProjects.add()..
+
 //        Project defaults = new Project();
 //
 //        File file = new File( canonical( pPath ) );
@@ -306,5 +309,7 @@ public class Project extends ProjectParameters
 //        return project;
     }
 
-
+    protected boolean mBuilt = false;
+    protected List<Project> mDependantProjects = new ArrayList<Project>();
+    // protected
 }

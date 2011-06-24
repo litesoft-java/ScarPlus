@@ -1753,10 +1753,59 @@ public class Scar extends Utils implements ProjectFactory
         }
     }
 
-    protected void executeMethod( String pMethodName )
+    protected Runnable createRunnableFor( String pMethodName )
             throws IOException
     {
-        // todo: use reflection to call method
+        Runnable zRunnable = createRunnableFor( this, pMethodName );
+        return (zRunnable != null) ? zRunnable : createRunnableFor( mLaunchProject, pMethodName );
+    }
+
+    protected Runnable createRunnableFor( final Object pObject, String pMethodName )
+    {
+        final Method zMethod = getMatchingMethod( pObject, pMethodName );
+        return (zMethod == null) ? null : new Runnable()
+        {
+            @Override public void run()
+            {
+                try
+                {
+                    zMethod.invoke( pObject );
+                }
+                catch ( Exception e )
+                {
+                    throw new RuntimeException( e );
+                }
+            }
+        };
+    }
+
+    protected Method getMatchingMethod( Object pObject, String pMethodName )
+    {
+        List<Method> zFound = new ArrayList<Method>();
+        Method[] zMethods = pObject.getClass().getMethods();
+        for ( Method zMethod : zMethods )
+        {
+            if ( zMethod.getReturnType().equals( Void.class ) && (zMethod.getParameterTypes().length == 0) )
+            {
+                if ( pMethodName.equals( zMethod.getName() ) )
+                {
+                    return zMethod;
+                }
+                if ( pMethodName.equalsIgnoreCase( zMethod.getName() ) )
+                {
+                    zFound.add( zMethod );
+                }
+            }
+        }
+        if ( zFound.size() == 0 )
+        {
+            return null;
+        }
+        if ( zFound.size() == 1 )
+        {
+            return zFound.get( 0 );
+        }
+        throw new IllegalArgumentException( "Multiple Methods " + zFound + " found on '" + pObject.getClass().getSimpleName() + "' than match: " + pMethodName );
     }
 
     protected void createLaunchProject()
@@ -1765,18 +1814,50 @@ public class Scar extends Utils implements ProjectFactory
         mLaunchProject = project( mArgs.get( "file", "." ) );
     }
 
-    protected void run()
+    protected int run()
             throws IOException
     {
         if ( mArgs.count() == 0 )
         {
             mLaunchProject.build();
-            return;
+            return 0;
         }
-        for ( Arguments.NameValuePair zPair ; null != (zPair = mArgs.getNext()); )
+        List<Runnable> zToExecute = getArgsBasedRunnables();
+        for ( Runnable zRunnable : zToExecute )
         {
-            executeMethod( zPair.getName() );
+            zRunnable.run();
         }
+        return 0;
+    }
+
+    private ArrayList<Runnable> getArgsBasedRunnables()
+            throws IOException
+    {
+        ArrayList<Runnable> zRunnables = new ArrayList<Runnable>();
+        List<String> zUnrecognizedNames = new ArrayList<String>();
+        for ( Arguments.NameValuePair zPair; null != (zPair = mArgs.getNext()); )
+        {
+
+            Runnable zRunnable = createRunnableFor( zPair.getName() );
+            if ( zRunnable != null )
+            {
+                zRunnables.add( zRunnable );
+            }
+            else
+            {
+                zUnrecognizedNames.add( zPair.getName() );
+            }
+        }
+        if ( !zUnrecognizedNames.isEmpty() )
+        {
+            System.err.println( "\nUnrecognized Command Line Args:" );
+            for ( String zName : zUnrecognizedNames )
+            {
+                System.err.println( "   " + zName );
+            }
+            System.exit( 1 );
+        }
+        return zRunnables;
     }
 
     public static void main( String[] args )
@@ -1786,6 +1867,6 @@ public class Scar extends Utils implements ProjectFactory
         Scar scar = new Scar( arguments );
         scar.initLoggerFactory();
         scar.createLaunchProject();
-        scar.run( );
+        System.exit( scar.run() );
     }
 }
