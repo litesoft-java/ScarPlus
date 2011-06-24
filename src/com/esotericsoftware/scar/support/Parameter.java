@@ -2,6 +2,8 @@ package com.esotericsoftware.scar.support;
 
 import java.util.*;
 
+import com.esotericsoftware.utils.*;
+
 @SuppressWarnings({"UnusedDeclaration"})
 public class Parameter
 {
@@ -52,12 +54,15 @@ public class Parameter
 
     private Parameter( String pName, Form pForm, String pDescription, String pDescriptionForDefaulting )
     {
-        mName = pName;
+        mName = Util.assertNotEmpty( "Name", pName );
         mForm = pForm;
         mDescription = pDescription;
         mDescriptionForDefaulting = pDescriptionForDefaulting;
 
-        RESERVED_NAMES.add( pName );
+        if ( !RESERVED_NAMES.add( mName ) )
+        {
+            throw new IllegalArgumentException( "Duplicate Parameter declared with name: " + mName );
+        }
     }
 
     private static final Set<String> RESERVED_NAMES = new HashSet<String>();

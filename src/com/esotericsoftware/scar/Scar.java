@@ -36,15 +36,22 @@ public class Scar extends Utils implements ProjectFactory
 
     protected final ProjectCache mProjectCache = new ProjectCache();
 
+    private Project mLaunchProject;
+
     /**
      * The command line arguments Scar was started with. Empty if Scar was started with no arguments or Scar was not started from
      * the command line.
      */
-    public final Arguments args;
+    public final Arguments mArgs;
 
     public Scar( Arguments pArgs )
     {
-        this.args = (pArgs != null) ? pArgs : new Arguments();
+        mArgs = (pArgs != null) ? pArgs : new Arguments();
+    }
+
+    public Project getLaunchProject()
+    {
+        return mLaunchProject;
     }
 
     /**
@@ -333,7 +340,7 @@ public class Scar extends Utils implements ProjectFactory
         String[] zLevels = LoggerLevel.LEVELS;
         for ( int i = 0; i < zLevels.length; i++ )
         {
-            if ( null != args.get( zLevels[i] ) )
+            if ( null != mArgs.get( zLevels[i] ) )
             {
                 zLevel = i;
                 break;
@@ -1746,14 +1753,39 @@ public class Scar extends Utils implements ProjectFactory
         }
     }
 
+    protected void executeMethod( String pMethodName )
+            throws IOException
+    {
+        // todo: use reflection to call method
+    }
+
+    protected void createLaunchProject()
+            throws IOException
+    {
+        mLaunchProject = project( mArgs.get( "file", "." ) );
+    }
+
+    protected void run()
+            throws IOException
+    {
+        if ( mArgs.count() == 0 )
+        {
+            mLaunchProject.build();
+            return;
+        }
+        for ( Arguments.NameValuePair zPair ; null != (zPair = mArgs.getNext()); )
+        {
+            executeMethod( zPair.getName() );
+        }
+    }
+
     public static void main( String[] args )
             throws Exception
     {
         Arguments arguments = new Arguments( args );
         Scar scar = new Scar( arguments );
         scar.initLoggerFactory();
-
-        Project project = scar.project( arguments.get( "file", "." ) );
-        project.build();
+        scar.createLaunchProject();
+        scar.run( );
     }
 }
