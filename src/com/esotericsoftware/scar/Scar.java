@@ -57,19 +57,28 @@ public class Scar extends Utils implements ProjectFactory
     /**
      * Loads the specified project with default values and loads any other projects needed for the "include" property.
      *
-     * @param pPath Path to a YAML project file, or a directory containing a "project.yaml" file.
+     * @param pCurrentDirectory
+     * @param pPath             Path to a YAML project file, or a directory containing a "project.yaml" file.
      */
     @Override
-    public Project project( String pPath )
+    public Project project( File pCurrentDirectory, String pPath )
             throws IOException
     {
-        String zPath = canonical( Util.assertNotEmpty( "Path", pPath ) );
+        Util.assertNotNull( "CurrentDirectory", pCurrentDirectory );
+        pPath = Util.assertNotEmpty( "Path", pPath );
+        File zFile = new File(pPath);
+        if ( !zFile.isAbsolute() )
+        {
+            zFile = new File( pCurrentDirectory, pPath );
+        }
+        zFile = Utils.canonical( zFile );
+
+        String zPath = zFile.getPath();
         Project zProject = mProjectCache.getByPath( zPath );
         if ( zProject != null )
         {
             return zProject;
         }
-        File zFile = new File( zPath );
         try
         {
             if ( zFile.isFile() ) // Assume Project Build File
@@ -364,8 +373,34 @@ public class Scar extends Utils implements ProjectFactory
 
     protected Class<Project> createJavaCodeProjectClass( Class<? extends Project> pClass, String pCode )
     {
-        throw new UnsupportedOperationException(); // todo: See - executeDocument();
+        throw new UnsupportedOperationException(); // todo: See - executeDocument()!;
     }
+
+    public void cleanAll()
+            throws IOException
+    {
+        System.out.println( "cleanAll" );
+        // todo: ...
+    }
+
+    public void build()
+            throws IOException
+    {
+        mLaunchProject.build();
+    }
+
+    /// todo: ==================================================================================================================
+    /// todo: ==================================================================================================================
+    /// todo: ==================================================================================================================
+    /// todo: ==================================================================================================================
+    /// todo: ==================================================================================================================
+    /// todo: ==================================================================================================================
+    /// todo: ==================================================================================================================
+    /// todo: ==================================================================================================================
+    /// todo: ==================================================================================================================
+    /// todo: ==================================================================================================================
+    /// todo: ==================================================================================================================
+    /// todo: vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv Here be Dragons vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 
     /**
      * Loads the specified project with the specified defaults and loads any other projects needed for the "include" property.
@@ -447,7 +482,7 @@ public class Scar extends Utils implements ProjectFactory
         Util.assertNotNull( "Project", project );
         for ( String dependency : project.getDependencies() )
         {
-            Project dependencyProject = project( project.path( dependency ) );
+            Project dependencyProject = project( null, project.path( dependency ) );
             String dependencyTarget = dependencyProject.path( "$target$/" );
             if ( errorIfDependenciesNotBuilt && !fileExists( dependencyTarget ) )
             {
@@ -710,7 +745,7 @@ public class Scar extends Utils implements ProjectFactory
 
         for ( String dependency : project.getDependencies() )
         {
-            Project dependencyProject = project( project.path( dependency ) );
+            Project dependencyProject = project( null, project.path( dependency ) );
             String dependencyTarget = dependencyProject.path( "$target$/" );
             if ( !fileExists( dependencyTarget ) )
             {
@@ -1702,6 +1737,19 @@ public class Scar extends Utils implements ProjectFactory
         Paths.setDefaultGlobExcludes( "**/.svn/**" );
     }
 
+    /// todo: ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Here be Dragons ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    /// todo: ==================================================================================================================
+    /// todo: ==================================================================================================================
+    /// todo: ==================================================================================================================
+    /// todo: ==================================================================================================================
+    /// todo: ==================================================================================================================
+    /// todo: ==================================================================================================================
+    /// todo: ==================================================================================================================
+    /// todo: ==================================================================================================================
+    /// todo: ==================================================================================================================
+    /// todo: ==================================================================================================================
+    /// todo: ==================================================================================================================
+
     private static class BuildFileFilter implements FileFilter
     {
         private static final String DEFAULT_JAVA_PROJECT_FILE_NAME = DEFAULT_PROJECT_FILE_NAME + JAVA_EXTENSION;
@@ -1735,6 +1783,7 @@ public class Scar extends Utils implements ProjectFactory
         }
 
         private Project initialize( ProjectFactory pFactory, String pPath, Project pProject )
+                throws IOException
         {
             synchronized ( this )
             {
@@ -1785,7 +1834,7 @@ public class Scar extends Utils implements ProjectFactory
         Method[] zMethods = pObject.getClass().getMethods();
         for ( Method zMethod : zMethods )
         {
-            if ( zMethod.getReturnType().equals( Void.class ) && (zMethod.getParameterTypes().length == 0) )
+            if ( zMethod.getReturnType().equals( Void.TYPE ) && (zMethod.getParameterTypes().length == 0) )
             {
                 if ( pMethodName.equals( zMethod.getName() ) )
                 {
@@ -1811,7 +1860,7 @@ public class Scar extends Utils implements ProjectFactory
     protected void createLaunchProject()
             throws IOException
     {
-        mLaunchProject = project( mArgs.get( "file", "." ) );
+        mLaunchProject = project( new File( System.getProperty("user.dir") ), mArgs.get( "file", "." ) );
     }
 
     protected int run()
@@ -1837,7 +1886,6 @@ public class Scar extends Utils implements ProjectFactory
         List<String> zUnrecognizedNames = new ArrayList<String>();
         for ( Arguments.NameValuePair zPair; null != (zPair = mArgs.getNext()); )
         {
-
             Runnable zRunnable = createRunnableFor( zPair.getName() );
             if ( zRunnable != null )
             {

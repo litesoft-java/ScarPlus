@@ -8,9 +8,11 @@ import java.util.regex.*;
 
 import javax.tools.*;
 
+import com.esotericsoftware.utils.*;
+
 import static com.esotericsoftware.minlog.Log.*;
 
-public class Utils
+public class Utils extends Util
 {
     /**
      * The Scar installation directory. The value comes from the SCAR_HOME environment variable, if it exists. Alternatively, the
@@ -105,6 +107,23 @@ public class Utils
                 file = file.getParentFile();
             }
             return file.getPath();
+        }
+    }
+
+    /**
+     * Returns the canonical path for the specified path. Eg, if "." is passed, this will resolve the actual path and return it.
+     */
+    static public File canonical( File path )
+    {
+        assertNotNull( "path", path );
+
+        try
+        {
+            return path.getCanonicalFile();
+        }
+        catch ( IOException ex )
+        {
+            return path.getAbsoluteFile();
         }
     }
 

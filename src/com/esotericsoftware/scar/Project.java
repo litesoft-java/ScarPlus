@@ -66,20 +66,25 @@ public class Project extends ProjectParameters
         Util.assertNotNull( "key", pKey );
         return pKey;
     }
+
     /**
      * Executes the buildDependencies, clean, compile, jar, and dist utility metshods.
      */
-    public void build()
+    public synchronized void build()
             throws IOException
     {
-        buildDependencies();
+        if ( !mBuilt )
+        {
+            buildDependencies();
+            System.out.println( "build: " + this );
 //        clean( project );
 //        compile( project );
 //        jar( project );
 //        dist( project );
 //
 //        builtProjects.add( project.getName() );
-        System.out.println( "build: " + this );
+            mBuilt = true;
+        }
     }
 
     /**
@@ -88,6 +93,10 @@ public class Project extends ProjectParameters
     public void buildDependencies()
             throws IOException
     {
+        for ( Project zProject : mDependantProjects )
+        {
+            zProject.build();
+        }
 //        for ( String dependency : project.getDependencies() )
 //        {
 //            Project dependencyProject = project( project.path( dependency ) );
@@ -241,9 +250,16 @@ public class Project extends ProjectParameters
 //        dir = project.dir;
 //    }
     public synchronized void initialize( ProjectFactory pProjectFactory )
+            throws IOException
     {
-
-//        mDependantProjects.add()..
+        List<String> zDependencies = getDependencies();
+        if ( zDependencies != null )
+        {
+            for ( String zDependency : zDependencies )
+            {
+                mDependantProjects.add( pProjectFactory.project( mDirectory, zDependency ) );
+            }
+        }
 
 //        Project defaults = new Project();
 //
@@ -311,5 +327,4 @@ public class Project extends ProjectParameters
 
     protected boolean mBuilt = false;
     protected List<Project> mDependantProjects = new ArrayList<Project>();
-    // protected
 }

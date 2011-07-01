@@ -6,6 +6,6 @@ import com.esotericsoftware.scar.*;
 
 public interface ProjectFactory
 {
-    Project project( String pPath )
+    Project project( File pCurrentDirectory, String pPath )
             throws IOException;
 }
