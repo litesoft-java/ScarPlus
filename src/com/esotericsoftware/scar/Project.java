@@ -2,11 +2,15 @@ package com.esotericsoftware.scar;
 
 import java.io.*;
 import java.util.*;
+import java.util.jar.*;
+import java.util.zip.*;
+import javax.tools.*;
 
 import org.litesoft.logger.*;
 
 import com.esotericsoftware.scar.support.*;
 import com.esotericsoftware.utils.*;
+import com.esotericsoftware.wildcard.*;
 
 /**
  * Generic Data structure that contains information needed to perform tasks.
@@ -16,9 +20,16 @@ public class Project extends ProjectParameters
 {
     protected static final Logger LOGGER = LoggerFactory.getLogger( Project.class );
 
+    private static final String META_INF_MANIFEST_MF = "META-INF/MANIFEST.MF";
+
     public Project( ProjectParameters pParameters )
     {
-        super( pParameters.getName(), pParameters.getDirectory(), pParameters.mData );
+        super( pParameters.getName(), pParameters.getCanonicalProjectDir(), pParameters.mData );
+    }
+
+    public String getTargetJavaVersion()
+    {
+        return "1.6";
     }
 
     public synchronized void set( Object key, Object object )
@@ -68,173 +79,360 @@ public class Project extends ProjectParameters
     }
 
     /**
-     * Executes the buildDependencies, clean, compile, jar, and dist utility metshods.
+     * Executes the buildDependencies, clean, compile, jar, and dist utility methods.
      */
-    public synchronized void build()
+    public synchronized boolean build()
             throws IOException
     {
-        if ( !mBuilt )
+        if ( mBuilt )
         {
-            buildDependencies();
-            System.out.println( "build: " + this );
-//        clean( project );
-//        compile( project );
-//        jar( project );
-//        dist( project );
-//
-//        builtProjects.add( project.getName() );
-            mBuilt = true;
+            return false;
         }
+        if ( !buildDependencies() && !needToBuild() )
+        {
+            progress( "Build: " + this + " NOT Needed!" );
+            return false;
+        }
+        progress( "Build: " + this );
+        buildIt();
+        return (mBuilt = true);
+    }
+
+    public boolean needToBuild()
+            throws IOException
+    {
+        return true; // todo
+    }
+
+    protected void buildIt()
+            throws IOException
+    {
+        clean();
+        compile();
+        jar();
+        dist();
+    }
+
+    /**
+     * Deletes the "target" directory and all files and directories under it.
+     */
+    public void clean()
+    {
+        progress( "Clean: " + this );
+        new Paths( path( "$target$" ) ).delete();
+    }
+
+    /**
+     * Collects the source files using the "source" property and compiles them into a "classes" directory under the target
+     * directory. It uses "classpath" and "dependencies" to find the libraries required to compile the source.
+     * <p/>
+     * Note: Each dependency project is not built automatically. Each needs to be built before the dependent project.
+     *
+     * @return The path to the "classes" directory.
+     */
+    public String compile()
+            throws IOException
+    {
+        Paths classpath = classpath();
+        Paths source = getSource();
+
+        String classesDir = Utils.mkdir( path( "$target$/classes/" ) );
+
+        if ( source.isEmpty() )
+        {
+            if ( LOGGER.warn.isEnabled() )
+            {
+                progress( "Compile: " + this + " --- No source files found." );
+            }
+            return classesDir;
+        }
+
+        if ( LOGGER.debug.isEnabled() )
+        {
+            progress( "Compile: " + this + "\nSource: " + source.count() + " files\nClasspath: " + classpath );
+        }
+        else
+        {
+            progress( "Compile: " + this );
+        }
+
+        // File tempFile = File.createTempFile( "scar", "compile" );
+
+        List<String> zCompileArgs = createCompileJavaArgs( classpath, source, classesDir );
+
+        compileJava( classpath, source, zCompileArgs );
+
+        return classesDir;
+    }
+
+    protected List<String> createCompileJavaArgs( Paths pClasspath, Paths pSource, String pClassesDir )
+    {
+        List<String> args = new ArrayList<String>();
+        if ( LOGGER.trace.isEnabled() )
+        {
+            args.add( "-verbose" );
+        }
+        args.add( "-d" );
+        args.add( pClassesDir );
+        args.add( "-g:source,lines" );
+        args.add( "-target" );
+        args.add( getTargetJavaVersion() );
+        args.addAll( pSource.getFullPaths() );
+        if ( !pClasspath.isEmpty() )
+        {
+            args.add( "-classpath" );
+            args.add( pClasspath.toString( ";" ) );
+        }
+        return args;
+    }
+
+    protected void compileJava( Paths pClasspath, Paths pSource, List<String> pCompileArgs )
+    {
+        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+        if ( compiler == null )
+        {
+            throw new RuntimeException( "No compiler available. Ensure you are running from a " + getTargetJavaVersion() + "+ JDK, and not a JRE." );
+        }
+        int zError = compiler.run( null, null, null, pCompileArgs.toArray( new String[pCompileArgs.size()] ) );
+        if ( zError != 0 )
+        {
+            throw new RuntimeException( "Error (" + zError + ") during compilation of project: " + this + "\nSource: " + pSource.count() + " files\nClasspath: " + pClasspath );
+        }
+        try
+        {
+            Thread.sleep( 100 );
+        }
+        catch ( InterruptedException ex )
+        {
+            // Whatever
+        }
+    }
+
+    /**
+     * Collects the class files from the "classes" directory and all the resource files using the "resources" property and encodes
+     * them into a JAR file.
+     * <p/>
+     * If the resources don't contain a META-INF/MANIFEST.MF file, one is generated. If the project has a main property, the
+     * generated manifest will include "Main-Class" and "Class-Path" entries to allow the main class to be run with "java -jar".
+     *
+     * @return The path to the created JAR file.
+     */
+    public String jar()
+            throws IOException
+    {
+        progress( "JAR: " + this );
+
+        if ( !LOGGER.trace.isEnabled() )
+        {
+            return null; // todo: ...
+        }
+
+        String jarDir = Utils.mkdir( path( "$target$/jar/" ) );
+
+        String classesDir = path( "$target$/classes/" );
+        new Paths( classesDir, "**/*.class" ).copyTo( jarDir );
+        getResources().copyTo( jarDir );
+
+        String jarFile;
+        if ( hasVersion() )
+        {
+            jarFile = path( "$target$/$name$-$version$.jar" );
+        }
+        else
+        {
+            jarFile = path( "$target$/$name$.jar" );
+        }
+
+        File manifestFile = new File( jarDir, "META-INF/MANIFEST.MF" );
+        if ( !manifestFile.exists() )
+        {
+            LOGGER.debug.log( "Generating JAR manifest: ", manifestFile );
+            Utils.mkdir( manifestFile.getParent() );
+            Manifest manifest = new Manifest();
+            manifest.getMainAttributes().putValue( Attributes.Name.MANIFEST_VERSION.toString(), "1.0" );
+            if ( hasMain() )
+            {
+                LOGGER.debug.log( "Main class: ", getMain() );
+                manifest.getMainAttributes().putValue( Attributes.Name.MAIN_CLASS.toString(), getMain() );
+                StringBuilder buffer = new StringBuilder( 512 );
+                buffer.append( Utils.fileName( jarFile ) );
+                buffer.append( " ." );
+                Paths classpath = classpath();
+                for ( String name : classpath.getRelativePaths() )
+                {
+                    buffer.append( ' ' );
+                    buffer.append( name );
+                }
+                manifest.getMainAttributes().putValue( Attributes.Name.CLASS_PATH.toString(), buffer.toString() );
+            }
+            FileOutputStream output = new FileOutputStream( manifestFile );
+            try
+            {
+                manifest.write( output );
+            }
+            finally
+            {
+                try
+                {
+                    output.close();
+                }
+                catch ( Exception ignored )
+                {
+                }
+            }
+        }
+
+        jar( jarFile, new Paths( jarDir ) );
+        return jarFile;
+    }
+
+    /**
+     * Collects the distribution files using the "dist" property, the project's JAR file, and everything on the project's classpath
+     * (including dependency project classpaths) and places them into a "dist" directory under the "target" directory. This is also
+     * done for depenency projects, recursively. This is everything the application needs to be run from JAR files.
+     *
+     * @return The path to the "dist" directory.
+     */
+    public String dist()
+            throws IOException
+    {
+        progress( "Dist: " + this );
+
+        if ( !LOGGER.trace.isEnabled() )
+        {
+            return null; // todo: ...
+        }
+
+        String distDir = Utils.mkdir( path( "$target$/dist/" ) );
+        classpath().copyTo( distDir );
+        Paths distPaths = getDist();
+        dependencyDistPaths( distPaths );
+        distPaths.copyTo( distDir );
+        new Paths( path( "$target$" ), "*.jar" ).copyTo( distDir );
+        return distDir;
+    }
+
+    private Paths dependencyDistPaths( Paths paths )
+            throws IOException
+    {
+        for ( String dependency : getDependencies() )
+        {
+            Project dependencyProject = null; // todo: project( null, path( dependency ) );
+            String dependencyTarget = dependencyProject.path( "$target$/" );
+            if ( !Utils.fileExists( dependencyTarget ) )
+            {
+                throw new RuntimeException( "Dependency has not been built: " + dependency );
+            }
+            paths.glob( dependencyTarget + "dist", "!*/**.jar" );
+            paths.add( dependencyDistPaths( paths ) );
+        }
+        return paths;
+    }
+
+    /**
+     * Encodes the specified paths into a JAR file.
+     *
+     * @return The path to the JAR file.
+     */
+    public String jar( String jarFile, Paths paths )
+            throws IOException
+    {
+        Util.assertNotNull( "jarFile", jarFile );
+        Util.assertNotNull( "paths", paths );
+
+        progress( "Creating JAR (" + paths.count() + " entries): " + jarFile );
+
+        int zZipped = paths.zip( jarFile, new ZipFactory()
+        {
+            @Override
+            public ZipOutputStream createZOS( String pFilePath, List<FilePath> pPaths )
+                    throws IOException
+            {
+                putManifestFirst( pPaths );
+                return new JarOutputStream( new BufferedOutputStream( new FileOutputStream( pFilePath ) ) );
+            }
+
+            @Override
+            public ZipEntry createZE( String pRelativePath )
+            {
+                return new JarEntry( pRelativePath );
+            }
+
+            private void putManifestFirst( List<FilePath> pPaths )
+            {
+                int at = findManifest( pPaths );
+                if ( at > 0 )
+                {
+                    FilePath zManifest = pPaths.remove( at );
+                    pPaths.add( 0, zManifest );
+                }
+            }
+
+            private int findManifest( List<FilePath> pPaths )
+            {
+                for ( int i = 0; i < pPaths.size(); i++ )
+                {
+                    if ( META_INF_MANIFEST_MF.equals( pPaths.get( i ).getFileSubPath() ) )
+                    {
+                        return i;
+                    }
+                }
+                return -1;
+            }
+        } );
+        return zZipped == 0 ? null : jarFile;
+    }
+
+    /**
+     * Computes the classpath for the specified project and all its dependency projects, recursively.
+     */
+    public Paths classpath()
+            throws IOException
+    {
+        Paths classpath = getClasspath();
+        for ( Project zProject : mDependantProjects )
+        {
+            zProject.addDependantProjectsClassPaths( classpath, getCanonicalProjectDir() );
+        }
+        return classpath;
+    }
+
+    /**
+     * Computes the classpath for all the dependencies of the specified project, recursively.
+     */
+    protected void addDependantProjectsClassPaths( Paths pPathsToAddTo, File pMasterProjectDirectory )
+            throws IOException
+    {
+        return;
+//        for ( String dependency : getDependencies() )
+//        {
+//            Project dependencyProject = null; // todo: project( null, path( dependency ) );
+//            String dependencyTarget = dependencyProject.path( "$target$/" );
+//            if ( errorIfDependenciesNotBuilt && !Utils.fileExists( dependencyTarget ) )
+//            {
+//                throw new RuntimeException( "Dependency has not been built: " + dependency ); // todo: + "\nAbsolute dependency path: " + canonical( dependency ) + "\nMissing dependency target: " + canonical( dependencyTarget ) );
+//            }
+//            if ( includeDependencyJAR )
+//            {
+//                pPathsToAddTo.glob( dependencyTarget, "*.jar" );
+//            }
+//            pPathsToAddTo.add( classpath() );
+//        }
     }
 
     /**
      * Calls {@link #build(Project)} for each dependency project in the specified project.
      */
-    public void buildDependencies()
+    public boolean buildDependencies()
             throws IOException
     {
+        boolean anyBuilt = false;
         for ( Project zProject : mDependantProjects )
         {
-            zProject.build();
+            anyBuilt |= zProject.build();
         }
-//        for ( String dependency : project.getDependencies() )
-//        {
-//            Project dependencyProject = project( project.path( dependency ) );
-//
-//            if ( builtProjects.contains( dependencyProject.getName() ) )
-//            {
-//                LOGGER.debug.log( "Dependency project already built: ", dependencyProject );
-//                return;
-//            }
-//
-//            String jarFile;
-//            if ( dependencyProject.hasVersion() )
-//            {
-//                jarFile = dependencyProject.path( "$target$/$name$-$version$.jar" );
-//            }
-//            else
-//            {
-//                jarFile = dependencyProject.path( "$target$/$name$.jar" );
-//            }
-//
-//            LOGGER.debug.log( "Building dependency: ", dependencyProject );
-//            if ( !executeDocument( dependencyProject ) )
-//            {
-//                build( dependencyProject );
-//            }
-//        }
+        return anyBuilt;
     }
-
-    /**
-     * Creates an empty project, without any default properties, and then loads the specified YAML files.
-     */
-//    public Project( String path, ProjectFactory pFactory, String... paths )
-//            throws IOException
-//    {
-//        Util.assertNotNull( "path", path );
-//
-//        load( path );
-//        if ( paths != null )
-//        {
-//            for ( String mergePath : paths )
-//            {
-//                replace( new Project( mergePath, pFactory ) );
-//            }
-//        }
-//    }
-
-    /**
-     * Clears the Data in this project and replaces it with the contents of the specified YAML file. The project directory is set
-     * to the directory containing the YAML file.
-     *
-     * @param path Path to a YAML project file, or a directory containing a "project.yaml" file.
-     */
-//    public void load( String path )
-//            throws IOException
-//    {
-//        File file = new File( path );
-//        if ( !file.exists() && !path.endsWith( ".yaml" ) )
-//        {
-//            path += ".yaml";
-//            file = new File( path );
-//        }
-//        Util.assertExists( "Project", file );
-//        if ( file.isDirectory() )
-//        {
-//            file = new File( file, "project.yaml" );
-//            if ( file.exists() )
-//            {
-//                load( file.getPath() );
-//            }
-//            else
-//            {
-//                dir = Utils.canonical( path );
-//            }
-//            return;
-//        }
-//        dir = new File( Utils.canonical( path ) ).getParent().replace( '\\', '/' );
-//
-//        BufferedReader fileReader = new BufferedReader( new FileReader( path ) );
-//        try
-//        {
-//            StringBuffer buffer = new StringBuffer( 2048 );
-//            while ( true )
-//            {
-//                String line = fileReader.readLine();
-//                if ( line == null || line.trim().equals( "---" ) )
-//                {
-//                    break;
-//                }
-//                buffer.append( line );
-//                buffer.append( '\n' );
-//            }
-//
-//            YamlReader yamlReader = new YamlReader( new StringReader( buffer.toString() ) )
-//            {
-//                @Override
-//                protected Object readValue( Class type, Class elementType, Class defaultType )
-//                        throws YamlException, ParserException, TokenizerException
-//                {
-//                    Object value = super.readValue( type, elementType, defaultType );
-//                    if ( value instanceof String )
-//                    {
-//                        value = ((String) value).replaceAll( "\\$dir\\$", dir );
-//                    }
-//                    return value;
-//                }
-//            };
-//            try
-//            {
-//                mData = yamlReader.read( HashMap.class );
-//                yamlReader.close();
-//            }
-//            catch ( YamlException ex )
-//            {
-//                throw new IOException( "Error reading YAML file: " + new File( path ).getAbsolutePath(), ex );
-//            }
-//            if ( mData == null )
-//            {
-//                mData = new HashMap();
-//            }
-//
-//            buffer.setLength( 0 );
-//            while ( true )
-//            {
-//                String line = fileReader.readLine();
-//                if ( line == null )
-//                {
-//                    break;
-//                }
-//                buffer.append( line );
-//                buffer.append( '\n' );
-//            }
-//            document = buffer.toString();
-//        }
-//        finally
-//        {
-//            fileReader.close();
-//        }
-//    }
 
     /**
      * Replaces the Data in this project with the contents of the specified YAML file. If the specified project has Data with the
@@ -257,7 +455,7 @@ public class Project extends ProjectParameters
         {
             for ( String zDependency : zDependencies )
             {
-                mDependantProjects.add( pProjectFactory.project( mDirectory, zDependency ) );
+                mDependantProjects.add( pProjectFactory.project( mCanonicalProjectDir, zDependency ) );
             }
         }
 

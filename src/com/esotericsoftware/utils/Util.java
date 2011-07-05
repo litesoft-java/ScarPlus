@@ -1,10 +1,20 @@
 package com.esotericsoftware.utils;
 
 import java.io.*;
+import java.nio.channels.*;
 
 @SuppressWarnings({"UnusedDeclaration"})
 public class Util
 {
+    public static LineSink PROGRESS_LINE_SINK = LineSink.SYSTEM_OUT;
+
+    public static void progress( String pMessage )
+    {
+        PROGRESS_LINE_SINK.addLine( pMessage );
+    }
+
+    public static final String[] EMPTY_STRING_ARRAY = new String[0];
+
     public static String noEmpty( String pToTest )
     {
         if ( pToTest != null )
@@ -65,5 +75,39 @@ public class Util
             pSource = pSource.substring( 0, at ) + pReplaceWith + pSource.substring( at + pOfInterest.length() );
         }
         return pSource;
+    }
+
+    /**
+     * Copies one file to another.
+     */
+    @SuppressWarnings({"ResultOfMethodCallIgnored"})
+    public static void copyFile( File in, File out )
+            throws IOException
+    {
+        out.getParentFile().mkdirs();
+        FileChannel sourceChannel = new FileInputStream( in ).getChannel();
+        FileChannel destinationChannel = new FileOutputStream( out ).getChannel();
+        sourceChannel.transferTo( 0, sourceChannel.size(), destinationChannel );
+        sourceChannel.close();
+        destinationChannel.close();
+    }
+
+    /**
+     * Deletes a directory and all files and directories it contains.
+     */
+    public static boolean delete( File pFile )
+    {
+        if ( pFile.isDirectory() )
+        {
+            File[] zFiles = pFile.listFiles();
+            for ( File zFile : zFiles )
+            {
+                if ( !delete( zFile ) )
+                {
+                    return false;
+                }
+            }
+        }
+        return pFile.delete();
     }
 }

@@ -141,7 +141,7 @@ public class Utils extends Util
         return !file.exists() || delete( file );
     }
 
-    private static boolean delete( File file )
+    static public boolean delete( File file )
     {
         if ( file.isDirectory() )
         {

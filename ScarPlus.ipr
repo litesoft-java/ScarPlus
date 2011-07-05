@@ -102,7 +102,7 @@
         </inspection_tool>
         <inspection_tool class="NonJREEmulationClassesInClientCode" enabled="true" level="INFO" enabled_by_default="true" />
         <inspection_tool class="NonSerializableServiceParameters" enabled="false" level="ERROR" enabled_by_default="false" />
-        <inspection_tool class="NullableProblems" enabled="true" level="WEAK WARNING" enabled_by_default="true">
+        <inspection_tool class="NullableProblems" enabled="false" level="WEAK WARNING" enabled_by_default="false">
           <option name="REPORT_NULLABLE_METHOD_OVERRIDES_NOTNULL" value="true" />
           <option name="REPORT_NOT_ANNOTATED_METHOD_OVERRIDES_NOTNULL" value="true" />
           <option name="REPORT_NOTNULL_PARAMETER_OVERRIDES_NULLABLE" value="true" />
@@ -111,6 +111,11 @@
           <option name="REPORT_NOT_ANNOTATED_SETTER_PARAMETER" value="true" />
           <option name="REPORT_ANNOTATION_NOT_PROPAGATED_TO_OVERRIDERS" value="true" />
           <option name="REPORT_NULLS_PASSED_TO_NON_ANNOTATED_METHOD" value="true" />
+        </inspection_tool>
+        <inspection_tool class="SpellCheckingInspection" enabled="true" level="WEAK WARNING" enabled_by_default="true">
+          <option name="processCode" value="true" />
+          <option name="processLiterals" value="true" />
+          <option name="processComments" value="true" />
         </inspection_tool>
         <inspection_tool class="SynchronizationOnLocalVariableOrMethodParameter" enabled="true" level="INFO" enabled_by_default="true">
           <option name="reportLocalVariables" value="true" />
@@ -284,6 +289,13 @@
         <default-constraints vsize-policy="6" hsize-policy="0" anchor="0" fill="2" />
       </item>
     </group>
+  </component>
+  <component name="ProjectDictionaryState">
+    <dictionary name="George">
+      <words>
+        <w>yaml</w>
+      </words>
+    </dictionary>
   </component>
   <component name="ProjectModuleManager">
     <modules>

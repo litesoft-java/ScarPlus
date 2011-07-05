@@ -48,10 +48,6 @@ public class Pattern
         }
         newPattern = processNonSlashedStarStar( newPattern );
         newPattern = Util.replace( newPattern, "/**/**/", "/**/" );
-        if ( !newPattern.equals( pattern ) )
-        {
-            System.out.println( "Pattern '" + pattern.substring( 2 ) + "' -> '" + newPattern.substring( 2 ) + "'" );
-        }
         return newPattern.substring( 2 );
     }
 

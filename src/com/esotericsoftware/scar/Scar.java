@@ -7,7 +7,6 @@ import java.util.*;
 import java.util.Map.*;
 import java.util.jar.*;
 import java.util.zip.*;
-import javax.tools.*;
 
 import org.litesoft.logger.*;
 import org.litesoft.logger.nonpublic.*;
@@ -49,6 +48,7 @@ public class Scar extends Utils implements ProjectFactory
         mArgs = (pArgs != null) ? pArgs : new Arguments();
     }
 
+    @SuppressWarnings({"UnusedDeclaration"})
     public Project getLaunchProject()
     {
         return mLaunchProject;
@@ -66,12 +66,12 @@ public class Scar extends Utils implements ProjectFactory
     {
         Util.assertNotNull( "CurrentDirectory", pCurrentDirectory );
         pPath = Util.assertNotEmpty( "Path", pPath );
-        File zFile = new File(pPath);
+        File zFile = new File( pPath );
         if ( !zFile.isAbsolute() )
         {
             zFile = new File( pCurrentDirectory, pPath );
         }
-        zFile = Utils.canonical( zFile );
+        zFile = zFile.getCanonicalFile();
 
         String zPath = zFile.getPath();
         Project zProject = mProjectCache.getByPath( zPath );
@@ -129,43 +129,43 @@ public class Scar extends Utils implements ProjectFactory
         return rv;
     }
 
-    protected Project createProject( File pPossibleBuildFile, File pProjectDir )
+    protected Project createProject( File pPossibleBuildFile, File pCanonicalProjectDir )
             throws IOException
     {
         String zBuildFileName = pPossibleBuildFile.getName();
         int zDotAt = zBuildFileName.lastIndexOf( '.' );
-        if ( (zDotAt != -1) && (pProjectDir != null) )
+        if ( (zDotAt != -1) && (pCanonicalProjectDir != null) )
         {
             String zName = zBuildFileName.substring( 0, zDotAt ).trim();
             if ( DEFAULT_PROJECT_FILE_NAME.equalsIgnoreCase( zName ) )
             {
-                zName = pProjectDir.getName();
+                zName = pCanonicalProjectDir.getName();
             }
-            return createProject( pPossibleBuildFile, pProjectDir, zName );
+            return createProject( pPossibleBuildFile, pCanonicalProjectDir, zName );
         }
         throw new IllegalArgumentException( "Unacceptable Project Path or Name, Project File " + pPossibleBuildFile );
     }
 
-    protected Project createProject( File pBuildFile, File pProjectDir, String pProjectName )
+    protected Project createProject( File pBuildFile, File pCanonicalProjectDir, String pProjectName )
             throws IOException
     {
         if ( pBuildFile == null )
         {
-            throw new IllegalArgumentException( "No 'Build.java' or 'Build.yaml' file found in Project Directory: " + pProjectDir );
+            throw new IllegalArgumentException( "No 'Build.java' or 'Build.yaml' file found in Project Directory: " + pCanonicalProjectDir );
         }
         String zBuildFileName = pBuildFile.getName();
         if ( zBuildFileName.endsWith( JAVA_EXTENSION ) )
         {
-            return createJavaProject( pBuildFile, pProjectDir, pProjectName );
+            return createJavaProject( pBuildFile, pCanonicalProjectDir, pProjectName );
         }
         if ( zBuildFileName.endsWith( YAML_EXTENSION ) )
         {
-            return createYamlProject( pBuildFile, pProjectDir, pProjectName );
+            return createYamlProject( pBuildFile, pCanonicalProjectDir, pProjectName );
         }
         throw new IllegalArgumentException( pBuildFile + " was NOT either a '.java' or a '.yaml' file!" );
     }
 
-    protected Project createYamlProject( File zYamlBuildFile, File pProjectDir, String pProjectName )
+    protected Project createYamlProject( File zYamlBuildFile, File pCanonicalProjectDir, String pProjectName )
             throws IOException
     {
         List<String> zLines = readLines( zYamlBuildFile );
@@ -180,27 +180,27 @@ public class Scar extends Utils implements ProjectFactory
             zYAML = mergeLines( zLines, 0, at );
             zCode = Util.noEmpty( mergeLines( zLines, at + 1 ) );
         }
-        Map<Object, Object> zData = (zYAML.length() == 0) ? new HashMap<Object, Object>() : parseYAML( pProjectDir, zYAML );
+        Map<Object, Object> zData = (zYAML.length() == 0) ? new HashMap<Object, Object>() : parseYAML( pCanonicalProjectDir, zYAML );
         Class<? extends Project> zClass = createYamlProjectClass();
         if ( zCode != null )
         {
             zClass = createYamlCodeProjectClass( zClass, zCode, at + 1 );
         }
-        return instantiate( zClass, pProjectDir, pProjectName, zData );
+        return instantiate( zClass, pCanonicalProjectDir, pProjectName, zData );
     }
 
-    protected Project createJavaProject( File zJavaBuildFile, File pProjectDir, String pProjectName )
+    protected Project createJavaProject( File zJavaBuildFile, File pCanonicalProjectDir, String pProjectName )
             throws IOException
     {
         String zFile = mergeLines( readLines( zJavaBuildFile ), 0 );
         Class<? extends Project> zClass = createJavaProjectClass();
         zClass = createJavaCodeProjectClass( zClass, zFile );
-        return instantiate( zClass, pProjectDir, pProjectName, null );
+        return instantiate( zClass, pCanonicalProjectDir, pProjectName, null );
     }
 
-    protected Project instantiate( Class<? extends Project> pClass, File pProjectDir, String pProjectName, Map<Object, Object> pData )
+    protected Project instantiate( Class<? extends Project> pClass, File pCanonicalProjectDir, String pProjectName, Map<Object, Object> pData )
     {
-        return instantiate( pClass, new ProjectParameters( pProjectName, pProjectDir, pData ) );
+        return instantiate( pClass, new ProjectParameters( pProjectName, pCanonicalProjectDir, pData ) );
     }
 
     protected Project instantiate( Class<? extends Project> pClass, ProjectParameters pParameters )
@@ -235,7 +235,7 @@ public class Scar extends Utils implements ProjectFactory
         {
             zCause = e;
         }
-        throw new RuntimeException( "Unable to Instantiate Project Class for Project: " + pParameters.getName() + " in dir " + pParameters.getDirectory(), zCause );
+        throw new RuntimeException( "Unable to Instantiate Project Class for Project: " + pParameters.getName() + " in dir " + pParameters.getCanonicalProjectDir(), zCause );
     }
 
     protected Class<? extends Project> createYamlProjectClass()
@@ -376,13 +376,25 @@ public class Scar extends Utils implements ProjectFactory
         throw new UnsupportedOperationException(); // todo: See - executeDocument()!;
     }
 
+    /**
+     * Cleans All projects - Normally called reflectively
+     */
+    @SuppressWarnings({"UnusedDeclaration"})
     public void cleanAll()
             throws IOException
     {
-        System.out.println( "cleanAll" );
-        // todo: ...
+        progress( "CleanAll" );
+        Set<Project> zProjects = mProjectCache.getAllProjects();
+        for ( Project zProject : zProjects )
+        {
+            zProject.clean();
+        }
     }
 
+    /**
+     * Builds the Launch Project - Normally called reflectively
+     */
+    @SuppressWarnings({"UnusedDeclaration"})
     public void build()
             throws IOException
     {
@@ -452,312 +464,6 @@ public class Scar extends Utils implements ProjectFactory
 //    }
 
     /**
-     * Deletes the "target" directory and all files and directories under it.
-     */
-    public void clean( Project project )
-    {
-        Util.assertNotNull( "Project", project );
-        LOGGER.info.log( "Clean: ", project );
-        new Paths( project.path( "$target$" ) ).delete();
-    }
-
-    /**
-     * Computes the classpath for the specified project and all its dependency projects, recursively.
-     */
-    public Paths classpath( Project project, boolean errorIfDependenciesNotBuilt )
-            throws IOException
-    {
-        Util.assertNotNull( "Project", project );
-        Paths classpath = project.getClasspath();
-        classpath.add( dependencyClasspaths( project, classpath, true, errorIfDependenciesNotBuilt ) );
-        return classpath;
-    }
-
-    /**
-     * Computes the classpath for all the dependencies of the specified project, recursively.
-     */
-    private Paths dependencyClasspaths( Project project, Paths paths, boolean includeDependencyJAR, boolean errorIfDependenciesNotBuilt )
-            throws IOException
-    {
-        Util.assertNotNull( "Project", project );
-        for ( String dependency : project.getDependencies() )
-        {
-            Project dependencyProject = project( null, project.path( dependency ) );
-            String dependencyTarget = dependencyProject.path( "$target$/" );
-            if ( errorIfDependenciesNotBuilt && !fileExists( dependencyTarget ) )
-            {
-                throw new RuntimeException( "Dependency has not been built: " + dependency + "\nAbsolute dependency path: " + canonical( dependency ) + "\nMissing dependency target: " + canonical( dependencyTarget ) );
-            }
-            if ( includeDependencyJAR )
-            {
-                paths.glob( dependencyTarget, "*.jar" );
-            }
-            paths.add( classpath( dependencyProject, errorIfDependenciesNotBuilt ) );
-        }
-        return paths;
-    }
-
-    /**
-     * Collects the source files using the "source" property and compiles them into a "classes" directory under the target
-     * directory. It uses "classpath" and "dependencies" to find the libraries required to compile the source.
-     * <p/>
-     * Note: Each dependency project is not built automatically. Each needs to be built before the dependent project.
-     *
-     * @return The path to the "classes" directory.
-     */
-    public String compile( Project project )
-            throws IOException
-    {
-        Util.assertNotNull( "Project", project );
-        Paths classpath = classpath( project, true );
-        Paths source = project.getSource();
-
-        String classesDir = mkdir( project.path( "$target$/classes/" ) );
-
-        if ( source.isEmpty() )
-        {
-            LOGGER.warn.log( "Compile: ", project, " --- No source files found." );
-            return classesDir;
-        }
-
-        if ( LOGGER.debug.isEnabled() )
-        {
-            LOGGER.debug.log( "Compile: ", project, "\n   Classpath: ", classpath, "\n   Source: " + source.count() + " files" );
-        }
-        else
-        {
-            LOGGER.info.log( "Compile: ", project );
-        }
-
-        File tempFile = File.createTempFile( "scar", "compile" );
-
-        List<String> args = new ArrayList<String>();
-        if ( LOGGER.trace.isEnabled() )
-        {
-            args.add( "-verbose" );
-        }
-        args.add( "-d" );
-        args.add( classesDir );
-        args.add( "-g:source,lines" );
-        args.add( "-target" );
-        args.add( "1.5" );
-        args.addAll( source.getPaths() );
-        if ( !classpath.isEmpty() )
-        {
-            args.add( "-classpath" );
-            args.add( classpath.toString( ";" ) );
-        }
-
-        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-        if ( compiler == null )
-        {
-            throw new RuntimeException( "No compiler available. Ensure you are running from a 1.6+ JDK, and not a JRE." );
-        }
-        if ( compiler.run( null, null, null, args.toArray( new String[args.size()] ) ) != 0 )
-        {
-            throw new RuntimeException( "Error during compilation of project: " + project + "\nSource: " + source.count() + " files\nClasspath: " + classpath );
-        }
-        try
-        {
-            Thread.sleep( 100 );
-        }
-        catch ( InterruptedException ex )
-        {
-            // Whatever
-        }
-        return classesDir;
-    }
-
-    /**
-     * Collects the class files from the "classes" directory and all the resource files using the "resources" property and encodes
-     * them into a JAR file.
-     * <p/>
-     * If the resources don't contain a META-INF/MANIFEST.MF file, one is generated. If the project has a main property, the
-     * generated manifest will include "Main-Class" and "Class-Path" entries to allow the main class to be run with "java -jar".
-     *
-     * @return The path to the created JAR file.
-     */
-    public String jar( Project project )
-            throws IOException
-    {
-        Util.assertNotNull( "Project", project );
-
-        LOGGER.info.log( "JAR: ", project );
-
-        String jarDir = mkdir( project.path( "$target$/jar/" ) );
-
-        String classesDir = project.path( "$target$/classes/" );
-        new Paths( classesDir, "**/*.class" ).copyTo( jarDir );
-        project.getResources().copyTo( jarDir );
-
-        String jarFile;
-        if ( project.hasVersion() )
-        {
-            jarFile = project.path( "$target$/$name$-$version$.jar" );
-        }
-        else
-        {
-            jarFile = project.path( "$target$/$name$.jar" );
-        }
-
-        File manifestFile = new File( jarDir, "META-INF/MANIFEST.MF" );
-        if ( !manifestFile.exists() )
-        {
-            LOGGER.debug.log( "Generating JAR manifest: ", manifestFile );
-            mkdir( manifestFile.getParent() );
-            Manifest manifest = new Manifest();
-            manifest.getMainAttributes().putValue( Attributes.Name.MANIFEST_VERSION.toString(), "1.0" );
-            if ( project.hasMain() )
-            {
-                LOGGER.debug.log( "Main class: ", project.getMain() );
-                manifest.getMainAttributes().putValue( Attributes.Name.MAIN_CLASS.toString(), project.getMain() );
-                StringBuilder buffer = new StringBuilder( 512 );
-                buffer.append( fileName( jarFile ) );
-                buffer.append( " ." );
-                Paths classpath = classpath( project, true );
-                for ( String name : classpath.getRelativePaths() )
-                {
-                    buffer.append( ' ' );
-                    buffer.append( name );
-                }
-                manifest.getMainAttributes().putValue( Attributes.Name.CLASS_PATH.toString(), buffer.toString() );
-            }
-            FileOutputStream output = new FileOutputStream( manifestFile );
-            try
-            {
-                manifest.write( output );
-            }
-            finally
-            {
-                try
-                {
-                    output.close();
-                }
-                catch ( Exception ignored )
-                {
-                }
-            }
-        }
-
-        jar( jarFile, new Paths( jarDir ) );
-        return jarFile;
-    }
-
-    /**
-     * Encodes the specified paths into a JAR file.
-     *
-     * @return The path to the JAR file.
-     */
-    public String jar( String jarFile, Paths paths )
-            throws IOException
-    {
-        Util.assertNotNull( "jarFile", jarFile );
-        Util.assertNotNull( "paths", paths );
-
-        paths = paths.filesOnly();
-
-        LOGGER.debug.log( "Creating JAR (", paths.count(), " entries): ", jarFile );
-
-        List<String> fullPaths = paths.getPaths();
-        List<String> relativePaths = paths.getRelativePaths();
-        // Ensure MANIFEST.MF is first.
-        int manifestIndex = relativePaths.indexOf( "META-INF/MANIFEST.MF" );
-        if ( manifestIndex > 0 )
-        {
-            relativePaths.remove( manifestIndex );
-            relativePaths.add( 0, "META-INF/MANIFEST.MF" );
-            String manifestFullPath = fullPaths.get( manifestIndex );
-            fullPaths.remove( manifestIndex );
-            fullPaths.add( 0, manifestFullPath );
-        }
-        JarOutputStream output = new JarOutputStream( new BufferedOutputStream( new FileOutputStream( jarFile ) ) );
-        try
-        {
-            for ( int i = 0, n = fullPaths.size(); i < n; i++ )
-            {
-                output.putNextEntry( new JarEntry( relativePaths.get( i ).replace( '\\', '/' ) ) );
-                FileInputStream input = new FileInputStream( fullPaths.get( i ) );
-                try
-                {
-                    byte[] buffer = new byte[4096];
-                    while ( true )
-                    {
-                        int length = input.read( buffer );
-                        if ( length == -1 )
-                        {
-                            break;
-                        }
-                        output.write( buffer, 0, length );
-                    }
-                }
-                finally
-                {
-                    try
-                    {
-                        input.close();
-                    }
-                    catch ( Exception ignored )
-                    {
-                    }
-                }
-            }
-        }
-        finally
-        {
-            try
-            {
-                output.close();
-            }
-            catch ( Exception ignored )
-            {
-            }
-        }
-        return jarFile;
-    }
-
-    /**
-     * Collects the distribution files using the "dist" property, the project's JAR file, and everything on the project's classpath
-     * (including dependency project classpaths) and places them into a "dist" directory under the "target" directory. This is also
-     * done for depenency projects, recursively. This is everything the application needs to be run from JAR files.
-     *
-     * @return The path to the "dist" directory.
-     */
-    public String dist( Project project )
-            throws IOException
-    {
-        Util.assertNotNull( "Project", project );
-
-        LOGGER.info.log( "Dist: ", project );
-
-        String distDir = mkdir( project.path( "$target$/dist/" ) );
-        classpath( project, true ).copyTo( distDir );
-        Paths distPaths = project.getDist();
-        dependencyDistPaths( project, distPaths );
-        distPaths.copyTo( distDir );
-        new Paths( project.path( "$target$" ), "*.jar" ).copyTo( distDir );
-        return distDir;
-    }
-
-    private Paths dependencyDistPaths( Project project, Paths paths )
-            throws IOException
-    {
-        Util.assertNotNull( "Project", project );
-
-        for ( String dependency : project.getDependencies() )
-        {
-            Project dependencyProject = project( null, project.path( dependency ) );
-            String dependencyTarget = dependencyProject.path( "$target$/" );
-            if ( !fileExists( dependencyTarget ) )
-            {
-                throw new RuntimeException( "Dependency has not been built: " + dependency );
-            }
-            paths.glob( dependencyTarget + "dist", "!*/**.jar" );
-            paths.add( dependencyDistPaths( dependencyProject, paths ) );
-        }
-        return paths;
-    }
-
-    /**
      * Removes any code signatures on the specified JAR. Removes any signature files in the META-INF directory and removes any
      * signature entries from the JAR's manifest.
      *
@@ -768,7 +474,7 @@ public class Scar extends Utils implements ProjectFactory
     {
         Util.assertNotNull( "jarFile", jarFile );
 
-        LOGGER.debug.log( "Removing signature from JAR: ", jarFile );
+        progress( "Removing signature from JAR: " + jarFile );
 
         File tempFile = File.createTempFile( "scar", "removejarsig" );
         JarOutputStream jarOutput = null;
@@ -861,7 +567,7 @@ public class Scar extends Utils implements ProjectFactory
         {
             throw new IllegalArgumentException( "password must be 6 or more characters." );
         }
-        LOGGER.debug.log( "Signing JAR (", keystoreFile, ", ", alias, ":", password, "): ", jarFile );
+        progress( "Signing JAR (" + keystoreFile + ", " + alias + ":" + password + "): " + jarFile );
 
         shell( "jarsigner", "-keystore", keystoreFile, "-storepass", password, "-keypass", password, jarFile, alias );
         return jarFile;
@@ -892,7 +598,7 @@ public class Scar extends Utils implements ProjectFactory
         Util.assertNotNull( "jarFile", jarFile );
         Util.assertNotNull( "packedFile", packedFile );
 
-        LOGGER.debug.log( "Packing JAR: ", jarFile, " -> ", packedFile );
+        progress( "Packing JAR: " + jarFile + " -> " + packedFile );
 
         shell( "pack200", "--no-gzip", "--segment-limit=-1", "--no-keep-file-order", "--effort=7", "--modification-time=latest", packedFile, jarFile );
         return packedFile;
@@ -929,7 +635,7 @@ public class Scar extends Utils implements ProjectFactory
         Util.assertNotNull( "packedFile", packedFile );
         Util.assertNotNull( "jarFile", jarFile );
 
-        LOGGER.debug.log( "Unpacking JAR: ", packedFile, " -> ", jarFile );
+        progress( "Unpacking JAR: " + packedFile + " -> " + jarFile );
 
         shell( "unpack200", packedFile, jarFile );
         return jarFile;
@@ -959,7 +665,7 @@ public class Scar extends Utils implements ProjectFactory
         Util.assertNotNull( "file", file );
         Util.assertNotNull( "gzipFile", gzipFile );
 
-        LOGGER.debug.log( "GZIP encoding: ", file, " -> ", gzipFile );
+        progress( "GZIP encoding: " + file + " -> " + gzipFile );
 
         InputStream input = new FileInputStream( file );
         try
@@ -1009,7 +715,7 @@ public class Scar extends Utils implements ProjectFactory
     {
         Util.assertNotNull( "gzipFile", gzipFile );
         Util.assertNotNull( "file", file );
-        LOGGER.debug.log( "GZIP decoding: ", gzipFile, " -> ", file );
+        progress( "GZIP decoding: " + gzipFile + " -> " + file );
 
         InputStream input = new GZIPInputStream( new FileInputStream( gzipFile ) );
         try
@@ -1039,7 +745,7 @@ public class Scar extends Utils implements ProjectFactory
     {
         Util.assertNotNull( "paths", paths );
         Util.assertNotNull( "zipFile", zipFile );
-        LOGGER.debug.log( "Creating ZIP (", paths.count(), " entries): ", zipFile );
+        progress( "Creating ZIP (" + paths.count() + " entries): " + zipFile );
 
         paths.zip( zipFile );
         return zipFile;
@@ -1055,7 +761,7 @@ public class Scar extends Utils implements ProjectFactory
     {
         Util.assertNotNull( "zipFile", zipFile );
         Util.assertNotNull( "outputDir", outputDir );
-        LOGGER.debug.log( "ZIP decoding: ", zipFile, " -> ", outputDir );
+        progress( "ZIP decoding: " + zipFile + " -> " + outputDir );
 
         ZipInputStream input = new ZipInputStream( new FileInputStream( zipFile ) );
         try
@@ -1137,7 +843,7 @@ public class Scar extends Utils implements ProjectFactory
     {
         Util.assertNotNull( "file", file );
         Util.assertNotNull( "lzmaFile", lzmaFile );
-        LOGGER.debug.log( "LZMA encoding: ", file, " -> ", lzmaFile );
+        progress( "LZMA encoding: " + file + " -> " + lzmaFile );
 
         try
         {
@@ -1180,7 +886,7 @@ public class Scar extends Utils implements ProjectFactory
     {
         Util.assertNotNull( "lzmaFile", lzmaFile );
         Util.assertNotNull( "file", file );
-        LOGGER.debug.log( "LZMA decoding: ", lzmaFile, " -> ", file );
+        progress( "LZMA decoding: " + lzmaFile + " -> " + file );
 
         try
         {
@@ -1210,7 +916,7 @@ public class Scar extends Utils implements ProjectFactory
             throw new IllegalArgumentException( "password must be 6 or more characters." );
         }
 
-        LOGGER.info.log( "JWS: ", project );
+        progress( "JWS: " + project );
 
         String jwsDir = mkdir( project.path( "$target$/jws/" ) );
         String distDir = project.path( "$target$/dist/" );
@@ -1243,7 +949,7 @@ public class Scar extends Utils implements ProjectFactory
     {
         Util.assertNotNull( "Project", project );
 
-        LOGGER.info.log( "JWS htaccess: ", project );
+        progress( "JWS htaccess: " + project );
 
         String jwsDir = mkdir( project.path( "$target$/jws/" ) );
         for ( String packedFile : new Paths( jwsDir + "packed", "*.jar.pack.gz" ) )
@@ -1316,11 +1022,11 @@ public class Scar extends Utils implements ProjectFactory
 
         if ( LOGGER.debug.isEnabled() )
         {
-            LOGGER.debug.log( "JNLP: " + project + " (" + url + ", " + company + ", " + title + ", " + splashImage + ")" );
+            progress( "JNLP: " + project + " (" + url + ", " + company + ", " + title + ", " + splashImage + ")" );
         }
         else
         {
-            LOGGER.info.log( "JNLP: ", project );
+            progress( "JNLP: " + project );
         }
 
         if ( !project.hasMain() )
@@ -1439,7 +1145,7 @@ public class Scar extends Utils implements ProjectFactory
             throw new IllegalArgumentException( "password must be 6 or more characters." );
         }
 
-        LOGGER.info.log( "LWJGL applet: ", project );
+        progress( "LWJGL applet: " + project );
 
         String appletDir = mkdir( project.path( "$target$/applet-lwjgl/" ) );
         String distDir = project.path( "$target$/dist/" );
@@ -1471,7 +1177,7 @@ public class Scar extends Utils implements ProjectFactory
             LOGGER.debug.log( "Unable to generate applet.html: project has no main class" );
             return appletDir;
         }
-        LOGGER.info.log( "Generating: applet.html" );
+        progress( "Generating: applet.html" );
         FileWriter writer = new FileWriter( appletDir + "applet.html" );
         try
         {
@@ -1551,7 +1257,7 @@ public class Scar extends Utils implements ProjectFactory
     {
         Util.assertNotNull( "Project", project );
 
-        LOGGER.info.log( "One JAR: ", project );
+        progress( "One JAR: " + project );
 
         String onejarDir = mkdir( project.path( "$target$/onejar/" ) );
         String distDir = project.path( "$target$/dist/" );
@@ -1592,7 +1298,7 @@ public class Scar extends Utils implements ProjectFactory
             onejarFile = project.path( "$target$/dist/onejar/$name$-all.jar" );
         }
         mkdir( parent( onejarFile ) );
-        jar( onejarFile, new Paths( onejarDir ) );
+        // todo: jar( onejarFile, new Paths( onejarDir ) );
     }
 
     /**
@@ -1645,7 +1351,7 @@ public class Scar extends Utils implements ProjectFactory
 
             // Append code, collecting imports statements and classpath URLs.
             StringBuilder importBuffer = new StringBuilder( 512 );
-            ArrayList<URL> classpathURLs = new ArrayList();
+            ArrayList<URL> classpathURLs = new ArrayList<URL>();
             BufferedReader reader = new BufferedReader( new StringReader( code ) );
             boolean header = true;
             while ( true )
@@ -1686,8 +1392,10 @@ public class Scar extends Utils implements ProjectFactory
             classBuffer.append( "}}" );
 
             final String classCode = importBuffer.append( classBuffer ).toString();
-            LOGGER.trace.log( "Executing code:\n", classCode );
-
+            if ( LOGGER.trace.isEnabled() )
+            {
+                progress( "Executing code:\n" + classCode );
+            }
             // Compile class.
             Class generatedClass = compileDynamicCodeToClass( pOverheadStartLines, classCode, classpathURLs.toArray( new URL[classpathURLs.size()] ) );
 
@@ -1734,7 +1442,7 @@ public class Scar extends Utils implements ProjectFactory
 
     static
     {
-        Paths.setDefaultGlobExcludes( "**/.svn/**" );
+        Paths.addDefaultGlobExcludes( "**/.svn/**" );
     }
 
     /// todo: ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Here be Dragons ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1800,6 +1508,11 @@ public class Scar extends Utils implements ProjectFactory
             pProject.initialize( pFactory );
             return pProject;
         }
+
+        public Set<Project> getAllProjects()
+        {
+            return new HashSet<Project>( mProjectByName.values() );
+        }
     }
 
     protected Runnable createRunnableFor( String pMethodName )
@@ -1860,7 +1573,7 @@ public class Scar extends Utils implements ProjectFactory
     protected void createLaunchProject()
             throws IOException
     {
-        mLaunchProject = project( new File( System.getProperty("user.dir") ), mArgs.get( "file", "." ) );
+        mLaunchProject = project( new File( System.getProperty( "user.dir" ) ), mArgs.get( "file", "." ) );
     }
 
     protected int run()

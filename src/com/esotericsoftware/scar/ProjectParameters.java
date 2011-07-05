@@ -11,7 +11,7 @@ import com.esotericsoftware.wildcard.*;
 import static com.esotericsoftware.scar.support.Parameter.*;
 
 @SuppressWarnings({"UnusedDeclaration"})
-public class ProjectParameters
+public class ProjectParameters extends Util
 {
     public static final Parameter NAME = def( "name", Form.STRING, "The name of the project. Used to name the JAR.", //
                                               "Default:\n" + //
@@ -23,31 +23,31 @@ public class ProjectParameters
 
     public static final Parameter VERSION = def( "version", Form.STRING, "The version of the project. If available, used to name the JAR." );
 
-    public static final Parameter RESOURCES = def( "resources", Form.PATHS, "Wildcard patterns for the files to include in the JAR.", //
+    public static final Parameter RESOURCES = def( "resources", Form.PATHS, "Wildcard patterns for the file(s) to include in the JAR.", //
                                                    "Default: 'resources' or 'src/main/resources'." );
 
-    public static final Parameter DIST = def( "dist", Form.PATHS, "Wildcard patterns for the files to include in the distribution, outside the JAR.", //
+    public static final Parameter DIST = def( "dist", Form.PATHS, "Wildcard patterns for the file(s) to include in the distribution, outside the JAR.", //
                                               "Default: 'dist'." );
 
-    public static final Parameter SOURCE = def( "source", Form.PATHS, "Wildcard patterns for the Java files to compile.", //
+    public static final Parameter SOURCE = def( "source", Form.PATHS, "Wildcard patterns for the Java file(s) to compile.", //
                                                 "Default: 'src|**/*.java' or 'src/main/java|**/*.java'." );
 
-    public static final Parameter CLASSPATH = def( "classpath", Form.PATHS, "Wildcard patterns for the files to include on the classpath.", //
+    public static final Parameter CLASSPATH = def( "classpath", Form.PATHS, "Wildcard patterns for the file(s) to include on the classpath.", //
                                                    "Default: 'lib|**/*.jar'." );
 
-    public static final Parameter DEPENDENCIES = def( "dependencies", Form.STRING_LIST, "Relative or absolute paths to dependency project directories or YAML files." );
+    public static final Parameter DEPENDENCIES = def( "dependencies", Form.STRING_LIST, "Relative or absolute path(s) to dependency project directories or YAML files." );
 
-    public static final Parameter INCLUDE = def( "include", Form.STRING_LIST, "Relative or absolute paths to project files to inherit properties from." );
+    public static final Parameter INCLUDE = def( "include", Form.STRING_LIST, "Relative or absolute path(s) to project files to inherit properties from." );
 
     public static final Parameter MAIN = def( "main", Form.STRING, "Name of the main class." );
 
     protected final String mName;
-    protected final File mDirectory;
+    protected final File mCanonicalProjectDir;
     protected final Map<Object, Object> mData = new HashMap<Object, Object>();
 
-    public ProjectParameters( String pName, File pDirectory, Map<Object, Object> pData )
+    public ProjectParameters( String pName, File pCanonicalProjectDir, Map<Object, Object> pData )
     {
-        mDirectory = pDirectory;
+        mCanonicalProjectDir = pCanonicalProjectDir;
         if ( pData != null )
         {
             for ( Object key : pData.keySet() )
@@ -89,9 +89,9 @@ public class ProjectParameters
         return mData.keySet().toArray();
     }
 
-    public synchronized File getDirectory()
+    public synchronized File getCanonicalProjectDir()
     {
-        return mDirectory;
+        return mCanonicalProjectDir;
     }
 
     public synchronized String getName()
@@ -350,11 +350,11 @@ public class ProjectParameters
         {
             return path;
         }
-        return new File( getDirectory(), path ).getAbsolutePath();
+        return new File( getCanonicalProjectDir(), path ).getAbsolutePath();
     }
 
     /**
-     * Replaces property names surrounded by curly braces with the value from this project.
+     * Replaces property names surrounded by dollar-signs ('$') with the value from this project.
      */
     public String format( String text )
     {
