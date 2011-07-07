@@ -5,12 +5,9 @@ import java.net.*;
 import java.nio.channels.*;
 import java.util.*;
 import java.util.regex.*;
-
 import javax.tools.*;
 
 import com.esotericsoftware.utils.*;
-
-import static com.esotericsoftware.minlog.Log.*;
 
 public class Utils extends Util
 {
@@ -38,16 +35,6 @@ public class Utils extends Util
     static public final String JAVA_HOME = System.getProperty( "java.home" );
 
     /**
-     * True if running on a Mac OS.
-     */
-    static public final boolean isMac = System.getProperty( "os.name" ).toLowerCase().contains( "mac os x" );
-
-    /**
-     * True if running on a Windows OS.
-     */
-    static public final boolean isWindows = System.getProperty( "os.name" ).toLowerCase().contains( "windows" );
-
-    /**
      * Returns the full path for the specified file name in the current working directory, the {@link #SCAR_HOME}, and the bin
      * directory of {@link #JAVA_HOME}.
      */
@@ -59,10 +46,7 @@ public class Utils extends Util
         }
 
         String foundFile = lowLevelResolve( fileName );
-        if ( TRACE )
-        {
-            trace( "scar", "Path \"" + fileName + "\" resolved to: " + foundFile );
-        }
+        LOGGER.trace.log( "Path \"", fileName, "\" resolved to: ", foundFile );
         return foundFile;
     }
 
@@ -89,10 +73,7 @@ public class Utils extends Util
      */
     static public String canonical( String path )
     {
-        if ( path == null )
-        {
-            throw new IllegalArgumentException( "path cannot be null." );
-        }
+        path = assertNotEmpty( "path", path );
 
         File file = new File( path );
         try
@@ -128,49 +109,13 @@ public class Utils extends Util
     }
 
     /**
-     * Deletes a file or directory and all files and subdirecties under it.
-     */
-    static public boolean delete( String fileName )
-    {
-        if ( fileName == null )
-        {
-            throw new IllegalArgumentException( "fileName cannot be null." );
-        }
-
-        File file = new File( fileName );
-        return !file.exists() || delete( file );
-    }
-
-    static public boolean delete( File file )
-    {
-        if ( file.isDirectory() )
-        {
-            File[] files = file.listFiles();
-            for ( File aFile : files )
-            {
-                delete( aFile );
-            }
-        }
-        if ( TRACE )
-        {
-            trace( "scar", "Deleting file: " + file );
-        }
-        return file.delete();
-    }
-
-    /**
      * Creates the directories in the specified path.
      */
     static public String mkdir( String path )
     {
-        if ( path == null )
+        if ( new File( path = assertNotEmpty( "path", path ) ).mkdirs() )
         {
-            throw new IllegalArgumentException( "path cannot be null." );
-        }
-
-        if ( new File( path ).mkdirs() && TRACE )
-        {
-            trace( "scar", "Created directory: " + path );
+            LOGGER.trace.log( "Created directory: ", path );
         }
         return path;
     }
@@ -180,12 +125,7 @@ public class Utils extends Util
      */
     static public boolean fileExists( String path )
     {
-        if ( path == null )
-        {
-            throw new IllegalArgumentException( "path cannot be null." );
-        }
-
-        return new File( path ).exists();
+        return new File( assertNotEmpty( "path", path ) ).exists();
     }
 
     /**
@@ -194,15 +134,9 @@ public class Utils extends Util
     static public void copyStream( InputStream input, OutputStream output )
             throws IOException
     {
-        if ( input == null )
-        {
-            throw new IllegalArgumentException( "input cannot be null." );
-        }
-        if ( output == null )
-        {
-            throw new IllegalArgumentException( "output cannot be null." );
-        }
-
+        assertNotNull( "input", input );
+        assertNotNull( "output", output );
+        Closeable zCloseable = output;
         try
         {
             byte[] buffer = new byte[4096];
@@ -215,23 +149,13 @@ public class Utils extends Util
                 }
                 output.write( buffer, 0, length );
             }
+            zCloseable = null;
+            output.close();
         }
         finally
         {
-            try
-            {
-                output.close();
-            }
-            catch ( Exception ignored )
-            {
-            }
-            try
-            {
-                input.close();
-            }
-            catch ( Exception ignored )
-            {
-            }
+            dispose( zCloseable );
+            dispose( input );
         }
     }
 
@@ -241,50 +165,25 @@ public class Utils extends Util
     static public String copyFile( String in, String out )
             throws IOException
     {
-        if ( in == null )
-        {
-            throw new IllegalArgumentException( "in cannot be null." );
-        }
-        if ( out == null )
-        {
-            throw new IllegalArgumentException( "out cannot be null." );
-        }
-
-        if ( TRACE )
-        {
-            trace( "scar", "Copying file: " + in + " -> " + out );
-        }
+        assertNotNull( "in", in );
+        assertNotNull( "out", out );
+        LOGGER.trace.log( "Copying file: ", in, " -> ", out );
 
         FileChannel sourceChannel = null;
         FileChannel destinationChannel = null;
+        Closeable zCloseable = null;
         try
         {
             sourceChannel = new FileInputStream( in ).getChannel();
-            destinationChannel = new FileOutputStream( out ).getChannel();
+            zCloseable = (destinationChannel = new FileOutputStream( out ).getChannel());
             sourceChannel.transferTo( 0, sourceChannel.size(), destinationChannel );
+            zCloseable = null;
+            destinationChannel.close();
         }
         finally
         {
-            try
-            {
-                if ( sourceChannel != null )
-                {
-                    sourceChannel.close();
-                }
-            }
-            catch ( Exception ignored )
-            {
-            }
-            try
-            {
-                if ( destinationChannel != null )
-                {
-                    destinationChannel.close();
-                }
-            }
-            catch ( Exception ignored )
-            {
-            }
+            dispose( zCloseable );
+            dispose( sourceChannel );
         }
         return out;
     }
@@ -295,15 +194,8 @@ public class Utils extends Util
     static public String moveFile( String in, String out )
             throws IOException
     {
-        if ( in == null )
-        {
-            throw new IllegalArgumentException( "in cannot be null." );
-        }
-        if ( out == null )
-        {
-            throw new IllegalArgumentException( "out cannot be null." );
-        }
-
+        assertNotNull( "in", in );
+        assertNotNull( "out", out );
         copyFile( in, out );
         delete( in );
         return out;
@@ -332,13 +224,7 @@ public class Utils extends Util
         }
         finally
         {
-            try
-            {
-                reader.close();
-            }
-            catch ( Exception ignored )
-            {
-            }
+            dispose( reader );
         }
         return stringBuffer.toString();
     }
@@ -364,17 +250,9 @@ public class Utils extends Util
      */
     static public String fileExtension( String file )
     {
-        if ( file == null )
-        {
-            throw new IllegalArgumentException( "fileName cannot be null." );
-        }
-
+        file = assertNotEmpty( "file", file );
         int commaIndex = file.indexOf( '.' );
-        if ( commaIndex == -1 )
-        {
-            return "";
-        }
-        return file.substring( commaIndex + 1 );
+        return (commaIndex == -1) ? "" : file.substring( commaIndex + 1 );
     }
 
     /**
@@ -382,11 +260,7 @@ public class Utils extends Util
      */
     static public String fileWithoutExtension( String file )
     {
-        if ( file == null )
-        {
-            throw new IllegalArgumentException( "fileName cannot be null." );
-        }
-
+        file = assertNotEmpty( "file", file );
         int commaIndex = file.indexOf( '.' );
         if ( commaIndex == -1 )
         {
@@ -411,16 +285,9 @@ public class Utils extends Util
      */
     static public String substring( String text, int start, int end )
     {
-        if ( text == null )
-        {
-            throw new IllegalArgumentException( "text cannot be null." );
-        }
-
-        if ( end >= 0 )
-        {
-            return text.substring( start, end );
-        }
-        return text.substring( start, text.length() + end );
+        assertNotNull( "text", text );
+        assertNotNegative( "start", start );
+        return text.substring( start, (end >= 0) ? end : text.length() + end );
     }
 
     /**
@@ -457,16 +324,9 @@ public class Utils extends Util
     static public void shell( String... command )
             throws IOException
     {
-        if ( command == null )
-        {
-            throw new IllegalArgumentException( "command cannot be null." );
-        }
-        if ( command.length == 0 )
-        {
-            throw new IllegalArgumentException( "command cannot be empty." );
-        }
+        assertNotEmpty( "command", command );
 
-        String originalCommand = command[0];
+        String originalCommand = (command[0] = assertNotEmpty( "shell Command", command[0] ));
         command[0] = resolvePath( command[0] );
         if ( !fileExists( command[0] ) && isWindows )
         {
@@ -477,7 +337,7 @@ public class Utils extends Util
             }
         }
 
-        if ( TRACE )
+        if ( LOGGER.trace.isEnabled() )
         {
             StringBuilder buffer = new StringBuilder( 256 );
             for ( String text : command )
@@ -485,7 +345,7 @@ public class Utils extends Util
                 buffer.append( text );
                 buffer.append( ' ' );
             }
-            trace( "scar", "Executing command: " + buffer );
+            LOGGER.trace.log( "Executing command: ", buffer );
         }
 
         Process process = new ProcessBuilder( command ).start();
@@ -534,39 +394,18 @@ public class Utils extends Util
     static public String keystore( String keystoreFile, String alias, String password, String company, String title )
             throws IOException
     {
-        if ( keystoreFile == null )
-        {
-            throw new IllegalArgumentException( "keystoreFile cannot be null." );
-        }
-        if ( fileExists( keystoreFile ) )
+        if ( fileExists( keystoreFile = assertNotEmpty( "keystoreFile", keystoreFile ) ) )
         {
             return keystoreFile;
         }
-        if ( alias == null )
-        {
-            throw new IllegalArgumentException( "alias cannot be null." );
-        }
-        if ( password == null )
-        {
-            throw new IllegalArgumentException( "password cannot be null." );
-        }
-        if ( password.length() < 6 )
+        alias = assertNotEmpty( "alias", alias );
+        company = assertNotEmpty( "company", company );
+        title = assertNotEmpty( "title", title );
+        if ( (password = assertNotEmpty( "password", password )).length() < 6 )
         {
             throw new IllegalArgumentException( "password must be 6 or more characters." );
         }
-        if ( company == null )
-        {
-            throw new IllegalArgumentException( "company cannot be null." );
-        }
-        if ( title == null )
-        {
-            throw new IllegalArgumentException( "title cannot be null." );
-        }
-
-        if ( DEBUG )
-        {
-            debug( "scar", "Creating keystore (" + alias + ":" + password + ", " + company + ", " + title + "): " + keystoreFile );
-        }
+        LOGGER.debug.log( "Creating keystore (", alias, ":", password, ", ", company, ", ", title, "): ", keystoreFile );
 
         File file = new File( keystoreFile );
         file.delete();
@@ -627,13 +466,13 @@ public class Utils extends Util
         DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<JavaFileObject>();
         //noinspection unchecked
         compiler.getTask( null, new ForwardingJavaFileManager( compiler.getStandardFileManager( null, null, null ) )
-                          {
-                              @Override
-                              public JavaFileObject getJavaFileForOutput( Location location, String className, JavaFileObject.Kind kind, FileObject sibling )
-                              {
-                                  return javaObject;
-                              }
-                          }, diagnostics, null, null, Arrays.asList( javaObject ) ).call();
+        {
+            @Override
+            public JavaFileObject getJavaFileForOutput( Location location, String className, JavaFileObject.Kind kind, FileObject sibling )
+            {
+                return javaObject;
+            }
+        }, diagnostics, null, null, Arrays.asList( javaObject ) ).call();
 
         if ( !diagnostics.getDiagnostics().isEmpty() )
         {

@@ -3,6 +3,8 @@ package com.esotericsoftware.utils;
 import java.io.*;
 import java.nio.channels.*;
 
+import org.litesoft.logger.*;
+
 @SuppressWarnings({"UnusedDeclaration"})
 public class Util
 {
@@ -13,7 +15,19 @@ public class Util
         PROGRESS_LINE_SINK.addLine( pMessage );
     }
 
+    /**
+     * True if running on a Mac OS.
+     */
+    public static final boolean isMac = System.getProperty( "os.name" ).toLowerCase().contains( "mac os x" );
+
+    /**
+     * True if running on a Windows OS.
+     */
+    public static final boolean isWindows = System.getProperty( "os.name" ).toLowerCase().contains( "windows" );
+
     public static final String[] EMPTY_STRING_ARRAY = new String[0];
+
+    public static final Logger LOGGER = LoggerFactory.getLogger( Util.class );
 
     public static String noEmpty( String pToTest )
     {
@@ -45,9 +59,27 @@ public class Util
     {
         if ( (pToTest = assertNotNull( pWhat, pToTest ).trim()).length() == 0 )
         {
-            throw new IllegalArgumentException( pWhat + " cannot be empty/black." );
+            throw new IllegalArgumentException( pWhat + " cannot be empty/blank." );
         }
         return pToTest;
+    }
+
+    public static void assertNotEmpty( String pWhat, String[] pToTest )
+    {
+        assertNotNull( pWhat, pToTest );
+        if ( pToTest.length == 0 )
+        {
+            throw new IllegalArgumentException( pWhat + " cannot be empty." );
+        }
+    }
+
+    public static int assertNotNegative( String pWhat, int pInt )
+    {
+        if ( pInt < 0 )
+        {
+            throw new IllegalArgumentException( pWhat + " was " + pInt + ", cannot be negative." );
+        }
+        return pInt;
     }
 
     public static void assertPairedEntries( String pWhat, Object[] pArray )
@@ -97,6 +129,7 @@ public class Util
      */
     public static boolean delete( File pFile )
     {
+        assertNotNull( "File", pFile );
         if ( pFile.isDirectory() )
         {
             File[] zFiles = pFile.listFiles();
@@ -108,6 +141,32 @@ public class Util
                 }
             }
         }
+        LOGGER.trace.log( "Deleting file: " , pFile );
         return pFile.delete();
+    }
+
+    /**
+     * Deletes a file or directory and all files and subdirecties under it.
+     */
+    public static boolean delete( String fileName )
+    {
+        return delete( new File( assertNotEmpty( "fileName", fileName ) ) );
+    }
+
+    public static Closeable dispose( Closeable pCloseable )
+    {
+        if ( pCloseable != null )
+        {
+            try
+            {
+                pCloseable.close();
+            }
+            catch ( IOException ignore )
+            {
+                // Whatever!
+            }
+            pCloseable = null;
+        }
+        return pCloseable;
     }
 }
