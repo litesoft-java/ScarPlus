@@ -5,7 +5,7 @@ import java.net.*;
 
 import org.apache.commons.net.ftp.*;
 
-import com.esotericsoftware.wildcard.*;
+import com.esotericsoftware.filesystem.*;
 
 import static com.esotericsoftware.minlog.Log.*;
 

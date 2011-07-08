@@ -12,9 +12,9 @@ import org.litesoft.logger.*;
 import org.litesoft.logger.nonpublic.*;
 
 import SevenZip.*;
+import com.esotericsoftware.filesystem.*;
 import com.esotericsoftware.scar.support.*;
 import com.esotericsoftware.utils.*;
-import com.esotericsoftware.wildcard.*;
 import com.esotericsoftware.yamlbeans.*;
 import com.esotericsoftware.yamlbeans.parser.*;
 import com.esotericsoftware.yamlbeans.tokenizer.*;
@@ -1306,7 +1306,7 @@ public class Scar extends Utils implements ProjectFactory
      * <p/>
      * Imports statements can be used at the start of the code. These imports are automatically used:<br>
      * import com.esotericsoftware.scar.Scar;<br>
-     * import com.esotericsoftware.wildcard.Paths;<br>
+     * import com.esotericsoftware.filesystem.Paths;<br>
      * import com.esotericsoftware.minlog.Log;<br>
      * import static com.esotericsoftware.scar.Scar.*;<br>
      * import static com.esotericsoftware.minlog.Log.*;<br>
@@ -1327,7 +1327,7 @@ public class Scar extends Utils implements ProjectFactory
             StringBuilder classBuffer = new StringBuilder( 2048 );
             classBuffer.append( "import com.esotericsoftware.scar.*;\n" );
             classBuffer.append( "import com.esotericsoftware.minlog.Log;\n" );
-            classBuffer.append( "import com.esotericsoftware.wildcard.Paths;\n" );
+            classBuffer.append( "import com.esotericsoftware.filesystem.Paths;\n" );
             classBuffer.append( "import static com.esotericsoftware.scar.Scar.*;\n" );
             classBuffer.append( "import static com.esotericsoftware.minlog.Log.*;\n" );
             classBuffer.append( "public class Generated {\n" );

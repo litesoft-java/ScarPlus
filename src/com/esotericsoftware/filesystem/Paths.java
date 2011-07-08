@@ -1,10 +1,11 @@
-package com.esotericsoftware.wildcard;
+package com.esotericsoftware.filesystem;
 
 import java.io.*;
 import java.util.*;
 import java.util.zip.*;
 
 import com.esotericsoftware.utils.*;
+import com.esotericsoftware.wildcard.*;
 
 /**
  * Collects filesystem paths using wildcards, preserving the directory structure. Copies, deletes, and zips paths.
@@ -16,7 +17,7 @@ public class Paths implements Iterable<String>
         @Override
         public int compare( FilePath s1, FilePath s2 )
         {
-            return s2.absolute().length() - s1.absolute().length();
+            return s2.canonical().length() - s1.canonical().length();
         }
     };
 
@@ -38,14 +39,6 @@ public class Paths implements Iterable<String>
      * Creates a Paths object and calls {@link #glob(String, String[])} with the specified arguments.
      */
     public Paths( String dir, String... patterns )
-    {
-        glob( dir, patterns );
-    }
-
-    /**
-     * Creates a Paths object and calls {@link #glob(String, List)} with the specified arguments.
-     */
-    public Paths( String dir, List<String> patterns )
     {
         glob( dir, patterns );
     }
@@ -312,7 +305,7 @@ public class Paths implements Iterable<String>
             @Override
             public String next()
             {
-                return iter.next().absolute();
+                return iter.next().canonical();
             }
 
             @Override
@@ -513,7 +506,7 @@ public class Paths implements Iterable<String>
         }
         List<String> patterns = Arrays.asList( args );
         patterns = patterns.subList( 1, patterns.size() );
-        for ( String path : new Paths( args[0], patterns ) )
+        for ( String path : new Paths( args[0], patterns.toArray( new String[patterns.size()] ) ) )
         {
             System.out.println( path );
         }

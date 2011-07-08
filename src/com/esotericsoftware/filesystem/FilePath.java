@@ -1,4 +1,4 @@
-package com.esotericsoftware.wildcard;
+package com.esotericsoftware.filesystem;
 
 import java.io.*;
 
@@ -8,11 +8,11 @@ public final class FilePath
 {
     private final File mSomeParentDir;
     private final String mFileSubPath;
-    private final File mAbsolutePath;
+    private final File mCanonicalPath;
 
     public FilePath( File pSomeParentDir, String pFileSubPath )
     {
-        mAbsolutePath = Utils.canonical( new File( mSomeParentDir = pSomeParentDir, mFileSubPath = pFileSubPath ) );
+        mCanonicalPath = Utils.canonical( new File( mSomeParentDir = pSomeParentDir, mFileSubPath = pFileSubPath ) );
     }
 
     public File getSomeParentDir()
@@ -25,19 +25,19 @@ public final class FilePath
         return mFileSubPath;
     }
 
-    public String absolute()
+    public String canonical()
     {
-        return mAbsolutePath.getPath();
+        return mCanonicalPath.getPath();
     }
 
     public File file()
     {
-        return mAbsolutePath;
+        return mCanonicalPath;
     }
 
     public boolean equals( FilePath them )
     {
-        return this == them || ((them != null) && this.absolute().equals( them.absolute() ));
+        return this == them || ((them != null) && this.canonical().equals( them.canonical() ));
     }
 
     public boolean equals( Object obj )
@@ -47,6 +47,6 @@ public final class FilePath
 
     public int hashCode()
     {
-        return absolute().hashCode();
+        return canonical().hashCode();
     }
 }

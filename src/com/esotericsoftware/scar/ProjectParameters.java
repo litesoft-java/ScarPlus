@@ -4,9 +4,9 @@ import java.io.*;
 import java.util.*;
 import java.util.regex.*;
 
+import com.esotericsoftware.filesystem.*;
 import com.esotericsoftware.scar.support.*;
 import com.esotericsoftware.utils.*;
-import com.esotericsoftware.wildcard.*;
 
 import static com.esotericsoftware.scar.support.Parameter.*;
 
@@ -335,22 +335,21 @@ public class ProjectParameters extends Util
     }
 
     /**
-     * Returns the specified path if it is an absolute path, otherwise returns the path relative to this project's directory.
+     * Returns a canonicalizePath built from the specified path.
+     * If the specified path is a relative path, it is made absolute relative to this project's directory.
      */
     public String path( String path )
     {
         path = format( path );
+        String zSuffix = "";
         int pipeIndex = path.indexOf( '|' );
         if ( pipeIndex > -1 )
         {
             // Handle wildcard search patterns.
-            return path( path.substring( 0, pipeIndex ) ) + path.substring( pipeIndex );
+            zSuffix = path.substring( pipeIndex );
+            path = path.substring( 0, pipeIndex );
         }
-        if ( new File( path ).isAbsolute() )
-        {
-            return path;
-        }
-        return new File( getCanonicalProjectDir(), path ).getAbsolutePath();
+        return canonicalizePath( getCanonicalProjectDir(), path ).getPath() + zSuffix;
     }
 
     /**

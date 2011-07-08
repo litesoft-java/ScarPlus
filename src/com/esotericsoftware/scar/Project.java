@@ -8,9 +8,9 @@ import javax.tools.*;
 
 import org.litesoft.logger.*;
 
+import com.esotericsoftware.filesystem.*;
 import com.esotericsoftware.scar.support.*;
 import com.esotericsoftware.utils.*;
-import com.esotericsoftware.wildcard.*;
 
 /**
  * Generic Data structure that contains information needed to perform tasks.

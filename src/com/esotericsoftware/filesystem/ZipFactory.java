@@ -1,4 +1,4 @@
-package com.esotericsoftware.wildcard;
+package com.esotericsoftware.filesystem;
 
 import java.io.*;
 import java.util.*;

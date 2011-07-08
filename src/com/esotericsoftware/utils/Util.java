@@ -184,6 +184,16 @@ public class Util
         return pCloseable;
     }
 
+    public static File canonicalizePath( String path )
+    {
+        return canonicalizePath( CANONICAL_USER_DIR, path );
+    }
+
+    public static File canonicalizePath( File pCanonicalParentDirIfPathRelative, String path )
+    {
+        return null; // todo: ...
+    }
+
     public static boolean isAbsolute( File pFile )
     {
         return false; // todo: ...
