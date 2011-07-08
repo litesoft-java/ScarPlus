@@ -15,6 +15,20 @@ public class Util
         PROGRESS_LINE_SINK.addLine( pMessage );
     }
 
+    public static final File CANONICAL_USER_DIR;
+
+    static
+    {
+        try
+        {
+            CANONICAL_USER_DIR = new File( System.getProperty( "user.dir" ) ).getCanonicalFile();
+        }
+        catch ( IOException e )
+        {
+            throw new Error( e );
+        }
+    }
+
     /**
      * True if running on a Mac OS.
      */
@@ -168,5 +182,10 @@ public class Util
             pCloseable = null;
         }
         return pCloseable;
+    }
+
+    public static boolean isAbsolute( File pFile )
+    {
+        return false; // todo: ...
     }
 }

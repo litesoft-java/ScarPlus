@@ -57,19 +57,19 @@ public class Scar extends Utils implements ProjectFactory
     /**
      * Loads the specified project with default values and loads any other projects needed for the "include" property.
      *
-     * @param pCurrentDirectory
-     * @param pPath             Path to a YAML project file, or a directory containing a "project.yaml" file.
+     * @param pCanonicalCurrentDirectory
+     * @param pPath                      Path to a YAML project file, or a directory containing a "project.yaml" file.
      */
     @Override
-    public Project project( File pCurrentDirectory, String pPath )
+    public Project project( File pCanonicalCurrentDirectory, String pPath )
             throws IOException
     {
-        Util.assertNotNull( "CurrentDirectory", pCurrentDirectory );
+        Util.assertNotNull( "CurrentDirectory", pCanonicalCurrentDirectory );
         pPath = Util.assertNotEmpty( "Path", pPath );
         File zFile = new File( pPath );
         if ( !zFile.isAbsolute() )
         {
-            zFile = new File( pCurrentDirectory, pPath );
+            zFile = new File( pCanonicalCurrentDirectory, pPath );
         }
         zFile = zFile.getCanonicalFile();
 
@@ -1573,7 +1573,7 @@ public class Scar extends Utils implements ProjectFactory
     protected void createLaunchProject()
             throws IOException
     {
-        mLaunchProject = project( new File( System.getProperty( "user.dir" ) ), mArgs.get( "file", "." ) );
+        mLaunchProject = project( CANONICAL_USER_DIR, mArgs.get( "file", "." ) );
     }
 
     protected int run()
