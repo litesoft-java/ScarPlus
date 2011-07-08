@@ -155,7 +155,7 @@ public class Util
                 }
             }
         }
-        LOGGER.trace.log( "Deleting file: " , pFile );
+        LOGGER.trace.log( "Deleting file: ", pFile );
         return pFile.delete();
     }
 
@@ -184,6 +184,73 @@ public class Util
         return pCloseable;
     }
 
+    public static boolean isAbsolutePath( String path )
+    {
+        return isAbsoluteNormalizedPath( normalizePath( path ) );
+    }
+
+    public static String normalizePath( String path )
+    {
+        if ( path != null )
+        {
+            path = path.trim();
+            String zPrefix = "";
+            if ( isWindows )
+            {
+                if ( path.startsWith( "\\\\" ) )
+                {
+                    zPrefix = "\\\\";
+                    path = path.substring( 2 ).trim();
+                }
+                else if ( (path.length() > 1) && (path.charAt( 1 ) == ':') ) // Handle Drive Letter
+                {
+                    zPrefix = path.substring( 0, 2 ).toLowerCase();
+                    path = path.substring( 2 ).trim();
+                }
+            }
+            path = path.trim();
+            if ( '/' != File.separatorChar )
+            {
+                path = path.replace( '/', File.separatorChar );
+            }
+            int at = path.indexOf( File.separatorChar );
+            if ( at != -1 )
+            {
+                // remove white space around file Parts
+                StringBuilder sb = new StringBuilder( path.length() );
+                int from = 0;
+                do
+                {
+                    sb.append( path.substring( from, at ).trim() ).append( File.separatorChar );
+                    from = at + 1;
+                }
+                while ( -1 != (at = path.indexOf( File.separatorChar, from )) );
+                path = sb.append( path.substring( from ).trim() ).toString();
+
+                // Clean up silly middle nothings
+                path = replace( path, File.separator + "." + File.separator, File.separator ); // "/./"
+                path = replace( path, File.separator + File.separator, File.separator ); // "//"
+
+                // Remove ending "/."
+                while ( path.endsWith( File.separator + "." ) )
+                {
+                    path = path.substring( 0, path.length() - 2 );
+                }
+                // Remove leading "./"
+                while ( path.startsWith( "." + File.separator ) )
+                {
+                    path = path.substring( 2 );
+                }
+            }
+            if ( path.length() == 0 )
+            {
+                path = ".";
+            }
+            path = zPrefix + path;
+        }
+        return path;
+    }
+
     public static File canonicalizePath( String path )
     {
         return canonicalizePath( CANONICAL_USER_DIR, path );
@@ -191,11 +258,28 @@ public class Util
 
     public static File canonicalizePath( File pCanonicalParentDirIfPathRelative, String path )
     {
-        return null; // todo: ...
+        if ( null == (path = normalizePath( path )) )
+        {
+            return null;
+        }
+        if ( isWindows && (path.length() > 1) && (path.charAt( 1 ) == ':') ) // Handle Drive Letter
+        {
+            if ( pCanonicalParentDirIfPathRelative.getPath().substring( 0, 2 ).equalsIgnoreCase( path.substring( 0, 2 ) ) )
+            {
+                path = path.substring( 2 );
+            }
+        }
+        if ( !isAbsoluteNormalizedPath( path ) )
+        {
+            path = normalizePath( pCanonicalParentDirIfPathRelative.getPath() + File.separator + path );
+        }
+        // canonicalize
+        return null; // todo...
     }
 
-    public static boolean isAbsolute( File pFile )
+    private static boolean isAbsoluteNormalizedPath( String path )
     {
+
         return false; // todo: ...
     }
 }
