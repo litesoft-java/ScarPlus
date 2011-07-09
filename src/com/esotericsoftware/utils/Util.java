@@ -186,7 +186,7 @@ public class Util
 
     public static boolean isAbsolutePath( String path )
     {
-        return isAbsoluteNormalizedPath( normalizePath( path ) );
+        return isAbsoluteNormalizedPath( CANONICAL_USER_DIR, normalizePath( path ) );
     }
 
     public static String normalizePath( String path )
@@ -269,7 +269,7 @@ public class Util
                 path = path.substring( 2 );
             }
         }
-        if ( !isAbsoluteNormalizedPath( path ) )
+        if ( !isAbsoluteNormalizedPath( pCanonicalParentDirIfPathRelative, path ) )
         {
             path = normalizePath( pCanonicalParentDirIfPathRelative.getPath() + File.separator + path );
         }
@@ -277,9 +277,18 @@ public class Util
         return null; // todo...
     }
 
-    private static boolean isAbsoluteNormalizedPath( String path )
+    private static boolean isAbsoluteNormalizedPath( File pCanonicalDirForWindowDriveLetterSourceRelativeness, String path )
     {
+        if ( isWindows && (path.length() > 1) && (path.charAt( 1 ) == ':') ) // Handle Drive Letter
+        {
+            if ( !pCanonicalDirForWindowDriveLetterSourceRelativeness.getPath().substring( 0, 2 ).equalsIgnoreCase( path.substring( 0, 2 ) ) )
+            {
+                return true; // Has Drive Letter and it is NOT the same as the 'CanonicalDirForWindowDriveLetterSourceRelativeness'
+            }
+            path = path.substring( 2 );
+        }
+        // todo: ...
 
-        return false; // todo: ...
+        return false;
     }
 }
