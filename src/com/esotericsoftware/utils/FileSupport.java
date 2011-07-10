@@ -1,24 +1,36 @@
 package com.esotericsoftware.utils;
 
+import java.io.*;
+
 import com.esotericsoftware.scar.*;
 
 public class FileSupport
 {
+    public static final String WINDOWS_UNC_PATH_PREFIX = "\\\\";
+
+    public static String getWindowsDriveIndicator( String path )
+    {
+        return ((path.length() > 1) && (path.charAt( 1 ) == ':')) ? path.substring( 0, 2 ).toUpperCase() : "";
+    }
+
+    public static String removeFromFront( String pToRemove, String path )
+    {
+        return (pToRemove.length() == 0) ? path : path.substring( pToRemove.length() );
+    }
+
     public static String normalizePath( IFileSystem pFileSystem, String path )
     {
         path = path.trim();
         String zPrefix = "";
         if ( pFileSystem.isWindows() )
         {
-            if ( path.startsWith( "\\\\" ) )
+            if ( path.startsWith( WINDOWS_UNC_PATH_PREFIX ) )
             {
-                zPrefix = "\\\\";
-                path = path.substring( 2 ).trim();
+                path = removeFromFront( zPrefix = WINDOWS_UNC_PATH_PREFIX, path ).trim();
             }
-            else if ( (path.length() > 1) && (path.charAt( 1 ) == ':') ) // Handle Drive Letter
+            else
             {
-                zPrefix = path.substring( 0, 2 ).toUpperCase();
-                path = path.substring( 2 ).trim();
+                path = removeFromFront( zPrefix = getWindowsDriveIndicator( path ), path ).trim(); // Handle Drive Letter
             }
         }
         path = path.trim();
@@ -94,40 +106,82 @@ public class FileSupport
         return path.substring( 0, pAt + 1 ) + path.substring( zEnd );
     }
 
-    public static boolean isAbsoluteNormalizedPath( IFileSystem pFileSystem, String pCanonicalDirForWindowDriveLetterSourceRelativeness, String path )
+    public static boolean isAbsoluteNormalizedPath( IFileSystem pFileSystem, String pCanonicalParentDirIfPathRelativeForWindowsDriveLetter, String path )
     {
-        if ( hasWindowsDriveLetter( pFileSystem, path ) ) // Handle Drive Letter
+        if ( pFileSystem.isWindows() )
         {
-            if ( !pCanonicalDirForWindowDriveLetterSourceRelativeness.substring( 0, 2 ).equalsIgnoreCase( path.substring( 0, 2 ) ) )
+            if ( path.startsWith( WINDOWS_UNC_PATH_PREFIX ) )
             {
-                return true; // Has Drive Letter and it is NOT the same as the 'CanonicalDirForWindowDriveLetterSourceRelativeness'
+                return true;
             }
-            path = path.substring( 2 );
+            String zDriveIndicator = getWindowsDriveIndicator( path );
+            if ( zDriveIndicator.length() != 0 ) // Handle Drive Letter
+            {
+                if ( !pCanonicalParentDirIfPathRelativeForWindowsDriveLetter.startsWith( zDriveIndicator ) || !pFileSystem.canonicalCurrentPath().startsWith( zDriveIndicator ) )
+                {
+                    return true; // Has Drive Letter and it is NOT the same both the 'CanonicalDirForWindowDriveLetterSourceRelativeness' && pFileSystem.canonicalCurrentPath()
+                }
+                path = removeFromFront( zDriveIndicator, path );
+            }
         }
-        // todo: ...
-
-        return false;
+        return (path.length() > 0) && (path.charAt( 0 ) == pFileSystem.separatorChar());
     }
 
     public static String canonicalizeNormalizedPath( IFileSystem pFileSystem, String pCanonicalParentDirIfPathRelative, String path )
+            throws IOException
     {
-        if ( hasWindowsDriveLetter( pFileSystem, path ) ) // Handle Drive Letter
+        if ( !pFileSystem.isWindows() )
         {
-            if ( pCanonicalParentDirIfPathRelative.substring( 0, 2 ).equalsIgnoreCase( path.substring( 0, 2 ) ) )
+            if ( !isAbsoluteNormalizedPath( pFileSystem, pCanonicalParentDirIfPathRelative, path ) )
             {
-                path = path.substring( 2 );
+                path = normalizePath( pFileSystem, pCanonicalParentDirIfPathRelative + pFileSystem.separatorChar() + path );
             }
+            return canonicalizeAbsoluteNormalizedPath( pFileSystem, path );
         }
-        if ( !isAbsoluteNormalizedPath( pFileSystem, pCanonicalParentDirIfPathRelative, path ) )
+        // Windows!
+        if ( path.startsWith( WINDOWS_UNC_PATH_PREFIX ) )
         {
-            path = normalizePath( pFileSystem, pCanonicalParentDirIfPathRelative + pFileSystem.separatorChar() + path );
+            return canonicalizeAbsoluteNormalizedPath( pFileSystem, path );
         }
-        // canonicalize
-        return null; // todo...
+        String zDriveIndicator = getWindowsDriveIndicator( path );
+        if ( !isAbsoluteNormalizedPath( pFileSystem, pCanonicalParentDirIfPathRelative, path ) ) // Relative!
+        {
+            path = normalizePath( pFileSystem, pCanonicalParentDirIfPathRelative + pFileSystem.separatorChar() + removeFromFront( zDriveIndicator, path ) );
+            return canonicalizeAbsoluteNormalizedPath( pFileSystem, path );
+        }
+        // Absolute
+        if ( zDriveIndicator.length() == 0 ) // to "default" Drive
+        {
+            return canonicalizeAbsoluteNormalizedPath( pFileSystem, path );
+        }
+        // Windows path w/ DriveIndicator which 'might' actually be relative to the given DriveIndicator
+        if ( (path = removeFromFront( zDriveIndicator, path )).length() == 0 ) // Should NOT be possible!
+        {
+            path = ".";
+        }
+        if ( (path.charAt( 0 ) != pFileSystem.separatorChar()) && !path.startsWith( "." ) )
+        {
+            path = "." + pFileSystem.separatorChar() + path;
+        }
+        return canonicalizeAbsoluteNormalizedPath( pFileSystem, zDriveIndicator + path );
     }
 
-    private static boolean hasWindowsDriveLetter( IFileSystem pFileSystem, String path )
+    private static String canonicalizeAbsoluteNormalizedPath( IFileSystem pFileSystem, String path )
+            throws IOException
     {
-        return pFileSystem.isWindows() && (path.length() > 1) && (path.charAt( 1 ) == ':');
+        String origPath = path;
+        if ( !pFileSystem.exists( origPath ) )
+        {
+            String zEnd = "";
+            for ( int at; -1 != (at = path.lastIndexOf( pFileSystem.separatorChar() )); )
+            {
+                zEnd = path.substring( at ) + zEnd;
+                if ( pFileSystem.exists( path = path.substring( 0, at ) ) )
+                {
+                    return pFileSystem.canonicalizeNormalizedExisting( path ) + zEnd;
+                }
+            }
+        }
+        return pFileSystem.canonicalizeNormalizedExisting( origPath );
     }
 }

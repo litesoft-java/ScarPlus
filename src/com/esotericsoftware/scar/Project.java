@@ -117,6 +117,7 @@ public class Project extends ProjectParameters
      * Deletes the "target" directory and all files and directories under it.
      */
     public void clean()
+            throws IOException
     {
         progress( "Clean: " + this );
         new Paths( path( "$target$" ) ).delete();

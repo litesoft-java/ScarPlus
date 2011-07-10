@@ -71,6 +71,7 @@ public class Paths implements Iterable<String>
     /**
      * Calls {@link #glob(String, String...)}.
      */
+    @SuppressWarnings({"UnusedDeclaration"})
     public void glob( String dir, List<String> patterns )
     {
         glob( dir, (patterns == null) ? Util.EMPTY_STRING_ARRAY : patterns.toArray( new String[patterns.size()] ) );

@@ -46,15 +46,21 @@ public class Util
     private static final IFileSystem FILE_SYSTEM = new IFileSystem()
     {
         @Override
+        public boolean isWindows()
+        {
+            return isWindows;
+        }
+
+        @Override
         public char separatorChar()
         {
             return File.separatorChar;
         }
 
         @Override
-        public boolean isWindows()
+        public String canonicalCurrentPath()
         {
-            return isWindows;
+            return CANONICAL_USER_DIR.getPath();
         }
 
         @Override
@@ -230,11 +236,13 @@ public class Util
     }
 
     public static File canonicalizePath( String path )
+            throws IOException
     {
         return canonicalizePath( CANONICAL_USER_DIR, path );
     }
 
     public static File canonicalizePath( File pCanonicalParentDirIfPathRelative, String path )
+            throws IOException
     {
         assertNotNull( "path", path );
         return new File( FileSupport.canonicalizeNormalizedPath( FILE_SYSTEM, pCanonicalParentDirIfPathRelative.getPath(), FileSupport.normalizePath( FILE_SYSTEM, path ) ) );

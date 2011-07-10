@@ -115,21 +115,25 @@ public class ProjectParameters extends Util
     }
 
     public Paths getResources()
+            throws IOException
     {
         return getPaths( RESOURCES.getName() );
     }
 
     public Paths getDist()
+            throws IOException
     {
         return getPaths( DIST.getName() );
     }
 
     public Paths getSource()
+            throws IOException
     {
         return getPaths( SOURCE.getName() );
     }
 
     public Paths getClasspath()
+            throws IOException
     {
         return getPaths( CLASSPATH.getName() );
     }
@@ -325,6 +329,7 @@ public class ProjectParameters extends Util
      * Uses the strings under the specified key to {@link Paths#glob(String, String...) glob} paths.
      */
     public Paths getPaths( String key )
+            throws IOException
     {
         Paths paths = new Paths();
         for ( String dirPattern : getList( key ) )
@@ -339,6 +344,7 @@ public class ProjectParameters extends Util
      * If the specified path is a relative path, it is made absolute relative to this project's directory.
      */
     public String path( String path )
+            throws IOException
     {
         path = format( path );
         String zSuffix = "";
