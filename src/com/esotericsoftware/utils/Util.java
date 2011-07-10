@@ -43,6 +43,39 @@ public class Util
 
     public static final Logger LOGGER = LoggerFactory.getLogger( Util.class );
 
+    private static final IFileSystem FILE_SYSTEM = new IFileSystem()
+    {
+        @Override
+        public char separatorChar()
+        {
+            return File.separatorChar;
+        }
+
+        @Override
+        public boolean isWindows()
+        {
+            return isWindows;
+        }
+
+        @Override
+        public boolean exists( String path )
+        {
+            return new File( path ).exists();
+        }
+
+        @Override
+        public String canonicalizeNormalizedExisting( String path )
+                throws IOException
+        {
+            File zFile = new File( path );
+            if ( zFile.exists() )
+            {
+                return zFile.getCanonicalPath();
+            }
+            throw new FileNotFoundException( path );
+        }
+    };
+
     public static String noEmpty( String pToTest )
     {
         if ( pToTest != null )
@@ -186,69 +219,14 @@ public class Util
 
     public static boolean isAbsolutePath( String path )
     {
-        return isAbsoluteNormalizedPath( CANONICAL_USER_DIR, normalizePath( path ) );
+        assertNotNull( "path", path );
+        return FileSupport.isAbsoluteNormalizedPath( FILE_SYSTEM, CANONICAL_USER_DIR.getPath(), FileSupport.normalizePath( FILE_SYSTEM, path ) );
     }
 
     public static String normalizePath( String path )
     {
-        if ( path != null )
-        {
-            path = path.trim();
-            String zPrefix = "";
-            if ( isWindows )
-            {
-                if ( path.startsWith( "\\\\" ) )
-                {
-                    zPrefix = "\\\\";
-                    path = path.substring( 2 ).trim();
-                }
-                else if ( (path.length() > 1) && (path.charAt( 1 ) == ':') ) // Handle Drive Letter
-                {
-                    zPrefix = path.substring( 0, 2 ).toLowerCase();
-                    path = path.substring( 2 ).trim();
-                }
-            }
-            path = path.trim();
-            if ( '/' != File.separatorChar )
-            {
-                path = path.replace( '/', File.separatorChar );
-            }
-            int at = path.indexOf( File.separatorChar );
-            if ( at != -1 )
-            {
-                // remove white space around file Parts
-                StringBuilder sb = new StringBuilder( path.length() );
-                int from = 0;
-                do
-                {
-                    sb.append( path.substring( from, at ).trim() ).append( File.separatorChar );
-                    from = at + 1;
-                }
-                while ( -1 != (at = path.indexOf( File.separatorChar, from )) );
-                path = sb.append( path.substring( from ).trim() ).toString();
-
-                // Clean up silly middle nothings
-                path = replace( path, File.separator + "." + File.separator, File.separator ); // "/./"
-                path = replace( path, File.separator + File.separator, File.separator ); // "//"
-
-                // Remove ending "/."
-                while ( path.endsWith( File.separator + "." ) )
-                {
-                    path = path.substring( 0, path.length() - 2 );
-                }
-                // Remove leading "./"
-                while ( path.startsWith( "." + File.separator ) )
-                {
-                    path = path.substring( 2 );
-                }
-            }
-            if ( path.length() == 0 )
-            {
-                path = ".";
-            }
-            path = zPrefix + path;
-        }
-        return path;
+        assertNotNull( "path", path );
+        return FileSupport.normalizePath( FILE_SYSTEM, path );
     }
 
     public static File canonicalizePath( String path )
@@ -258,37 +236,7 @@ public class Util
 
     public static File canonicalizePath( File pCanonicalParentDirIfPathRelative, String path )
     {
-        if ( null == (path = normalizePath( path )) )
-        {
-            return null;
-        }
-        if ( isWindows && (path.length() > 1) && (path.charAt( 1 ) == ':') ) // Handle Drive Letter
-        {
-            if ( pCanonicalParentDirIfPathRelative.getPath().substring( 0, 2 ).equalsIgnoreCase( path.substring( 0, 2 ) ) )
-            {
-                path = path.substring( 2 );
-            }
-        }
-        if ( !isAbsoluteNormalizedPath( pCanonicalParentDirIfPathRelative, path ) )
-        {
-            path = normalizePath( pCanonicalParentDirIfPathRelative.getPath() + File.separator + path );
-        }
-        // canonicalize
-        return null; // todo...
-    }
-
-    private static boolean isAbsoluteNormalizedPath( File pCanonicalDirForWindowDriveLetterSourceRelativeness, String path )
-    {
-        if ( isWindows && (path.length() > 1) && (path.charAt( 1 ) == ':') ) // Handle Drive Letter
-        {
-            if ( !pCanonicalDirForWindowDriveLetterSourceRelativeness.getPath().substring( 0, 2 ).equalsIgnoreCase( path.substring( 0, 2 ) ) )
-            {
-                return true; // Has Drive Letter and it is NOT the same as the 'CanonicalDirForWindowDriveLetterSourceRelativeness'
-            }
-            path = path.substring( 2 );
-        }
-        // todo: ...
-
-        return false;
+        assertNotNull( "path", path );
+        return new File( FileSupport.canonicalizeNormalizedPath( FILE_SYSTEM, pCanonicalParentDirIfPathRelative.getPath(), FileSupport.normalizePath( FILE_SYSTEM, path ) ) );
     }
 }
