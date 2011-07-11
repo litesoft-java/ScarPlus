@@ -172,6 +172,7 @@ public class FileSupportTest
 
         assertEquals( "..\\Fred", FileSupport.normalizePath( zFileSystem, "../Fred" ) );
         assertEquals( "..\\Fred", FileSupport.normalizePath( zFileSystem, "..\\Fred" ) );
+        assertEquals( "..\\..\\..\\Fred", FileSupport.normalizePath( zFileSystem, "..\\..\\..\\Fred" ) );
 
         assertEquals( "C:.", FileSupport.normalizePath( zFileSystem, "C:" ) ); // Just Our Drive Letter is equivalent to "."
 
@@ -221,6 +222,7 @@ public class FileSupportTest
         assertEquals( "Fred", FileSupport.normalizePath( zFileSystem, ".//.////./Fred////./." ) );
 
         assertEquals( "../Fred", FileSupport.normalizePath( zFileSystem, "../Fred" ) );
+        assertEquals( "../../../Fred", FileSupport.normalizePath( zFileSystem, "../../../Fred" ) );
 
         assertEquals( "/Fred", FileSupport.normalizePath( zFileSystem, "/Fred" ) );
 

@@ -70,16 +70,24 @@ public class FileSupport
             }
 
             // Process Funky ..
+            String zPrefixDotDotSlash = "";
+            String zDotDotSlash = ".." + zFileSeparator;
+            while ( path.startsWith( zDotDotSlash ) )
+            {
+                zPrefixDotDotSlash += zDotDotSlash;
+                path = path.substring( 3 );
+            }
             String zUpLevel = zFileSeparator + "..";
             if ( path.endsWith( zUpLevel ) )
             {
                 path += zFileSeparator;
             }
             zUpLevel += zFileSeparator;
-            for ( at = path.lastIndexOf( zUpLevel ); at > 0; at = path.lastIndexOf( zUpLevel ) )
+            for ( at = path.indexOf( zUpLevel ); at > 0; at = path.indexOf( zUpLevel ) )
             {
                 path = removeDotDot( path, at, pFileSystem.separatorChar() );
             }
+            path = zPrefixDotDotSlash + path;
             if ( (path.length() > 1) && path.endsWith( zFileSeparator ) )
             {
                 path = path.substring( 0, path.length() - 1 );

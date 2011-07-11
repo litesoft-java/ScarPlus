@@ -101,7 +101,7 @@ public class Paths implements Iterable<String>
      */
     public void glob( String dir, String... patterns )
     {
-        new DirPatterns( dir, patterns ).addTo( mPaths );
+        new PathPatterns( dir, patterns ).addTo( mPaths );
     }
 
     // ^^^^^^^^^^^^^^^^^^^^^^^ Should These be supported as they can introduce potentially conflicting FileSubPaths ^^^^^^^^^^^^^^^^^^^^^^^
@@ -337,29 +337,37 @@ public class Paths implements Iterable<String>
         }
     }
 
-    private static class DirPatterns
+    private static class PathPatterns
     {
-        private File mDir;
+        private File mPath;
         private List<Pattern> mIncludes = new ArrayList<Pattern>();
         private List<Pattern> mExcludes = new ArrayList<Pattern>();
 
-        public DirPatterns( String pDir, String[] pPatterns )
+        public PathPatterns( String pPath, String[] pPatterns )
         {
-            pDir = Util.deNull( pDir, "." ).trim();
+            pPath = Util.deNull( pPath, "." ).trim();
             if ( pPatterns == null || pPatterns.length == 0 )
             {
-                String[] split = pDir.split( "\\|" ); // split on a '|'
-                pDir = split[0].trim();
+                String[] split = pPath.split( "\\|" ); // split on a '|'
+                pPath = split[0].trim();
                 pPatterns = new String[split.length - 1];
                 for ( int i = 1, n = split.length; i < n; i++ )
                 {
                     pPatterns[i - 1] = split[i].trim();
                 }
             }
-            mDir = new File( pDir );
-            if ( !mDir.isDirectory() )
+            mPath = new File( pPath );
+            if ( mPath.isFile() )
             {
+                if ( pPatterns.length != 0 )
+                {
+                    throw new IllegalArgumentException( "Files (e.g. " + mPath + ") may NOT have patterns: " + Arrays.asList( pPatterns ) );
+                }
                 return;
+            }
+            if ( !mPath.isDirectory() )
+            {
+                throw new IllegalArgumentException( "Path Reference not a File or Directory: " + mPath );
             }
             List<String> zIncludes = new ArrayList<String>();
             List<String> zExcludes = new ArrayList<String>();
@@ -401,12 +409,17 @@ public class Paths implements Iterable<String>
 
         public void addTo( Collection<FilePath> pPaths )
         {
-            if ( mDir.isDirectory() )
+            if ( mPath.isFile() )
             {
-                String[] zFileNames = mDir.list();
+                pPaths.add( new FilePath( mPath.getParentFile(), mPath.getName() ) );
+                return;
+            }
+            if ( mPath.isDirectory() )
+            {
+                String[] zFileNames = mPath.list();
                 for ( String zFileName : zFileNames )
                 {
-                    File zFile = new File( mDir, zFileName );
+                    File zFile = new File( mPath, zFileName );
                     if ( zFile.isDirectory() )
                     {
                         if ( !excludedDir( zFileName ) && acceptableDir( zFileName ) )
@@ -418,7 +431,7 @@ public class Paths implements Iterable<String>
                     {
                         if ( !excludedFile( zFileName ) && acceptableFile( zFileName ) )
                         {
-                            pPaths.add( new FilePath( mDir, zFileName ) );
+                            pPaths.add( new FilePath( mPath, zFileName ) );
                         }
                     }
                 }
@@ -443,7 +456,7 @@ public class Paths implements Iterable<String>
                 {
                     if ( !excludedFile( zPath ) && acceptableFile( zPath ) )
                     {
-                        pPaths.add( new FilePath( mDir, zPath ) );
+                        pPaths.add( new FilePath( mPath, zPath ) );
                     }
                 }
             }
