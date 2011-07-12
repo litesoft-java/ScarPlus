@@ -337,6 +337,7 @@ public class Paths implements Iterable<String>
         }
     }
 
+
     private static class PathPatterns
     {
         private File mPath;
