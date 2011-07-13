@@ -10,7 +10,7 @@ import com.esotericsoftware.wildcard.*;
 /**
  * Collects filesystem paths using wildcards, preserving the directory structure. Copies, deletes, and zips paths.
  */
-public class Paths implements Iterable<String>
+public class Paths
 {
     static private final Comparator<FilePath> LONGEST_TO_SHORTEST = new Comparator<FilePath>()
     {
@@ -26,7 +26,7 @@ public class Paths implements Iterable<String>
     /**
      * Only the Files will be stored!
      */
-    private final HashSet<FilePath> mPaths = new HashSet<FilePath>();
+    private final RootedPathsCollection mPaths = new RootedPathsCollection();
 
     /**
      * Creates an empty Paths object.
@@ -39,6 +39,7 @@ public class Paths implements Iterable<String>
      * Creates a Paths object and calls {@link #glob(String, String[])} with the specified arguments.
      */
     public Paths( String dir, String... patterns )
+            throws IOException
     {
         glob( dir, patterns );
     }
@@ -50,22 +51,36 @@ public class Paths implements Iterable<String>
 
     public int count()
     {
-        return mPaths.size();
+        return mPaths.count();
     }
 
     public List<FilePath> getPaths()
     {
-        return new ArrayList<FilePath>( mPaths );
+        return mPaths.collectPaths( new ArrayList<FilePath>() );
     }
 
-    // vvvvvvvvvvvvvvvvvvvvvvv Should These be supported as they can introduce potentially conflicting FileSubPaths vvvvvvvvvvvvvvvvvvvvvvv
+    public void add( FilePath pFilePath )
+    {
+        mPaths.add( pFilePath );
+    }
+
+    @SuppressWarnings({"UnusedDeclaration"})
+    public void add( RootedPaths pRootedPaths )
+    {
+        mPaths.add( pRootedPaths );
+    }
+
+    public void add( RootedPathsCollection pRootedPathsCollection )
+    {
+        mPaths.mergeIn( pRootedPathsCollection );
+    }
 
     /**
      * Adds all paths from the specified Paths object to this Paths object.
      */
     public void add( Paths paths )
     {
-        this.mPaths.addAll( paths.mPaths );
+        add( paths.mPaths );
     }
 
     /**
@@ -73,6 +88,7 @@ public class Paths implements Iterable<String>
      */
     @SuppressWarnings({"UnusedDeclaration"})
     public void glob( String dir, List<String> patterns )
+            throws IOException
     {
         glob( dir, (patterns == null) ? Util.EMPTY_STRING_ARRAY : patterns.toArray( new String[patterns.size()] ) );
     }
@@ -100,6 +116,7 @@ public class Paths implements Iterable<String>
      *                 patterns would select the paths.
      */
     public void glob( String dir, String... patterns )
+            throws IOException
     {
         new PathPatterns( dir, patterns ).addTo( mPaths );
     }
@@ -119,7 +136,7 @@ public class Paths implements Iterable<String>
         zDest.mkdirs();
 
         Paths newPaths = new Paths();
-        for ( FilePath path : this.mPaths )
+        for ( FilePath path : getPaths() )
         {
             String zSubPath = path.getFileSubPath();
             Util.copyFile( path.file(), new File( destDir, zSubPath ) );
@@ -227,10 +244,9 @@ public class Paths implements Iterable<String>
     public Paths flatten()
     {
         Paths newPaths = new Paths();
-        for ( FilePath path : mPaths )
+        for ( File zFile : getFiles() )
         {
-            File file = path.file();
-            newPaths.mPaths.add( new FilePath( file.getParentFile(), file.getName() ) );
+            newPaths.add( new FilePath( zFile.getParentFile(), zFile.getName() ) );
         }
         return newPaths;
     }
@@ -240,8 +256,9 @@ public class Paths implements Iterable<String>
      */
     public List<File> getFiles()
     {
-        List<File> files = new ArrayList<File>( mPaths.size() );
-        for ( FilePath path : mPaths )
+        List<FilePath> zPaths = getPaths();
+        List<File> files = new ArrayList<File>( zPaths.size() );
+        for ( FilePath path : zPaths )
         {
             files.add( path.file() );
         }
@@ -253,12 +270,13 @@ public class Paths implements Iterable<String>
      */
     public List<String> getRelativePaths()
     {
-        List<String> stringPaths = new ArrayList<String>( mPaths.size() );
-        for ( FilePath path : mPaths )
+        List<FilePath> zPaths = getPaths();
+        List<String> rv = new ArrayList<String>( zPaths.size() );
+        for ( FilePath path : zPaths )
         {
-            stringPaths.add( path.getFileSubPath() );
+            rv.add( path.getFileSubPath() );
         }
-        return stringPaths;
+        return rv;
     }
 
     /**
@@ -266,12 +284,13 @@ public class Paths implements Iterable<String>
      */
     public List<String> getFullPaths()
     {
-        List<String> stringPaths = new ArrayList<String>( mPaths.size() );
-        for ( File file : getFiles() )
+        List<File> zFiles = getFiles();
+        List<String> rv = new ArrayList<String>( zFiles.size() );
+        for ( File file : zFiles )
         {
-            stringPaths.add( file.getPath() );
+            rv.add( file.getPath() );
         }
-        return stringPaths;
+        return rv;
     }
 
     /**
@@ -279,42 +298,13 @@ public class Paths implements Iterable<String>
      */
     public List<String> getNames()
     {
-        List<String> stringPaths = new ArrayList<String>( mPaths.size() );
-        for ( File file : getFiles() )
+        List<File> zFiles = getFiles();
+        List<String> rv = new ArrayList<String>( zFiles.size() );
+        for ( File file : zFiles )
         {
-            stringPaths.add( file.getName() );
+            rv.add( file.getName() );
         }
-        return stringPaths;
-    }
-
-    /**
-     * Iterates over the absolute paths. The iterator supports the remove method.
-     */
-    @Override
-    public Iterator<String> iterator()
-    {
-        return new Iterator<String>()
-        {
-            private Iterator<FilePath> iter = mPaths.iterator();
-
-            @Override
-            public void remove()
-            {
-                iter.remove();
-            }
-
-            @Override
-            public String next()
-            {
-                return iter.next().canonical();
-            }
-
-            @Override
-            public boolean hasNext()
-            {
-                return iter.hasNext();
-            }
-        };
+        return rv;
     }
 
     /**
@@ -408,8 +398,10 @@ public class Paths implements Iterable<String>
             }
         }
 
-        public void addTo( Collection<FilePath> pPaths )
+        public void addTo( RootedPathsCollection pPaths )
+                throws IOException
         {
+            mPath = mPath.getCanonicalFile();
             if ( mPath.isFile() )
             {
                 pPaths.add( new FilePath( mPath.getParentFile(), mPath.getName() ) );
@@ -417,6 +409,7 @@ public class Paths implements Iterable<String>
             }
             if ( mPath.isDirectory() )
             {
+                RootedPaths zPaths = new RootedPaths( mPath );
                 String[] zFileNames = mPath.list();
                 for ( String zFileName : zFileNames )
                 {
@@ -425,21 +418,23 @@ public class Paths implements Iterable<String>
                     {
                         if ( !excludedDir( zFileName ) && acceptableDir( zFileName ) )
                         {
-                            addTo( pPaths, zFileName + "/", zFile );
+                            addTo( zPaths, zFileName + "/", zFile );
                         }
                     }
                     else
                     {
                         if ( !excludedFile( zFileName ) && acceptableFile( zFileName ) )
                         {
-                            pPaths.add( new FilePath( mPath, zFileName ) );
+                            zPaths.addCanonicalRelativePath( zFileName );
                         }
                     }
                 }
+                pPaths.add( zPaths );
             }
         }
 
-        private void addTo( Collection<FilePath> pPaths, String pAdditionalDirPath, File pDirectory )
+        private void addTo( RootedPaths pPaths, String pAdditionalDirPath, File pDirectory )
+                throws IOException
         {
             String[] zFileNames = pDirectory.list();
             for ( String zFileName : zFileNames )
@@ -457,7 +452,10 @@ public class Paths implements Iterable<String>
                 {
                     if ( !excludedFile( zPath ) && acceptableFile( zPath ) )
                     {
-                        pPaths.add( new FilePath( mPath, zPath ) );
+
+                        String zFullCanonicalPath = zFile.getCanonicalPath();
+                        String zRelativeCanonicalPath = zFullCanonicalPath.substring( mPath.getPath().length() + 1 );
+                        pPaths.addCanonicalRelativePath( zRelativeCanonicalPath );
                     }
                 }
             }
@@ -513,6 +511,7 @@ public class Paths implements Iterable<String>
     }
 
     public static void main( String[] args )
+            throws Exception
     {
         if ( args.length == 0 )
         {
@@ -521,7 +520,7 @@ public class Paths implements Iterable<String>
         }
         List<String> patterns = Arrays.asList( args );
         patterns = patterns.subList( 1, patterns.size() );
-        for ( String path : new Paths( args[0], patterns.toArray( new String[patterns.size()] ) ) )
+        for ( String path : new Paths( args[0], patterns.toArray( new String[patterns.size()] ) ).getFullPaths() )
         {
             System.out.println( path );
         }

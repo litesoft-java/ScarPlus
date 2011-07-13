@@ -42,7 +42,7 @@ public class FTP
             return false;
         }
         ftp.setFileType( org.apache.commons.net.ftp.FTP.BINARY_FILE_TYPE );
-        for ( String path : paths )
+        for ( String path : paths.getFullPaths() )
         {
             if ( INFO )
             {

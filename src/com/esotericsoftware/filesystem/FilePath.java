@@ -10,9 +10,21 @@ public final class FilePath
     private final String mFileSubPath;
     private final File mCanonicalPath;
 
+    private FilePath( File pSomeParentDir, String pFileSubPath, File pCanonicalPath )
+    {
+        mSomeParentDir = pSomeParentDir;
+        mFileSubPath = pFileSubPath;
+        mCanonicalPath = pCanonicalPath;
+    }
+
     public FilePath( File pSomeParentDir, String pFileSubPath )
     {
-        mCanonicalPath = Utils.canonical( new File( mSomeParentDir = pSomeParentDir, mFileSubPath = pFileSubPath ) );
+        this( pSomeParentDir, pFileSubPath, Utils.canonical( new File( pSomeParentDir, pFileSubPath ) ) );
+    }
+
+    public static FilePath canonical( File pSomeParentDir, String pFileSubPath )
+    {
+        return new FilePath( pSomeParentDir, pFileSubPath, new File( pSomeParentDir, pFileSubPath ) );
     }
 
     public File getSomeParentDir()

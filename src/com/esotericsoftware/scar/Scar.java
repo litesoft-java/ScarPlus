@@ -921,7 +921,7 @@ public class Scar extends Utils implements ProjectFactory
         String jwsDir = mkdir( project.path( "$target$/jws/" ) );
         String distDir = project.path( "$target$/dist/" );
         new Paths( distDir, "*.jar", "*.jnlp" ).copyTo( jwsDir );
-        for ( String file : new Paths( jwsDir, "*.jar" ) )
+        for ( String file : new Paths( jwsDir, "*.jar" ).getFullPaths() )
         {
             sign( unpack200( pack200( unsign( file ) ) ), keystoreFile, alias, password );
         }
@@ -929,7 +929,7 @@ public class Scar extends Utils implements ProjectFactory
         {
             String unpackedDir = mkdir( jwsDir + "unpacked/" );
             String packedDir = mkdir( jwsDir + "packed/" );
-            for ( String file : new Paths( jwsDir, "*.jar", "!*native*" ) )
+            for ( String file : new Paths( jwsDir, "*.jar", "!*native*" ).getFullPaths() )
             {
                 String fileName = fileName( file );
                 String unpackedFile = unpackedDir + fileName;
@@ -952,7 +952,7 @@ public class Scar extends Utils implements ProjectFactory
         progress( "JWS htaccess: " + project );
 
         String jwsDir = mkdir( project.path( "$target$/jws/" ) );
-        for ( String packedFile : new Paths( jwsDir + "packed", "*.jar.pack.gz" ) )
+        for ( String packedFile : new Paths( jwsDir + "packed", "*.jar.pack.gz" ).getFullPaths() )
         {
             String packedFileName = fileName( packedFile );
             String jarFileName = substring( packedFileName, 0, -8 );
@@ -1080,7 +1080,7 @@ public class Scar extends Utils implements ProjectFactory
             writer.write( "\t<jar href='" + path + projectJarName + "'/>\n" );
 
             // Rest of JARs, except natives.
-            for ( String file : new Paths( jwsDir, "**/*.jar", "!*native*", "!**/" + projectJarName ) )
+            for ( String file : new Paths( jwsDir, "**/*.jar", "!*native*", "!**/" + projectJarName ).getFullPaths() )
             {
                 writer.write( "\t<jar href='" + path + fileName( file ) + "'/>\n" );
             }
@@ -1150,7 +1150,7 @@ public class Scar extends Utils implements ProjectFactory
         String appletDir = mkdir( project.path( "$target$/applet-lwjgl/" ) );
         String distDir = project.path( "$target$/dist/" );
         new Paths( distDir, "**/*.jar", "*.html", "*.htm" ).flatten().copyTo( appletDir );
-        for ( String jarFile : new Paths( appletDir, "*.jar" ) )
+        for ( String jarFile : new Paths( appletDir, "*.jar" ).getFullPaths() )
         {
             sign( unpack200( pack200( unsign( jarFile ) ) ), keystoreFile, alias, password );
             String fileName = fileName( jarFile );
@@ -1273,7 +1273,7 @@ public class Scar extends Utils implements ProjectFactory
 
         ArrayList<String> processedJARs = new ArrayList();
         outer:
-        for ( String jarFile : new Paths( distDir, "*.jar", "!" + projectJarName ) )
+        for ( String jarFile : new Paths( distDir, "*.jar", "!" + projectJarName ).getFullPaths() )
         {
             String jarName = fileName( jarFile );
             for ( String exclude : excludeJARs )
