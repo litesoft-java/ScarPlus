@@ -178,6 +178,18 @@ public class Util
     }
 
     /**
+     * Creates the directories in the specified path.
+     */
+    public static String mkdir( String path )
+    {
+        if ( new File( path = assertNotEmpty( "path", path ) ).mkdirs() )
+        {
+            LOGGER.trace.log( "Created directory: ", path );
+        }
+        return path;
+    }
+
+    /**
      * Deletes a directory and all files and directories it contains.
      */
     public static boolean delete( File pFile )

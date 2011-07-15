@@ -109,18 +109,6 @@ public class Utils extends Util
     }
 
     /**
-     * Creates the directories in the specified path.
-     */
-    static public String mkdir( String path )
-    {
-        if ( new File( path = assertNotEmpty( "path", path ) ).mkdirs() )
-        {
-            LOGGER.trace.log( "Created directory: ", path );
-        }
-        return path;
-    }
-
-    /**
      * Returns true if the file exists.
      */
     static public boolean fileExists( String path )

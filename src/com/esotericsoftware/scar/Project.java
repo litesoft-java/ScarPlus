@@ -120,7 +120,7 @@ public class Project extends ProjectParameters
             throws IOException
     {
         progress( "Clean: " + this );
-        new Paths( path( "$target$" ) ).delete();
+        delete( path( "$target$" ) );
     }
 
     /**
@@ -137,7 +137,7 @@ public class Project extends ProjectParameters
         Paths classpath = classpath();
         Paths source = getSource();
 
-        String classesDir = Utils.mkdir( path( "$target$/classes/" ) );
+        String classesDir = mkdir( path( "$target$/classes/" ) );
 
         if ( source.isEmpty() )
         {
@@ -223,68 +223,57 @@ public class Project extends ProjectParameters
     {
         progress( "JAR: " + this );
 
-        if ( !LOGGER.trace.isEnabled() )
-        {
-            return null; // todo: ...
-        }
-
-        String jarDir = Utils.mkdir( path( "$target$/jar/" ) );
+        String jarDir = mkdir( path( "$target$/jar/" ) );
 
         String classesDir = path( "$target$/classes/" );
         new Paths( classesDir, "**/*.class" ).copyTo( jarDir );
         getResources().copyTo( jarDir );
 
-        String jarFile;
-        if ( hasVersion() )
-        {
-            jarFile = path( "$target$/$name$-$version$.jar" );
-        }
-        else
-        {
-            jarFile = path( "$target$/$name$.jar" );
-        }
+        String jarFile = path( "$target$/$name$" + (hasVersion() ? "-$version$" : "") + ".jar" );
 
         File manifestFile = new File( jarDir, "META-INF/MANIFEST.MF" );
         if ( !manifestFile.exists() )
         {
-            LOGGER.debug.log( "Generating JAR manifest: ", manifestFile );
-            Utils.mkdir( manifestFile.getParent() );
-            Manifest manifest = new Manifest();
-            manifest.getMainAttributes().putValue( Attributes.Name.MANIFEST_VERSION.toString(), "1.0" );
-            if ( hasMain() )
-            {
-                LOGGER.debug.log( "Main class: ", getMain() );
-                manifest.getMainAttributes().putValue( Attributes.Name.MAIN_CLASS.toString(), getMain() );
-                StringBuilder buffer = new StringBuilder( 512 );
-                buffer.append( Utils.fileName( jarFile ) );
-                buffer.append( " ." );
-                Paths classpath = classpath();
-                for ( String name : classpath.getRelativePaths() )
-                {
-                    buffer.append( ' ' );
-                    buffer.append( name );
-                }
-                manifest.getMainAttributes().putValue( Attributes.Name.CLASS_PATH.toString(), buffer.toString() );
-            }
-            FileOutputStream output = new FileOutputStream( manifestFile );
-            try
-            {
-                manifest.write( output );
-            }
-            finally
-            {
-                try
-                {
-                    output.close();
-                }
-                catch ( Exception ignored )
-                {
-                }
-            }
+            createDefaultManifestFile( jarFile, manifestFile );
         }
 
-        jar( jarFile, new Paths( jarDir ) );
-        return jarFile;
+        return jar( jarFile, new Paths( jarDir ) );
+    }
+
+    protected void createDefaultManifestFile( String pJarFile, File pManifestFile )
+            throws IOException
+    {
+        LOGGER.debug.log( "Generating JAR manifest: ", pManifestFile );
+        mkdir( pManifestFile.getParent() );
+        Manifest manifest = new Manifest();
+        manifest.getMainAttributes().putValue( Attributes.Name.MANIFEST_VERSION.toString(), "1.0" );
+        if ( hasMain() )
+        {
+            LOGGER.debug.log( "Main class: ", getMain() );
+            manifest.getMainAttributes().putValue( Attributes.Name.MAIN_CLASS.toString(), getMain() );
+            StringBuilder buffer = new StringBuilder( 512 );
+            buffer.append( Utils.fileName( pJarFile ) );
+            buffer.append( " ." );
+            Paths classpath = classpath();
+            for ( String name : classpath.getRelativePaths() )
+            {
+                buffer.append( ' ' );
+                buffer.append( name );
+            }
+            manifest.getMainAttributes().putValue( Attributes.Name.CLASS_PATH.toString(), buffer.toString() );
+        }
+        OutputStream output = new FileOutputStream( pManifestFile );
+        try
+        {
+            manifest.write( output );
+            Closeable zCloseable = output;
+            output = null;
+            zCloseable.close();
+        }
+        finally
+        {
+            dispose( output );
+        }
     }
 
     /**
@@ -304,7 +293,7 @@ public class Project extends ProjectParameters
             return null; // todo: ...
         }
 
-        String distDir = Utils.mkdir( path( "$target$/dist/" ) );
+        String distDir = mkdir( path( "$target$/dist/" ) );
         classpath().copyTo( distDir );
         Paths distPaths = getDist();
         dependencyDistPaths( distPaths );
