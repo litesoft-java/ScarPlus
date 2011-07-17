@@ -1,7 +1,5 @@
 package com.esotericsoftware.utils;
 
-import java.io.*;
-
 import com.esotericsoftware.scar.*;
 
 public class FileSupport
@@ -136,7 +134,6 @@ public class FileSupport
     }
 
     public static String canonicalizeNormalizedPath( IFileSystem pFileSystem, String pCanonicalParentDirIfPathRelative, String path )
-            throws IOException
     {
         if ( !pFileSystem.isWindows() )
         {
@@ -175,7 +172,6 @@ public class FileSupport
     }
 
     private static String canonicalizeAbsoluteNormalizedPath( IFileSystem pFileSystem, String path )
-            throws IOException
     {
         String origPath = path;
         if ( !pFileSystem.exists( origPath ) )

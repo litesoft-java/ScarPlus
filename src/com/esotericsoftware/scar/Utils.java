@@ -2,14 +2,13 @@ package com.esotericsoftware.scar;
 
 import java.io.*;
 import java.net.*;
-import java.nio.channels.*;
 import java.util.*;
 import java.util.regex.*;
 import javax.tools.*;
 
 import com.esotericsoftware.utils.*;
 
-public class Utils extends Util
+public class Utils extends FileUtil
 {
     /**
      * The Scar installation directory. The value comes from the SCAR_HOME environment variable, if it exists. Alternatively, the
@@ -117,107 +116,6 @@ public class Utils extends Util
     }
 
     /**
-     * Reads to the end of the input stream and writes the bytes to the output stream.
-     */
-    static public void copyStream( InputStream input, OutputStream output )
-            throws IOException
-    {
-        assertNotNull( "input", input );
-        assertNotNull( "output", output );
-        Closeable zCloseable = output;
-        try
-        {
-            byte[] buffer = new byte[4096];
-            while ( true )
-            {
-                int length = input.read( buffer );
-                if ( length == -1 )
-                {
-                    break;
-                }
-                output.write( buffer, 0, length );
-            }
-            zCloseable = null;
-            output.close();
-        }
-        finally
-        {
-            dispose( zCloseable );
-            dispose( input );
-        }
-    }
-
-    /**
-     * Copies a file, overwriting any existing file at the destination.
-     */
-    static public String copyFile( String in, String out )
-            throws IOException
-    {
-        assertNotNull( "in", in );
-        assertNotNull( "out", out );
-        LOGGER.trace.log( "Copying file: ", in, " -> ", out );
-
-        FileChannel sourceChannel = null;
-        FileChannel destinationChannel = null;
-        Closeable zCloseable = null;
-        try
-        {
-            sourceChannel = new FileInputStream( in ).getChannel();
-            zCloseable = (destinationChannel = new FileOutputStream( out ).getChannel());
-            sourceChannel.transferTo( 0, sourceChannel.size(), destinationChannel );
-            zCloseable = null;
-            destinationChannel.close();
-        }
-        finally
-        {
-            dispose( zCloseable );
-            dispose( sourceChannel );
-        }
-        return out;
-    }
-
-    /**
-     * Moves a file, overwriting any existing file at the destination.
-     */
-    static public String moveFile( String in, String out )
-            throws IOException
-    {
-        assertNotNull( "in", in );
-        assertNotNull( "out", out );
-        copyFile( in, out );
-        delete( in );
-        return out;
-    }
-
-    /**
-     * Returns the textual contents of the specified file.
-     */
-    static public String fileContents( String path )
-            throws IOException
-    {
-        StringBuilder stringBuffer = new StringBuilder( 4096 );
-        FileReader reader = new FileReader( path );
-        try
-        {
-            char[] buffer = new char[2048];
-            while ( true )
-            {
-                int length = reader.read( buffer );
-                if ( length == -1 )
-                {
-                    break;
-                }
-                stringBuffer.append( buffer, 0, length );
-            }
-        }
-        finally
-        {
-            dispose( reader );
-        }
-        return stringBuffer.toString();
-    }
-
-    /**
      * Returns only the filename portion of the specified path.
      */
     static public String fileName( String path )
@@ -282,7 +180,6 @@ public class Utils extends Util
      * Splits the specified command at spaces that are not surrounded by quotes and passes the result to {@link #shell(String...)}.
      */
     static public void shell( String command )
-            throws IOException
     {
         List<String> matchList = new ArrayList<String>();
         Pattern regex = Pattern.compile( "[^\\s\"']+|\"([^\"]*)\"|'([^']*)'" );
@@ -310,7 +207,6 @@ public class Utils extends Util
      * Windows the same filename with an "exe" extension is also tried.
      */
     static public void shell( String... command )
-            throws IOException
     {
         assertNotEmpty( "command", command );
 
@@ -336,41 +232,36 @@ public class Utils extends Util
             LOGGER.trace.log( "Executing command: ", buffer );
         }
 
-        Process process = new ProcessBuilder( command ).start();
-        // try {
-        // process.waitFor();
-        // } catch (InterruptedException ignored) {
-        // }
-        BufferedReader reader = new BufferedReader( new InputStreamReader( process.getInputStream() ) );
-        while ( true )
+        try
         {
-            String line = reader.readLine();
-            if ( line == null )
+            Process process = new ProcessBuilder( command ).start();
+            Thread zOut = new CopyOutputThread( process.getInputStream(), System.out );
+            Thread zErr = new CopyOutputThread( process.getErrorStream(), System.err );
+
+            zOut.join();
+            zErr.join();
+            // try {
+            // process.waitFor();
+            // } catch (InterruptedException ignored) {
+            // }
+            if ( process.exitValue() != 0 )
             {
-                break;
+                StringBuilder buffer = new StringBuilder( 256 );
+                for ( String text : command )
+                {
+                    buffer.append( text );
+                    buffer.append( ' ' );
+                }
+                throw new RuntimeException( "Error (" + process.exitValue() + ") executing command: " + buffer );
             }
-            System.out.println( line );
         }
-        reader.close();
-        reader = new BufferedReader( new InputStreamReader( process.getErrorStream() ) );
-        while ( true )
+        catch ( IOException e )
         {
-            String line = reader.readLine();
-            if ( line == null )
-            {
-                break;
-            }
-            System.out.println( line );
+            throw new WrappedIOException( e );
         }
-        if ( process.exitValue() != 0 )
+        catch ( InterruptedException e )
         {
-            StringBuilder buffer = new StringBuilder( 256 );
-            for ( String text : command )
-            {
-                buffer.append( text );
-                buffer.append( ' ' );
-            }
-            throw new RuntimeException( "Error executing command: " + buffer );
+            throw new RuntimeException( e );
         }
     }
 
@@ -380,7 +271,6 @@ public class Utils extends Util
      * @return The path to the keystore file.
      */
     static public String keystore( String keystoreFile, String alias, String password, String company, String title )
-            throws IOException
     {
         if ( fileExists( keystoreFile = assertNotEmpty( "keystoreFile", keystoreFile ) ) )
         {
@@ -397,22 +287,30 @@ public class Utils extends Util
 
         File file = new File( keystoreFile );
         file.delete();
-        Process process = Runtime.getRuntime().exec( new String[]{resolvePath( "keytool" ), "-genkey", "-keystore", keystoreFile, "-alias", alias} );
-        OutputStreamWriter writer = new OutputStreamWriter( process.getOutputStream() );
-        writer.write( password + "\n" ); // Enter keystore password:
-        writer.write( password + "\n" ); // Re-enter new password:
-        writer.write( company + "\n" ); // What is your first and last name?
-        writer.write( title + "\n" ); // What is the name of your organizational unit?
-        writer.write( title + "\n" ); // What is the name of your organization?
-        writer.write( "\n" ); // What is the name of your City or Locality? [Unknown]
-        writer.write( "\n" ); // What is the name of your State or Province? [Unknown]
-        writer.write( "\n" ); // What is the two-letter country code for this unit? [Unknown]
-        writer.write( "yes\n" ); // Correct?
-        writer.write( "\n" ); // Return if same alias key password as keystore.
-        writer.flush();
-        process.getOutputStream().close();
-        process.getInputStream().close();
-        process.getErrorStream().close();
+        Process process = null;
+        try
+        {
+            process = Runtime.getRuntime().exec( new String[]{resolvePath( "keytool" ), "-genkey", "-keystore", keystoreFile, "-alias", alias} );
+            OutputStreamWriter writer = new OutputStreamWriter( process.getOutputStream() );
+            writer.write( password + "\n" ); // Enter keystore password:
+            writer.write( password + "\n" ); // Re-enter new password:
+            writer.write( company + "\n" ); // What is your first and last name?
+            writer.write( title + "\n" ); // What is the name of your organizational unit?
+            writer.write( title + "\n" ); // What is the name of your organization?
+            writer.write( "\n" ); // What is the name of your City or Locality? [Unknown]
+            writer.write( "\n" ); // What is the name of your State or Province? [Unknown]
+            writer.write( "\n" ); // What is the two-letter country code for this unit? [Unknown]
+            writer.write( "yes\n" ); // Correct?
+            writer.write( "\n" ); // Return if same alias key password as keystore.
+            writer.flush();
+            process.getOutputStream().close();
+            process.getInputStream().close();
+            process.getErrorStream().close();
+        }
+        catch ( IOException e )
+        {
+            throw new WrappedIOException( e );
+        }
         try
         {
             process.waitFor();

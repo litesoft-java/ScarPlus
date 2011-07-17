@@ -11,98 +11,87 @@ import com.esotericsoftware.utils.*;
 import static com.esotericsoftware.scar.support.Parameter.*;
 
 @SuppressWarnings({"UnusedDeclaration"})
-public class ProjectParameters extends Util
+public class ProjectParameters extends FileUtil
 {
     public static final Parameter NAME = def( "name", Form.STRING, "The name of the project. Used to name the JAR.", //
                                               "Default:\n" + //
                                               "  The name of the directory containing the project YAML file, or\n" + //
                                               "  the name of the YAML file if it is not 'build'." );
 
-    public static final Parameter TARGET = def( "target", Form.STRING, "The directory to output build artifacts.", //
-                                                "Default: The directory containing the project YAML file, plus '../target/name'." );
+    public static final Parameter VERSION = def( "version", Form.STRING, "The version of the project. If available, used to name the 'default' named JAR." );
 
-    public static final Parameter VERSION = def( "version", Form.STRING, "The version of the project. If available, used to name the JAR." );
+    public static final Parameter MAIN = def( "main", Form.STRING, "Name of the main class." );
+
+    public static final Parameter TARGET = def( "target", Form.STRING, "The directory to output build artifacts.", //
+                                                "Default: The directory containing the project YAML file, plus 'build'." );
+
+    public static final Parameter DEPENDENCIES = def( "dependencies", Form.STRING_LIST, "Relative or absolute path(s) to dependency project directories or YAML files." );
+
+    public static final Parameter CLASSPATH = def( "classpath", Form.PATHS, "Wildcard patterns for the file(s) to include on the classpath.", //
+                                                   "Default: 'lib|**.jar'." );
+
+    public static final Parameter SOURCE = def( "source", Form.PATHS, "Wildcard patterns for the Java file(s) to compile.", //
+                                                "Default: 'src|**.java' or 'src/main/java|**.java'." );
 
     public static final Parameter RESOURCES = def( "resources", Form.PATHS, "Wildcard patterns for the file(s) to include in the JAR.", //
                                                    "Default: 'resources' or 'src/main/resources'." );
 
-    public static final Parameter DIST = def( "dist", Form.PATHS, "Wildcard patterns for the file(s) to include in the distribution, outside the JAR.", //
-                                              "Default: 'dist'." );
+    public static final Parameter JAR = def( "jar", Form.STRING, "JAR name w/ optional path for the JAR ('.jar' added to the end if does not end with 'jar', case insensitive).", //
+                                             "Default: '$target$[-$version$]'." );
 
-    public static final Parameter SOURCE = def( "source", Form.PATHS, "Wildcard patterns for the Java file(s) to compile.", //
-                                                "Default: 'src|**/*.java' or 'src/main/java|**/*.java'." );
+    public static final Parameter DIST = def( "dist", Form.PATHS, "Wildcard patterns for the file(s) to include in the distribution, outside the JAR." );
 
-    public static final Parameter CLASSPATH = def( "classpath", Form.PATHS, "Wildcard patterns for the file(s) to include on the classpath.", //
-                                                   "Default: 'lib|**/*.jar'." );
+    public static final Parameter APPDIR = def( "appdir", Form.STRING, "Directory path to bring together all files (both JARs and 'dist', for this project " + "and all dependencies, recursively) the application needs to be run from JAR files." );
 
-    public static final Parameter DEPENDENCIES = def( "dependencies", Form.STRING_LIST, "Relative or absolute path(s) to dependency project directories or YAML files." );
+    // ------------------------------------------------ Default Support ------------------------------------------------
 
-    public static final Parameter INCLUDE = def( "include", Form.STRING_LIST, "Relative or absolute path(s) to project files to inherit properties from." );
-
-    public static final Parameter MAIN = def( "main", Form.STRING, "Name of the main class." );
-
-    protected final String mName;
-    protected final File mCanonicalProjectDir;
-    protected final Map<Object, Object> mData = new HashMap<Object, Object>();
-
-    public ProjectParameters( String pName, File pCanonicalProjectDir, Map<Object, Object> pData )
+    protected synchronized void applyDefaults()
     {
-        mCanonicalProjectDir = pCanonicalProjectDir;
-        if ( pData != null )
+        defaultTARGET();
+        defaultCLASSPATH();
+        defaultSOURCE();
+        defaultRESOURCES();
+        defaultJAR();
+    }
+
+    protected void defaultJAR()
+    {
+        String zJar = getJar();
+        if ( null == zJar )
         {
-            for ( Object key : pData.keySet() )
+            mManager.put( JAR.getName(), "$target$/$name$" + (hasVersion() ? "-$version$" : "") + ".jar" );
+        }
+        else
+        {
+            int at = zJar.lastIndexOf( '.' );
+            if ( at == -1 || !".jar".equalsIgnoreCase( zJar.substring( at ) ) )
             {
-                Object zValue = pData.get( key );
-                if ( key instanceof String )
-                {
-                    key = key.toString().toLowerCase();
-                }
-                mData.put( key, zValue );
+                mManager.put( JAR.getName(), zJar + ".jar" );
             }
         }
-        Object zObjName = mData.get( NAME.getName() );
-        String zName = (zObjName == null) ? null : Util.noEmpty( zObjName.toString() );
-        mData.put( NAME.getName(), mName = (zName != null) ? zName : pName );
     }
 
-    @Override
-    public String toString()
+    protected void defaultTARGET()
     {
-        return getName();
+        defaultKey( TARGET, "build" );
     }
 
-    protected Object valueFor( Object pKey )
+    private void defaultCLASSPATH()
     {
-        if ( pKey instanceof String )
-        {
-            pKey = Util.noEmpty( pKey.toString().toLowerCase() );
-        }
-        Util.assertNotNull( "key", pKey );
-        synchronized ( this )
-        {
-            return mData.get( pKey );
-        }
+        defaultSubDirOptional( CLASSPATH, "lib|**.jar" );
     }
 
-    public synchronized Object[] keys()
+    private void defaultRESOURCES()
     {
-        return mData.keySet().toArray();
+        defaultSubDirOptional( RESOURCES, "src/main/resources", "resources" );
     }
 
-    public synchronized File getCanonicalProjectDir()
+    private void defaultSOURCE()
     {
-        return mCanonicalProjectDir;
+        defaultSubDirOptional( SOURCE, "src/main/java|**.java", "src|**.java" );
     }
 
-    public synchronized String getName()
-    {
-        return mName;
-    }
-
-    public String getTarget()
-    {
-        return get( TARGET.getName() );
-    }
+    // ------------------------------------------- Special Property Accessors ------------------------------------------
 
     public boolean hasVersion()
     {
@@ -111,41 +100,7 @@ public class ProjectParameters extends Util
 
     public String getVersion()
     {
-        return get( VERSION.getName() );
-    }
-
-    public Paths getResources()
-            throws IOException
-    {
-        return getPaths( RESOURCES.getName() );
-    }
-
-    public Paths getDist()
-            throws IOException
-    {
-        return getPaths( DIST.getName() );
-    }
-
-    public Paths getSource()
-            throws IOException
-    {
-        return getPaths( SOURCE.getName() );
-    }
-
-    public Paths getClasspath()
-            throws IOException
-    {
-        return getPaths( CLASSPATH.getName() );
-    }
-
-    public List<String> getDependencies()
-    {
-        return getList( DEPENDENCIES.getName() );
-    }
-
-    public List<String> getInclude()
-    {
-        return getList( INCLUDE.getName() );
+        return get( JAR.getName() );
     }
 
     public boolean hasMain()
@@ -158,16 +113,56 @@ public class ProjectParameters extends Util
         return get( MAIN.getName() );
     }
 
-    // Below here are the accessors for the underlying Data (map)
+    public String getTarget()
+    {
+        return get( TARGET.getName() );
+    }
+
+    public List<String> getDependencies()
+    {
+        return getListNotNull( DEPENDENCIES.getName() );
+    }
+
+    public Paths getClasspath()
+    {
+        return getPaths( CLASSPATH.getName() );
+    }
+
+    public Paths getSource()
+    {
+        return getPaths( SOURCE.getName() );
+    }
+
+    public Paths getResources()
+    {
+        return getPaths( RESOURCES.getName() );
+    }
+
+    public String getJar()
+    {
+        return get( JAR.getName() );
+    }
+
+    public Paths getDist()
+    {
+        return getPaths( DIST.getName() );
+    }
+
+    public String getAppDir()
+    {
+        return get( APPDIR.getName() );
+    }
+
+    // ---------------------------------- Generic accessors for the underlying Data (map) ------------------------------
 
     public boolean has( Object key )
     {
-        return null != valueFor( key );
+        return null != getObject( key );
     }
 
     public Object getObject( Object key )
     {
-        return valueFor( key );
+        return mManager.get( mManager.normalizeKey( key ) );
     }
 
     public Object getObject( Object key, Object defaultValue )
@@ -177,166 +172,156 @@ public class ProjectParameters extends Util
 
     public String get( Object key )
     {
-        return get( key, null );
+        Object zValue = getObject( key );
+        return (zValue != null) ? zValue.toString() : null;
     }
 
     public String get( Object key, String defaultValue )
     {
-        Object value = getObject( key );
-        return (value != null) ? value.toString() : defaultValue;
+        return Util.deNull( get( key ), defaultValue );
     }
 
-    public int getInt( Object key )
+    public int get_int( Object key )
     {
-        return getInt( key, 0 );
+        return get_int( key, 0 );
     }
 
-    public int getInt( Object key, int defaultValue )
+    public int get_int( Object key, int defaultValue )
     {
-        Object value = getObject( key );
-        if ( value == null )
-        {
-            return defaultValue;
-        }
-        if ( value instanceof Number )
-        {
-            return ((Number) value).intValue();
-        }
-        return Integer.parseInt( value.toString() );
+        return getInteger( key, defaultValue );
     }
 
-    public float getFloat( Object key )
+    public Integer getInteger( Object key, int defaultValue )
     {
-        return getFloat( key, 0 );
+        return Util.deNull( getInteger( key ), defaultValue );
     }
 
-    public float getFloat( Object key, float defaultValue )
+    public Integer getInteger( Object key )
     {
-        Object value = getObject( key );
-        if ( value == null )
-        {
-            return defaultValue;
-        }
-        if ( value instanceof Number )
-        {
-            return ((Number) value).floatValue();
-        }
-        return Float.parseFloat( value.toString() );
+        return getCachedWithConvertion( key, INTEGER );
     }
 
-    public boolean getBoolean( Object key )
+    public float get_float( Object key )
     {
-        return getBoolean( key, false );
+        return get_float( key, 0 );
     }
 
-    public boolean getBoolean( Object key, boolean defaultValue )
+    public float get_float( Object key, float defaultValue )
     {
-        Object value = getObject( key );
-        if ( value == null )
-        {
-            return defaultValue;
-        }
-        if ( value instanceof Boolean )
-        {
-            return (Boolean) value;
-        }
-        return Boolean.parseBoolean( value.toString() );
+        return getFloat( key, defaultValue );
     }
 
-    /**
-     * Returns a list of strings under the specified key. If the key is a single value, it is placed in a list and returned. If the
-     * key does not exist, an empty list is returned.
-     */
-    public List<String> getList( Object key, String... defaultValues )
+    public Float getFloat( Object key, float defaultValue )
     {
-        Object object = getObject( key );
-        if ( object instanceof List )
-        {
-            List src = (List) object;
-            List<String> rv = new ArrayList<String>( src.size() );
-            for ( Object entry : src )
-            {
-                rv.add( entry.toString() );
-            }
-            return rv;
-        }
-        if ( object != null )
-        {
-            return Arrays.asList( object.toString() );
-        }
-        return (defaultValues == null) ? null : Arrays.asList( defaultValues );
+        return Util.deNull( getFloat( key ), defaultValue );
+    }
+
+    public Float getFloat( Object key )
+    {
+        return getCachedWithConvertion( key, FLOAT );
+    }
+
+    public boolean get_boolean( Object key )
+    {
+        return get_boolean( key, false );
+    }
+
+    public boolean get_boolean( Object key, boolean defaultValue )
+    {
+        return getBoolean( key, defaultValue );
+    }
+
+    public Boolean getBoolean( Object key, boolean defaultValue )
+    {
+        return Util.deNull( getBoolean( key ), defaultValue );
+    }
+
+    public Boolean getBoolean( Object key )
+    {
+        return getCachedWithConvertion( key, BOOLEAN );
     }
 
     /**
      * Returns a list of objects under the specified key. If the key is a single value, it is placed in a list and returned. If the
-     * key does not exist, an empty list is returned.
+     * key does not exist, a list with the defaultValues is returned.
      */
-    public List getObjectList( Object key, Object... defaultValues )
+    public List<?> getObjectListNotNull( Object key, Object... defaultValues )
     {
-        Object object = getObject( key );
-        if ( object instanceof List )
-        {
-            return (List) object;
-        }
-        if ( object != null )
-        {
-            return Arrays.asList( object );
-        }
-        return (defaultValues == null) ? null : Arrays.asList( defaultValues );
+        List<?> zList = getObjectList( key );
+        return (zList != null) ? zList : (defaultValues == null) ? Collections.emptyList() : Arrays.asList( defaultValues );
     }
 
-    public Map<String, String> getMap( Object key, String... defaultValues )
+    /**
+     * Returns a list of objects under the specified key. If the key is a single value, it is placed in a list and returned. If the
+     * key does not exist, a 'null' is returned.
+     */
+    public List<?> getObjectList( Object key )
     {
-        Util.assertPairedEntries( "defaultValues", defaultValues );
-        Map<String, String> map = getAsMap( key );
-        if ( map == null )
-        {
-            if ( defaultValues != null )
-            {
-                map = new HashMap<String, String>();
-                for ( int i = 0; i < defaultValues.length; )
-                {
-                    String defaultKey = defaultValues[i++];
-                    String defaultValue = defaultValues[i++];
-                    map.put( defaultKey, defaultValue );
-                }
-            }
-        }
-        return map;
+        return getCachedWithConvertion( key, LIST_OBJECT );
     }
 
-    public Map getObjectMap( Object key, Object... defaultValues )
+    /**
+     * Returns a list of strings under the specified key. If the key is a single value, it is placed in a list and returned. If the
+     * key does not exist, a list with the defaultValues is returned.
+     */
+    public List<String> getListNotNull( Object key, String... defaultValues )
+    {
+        List<String> zList = getList( key );
+        return (zList != null) ? zList : (defaultValues == null) ? Collections.<String>emptyList() : Arrays.asList( defaultValues );
+    }
+
+    /**
+     * Returns a list of strings under the specified key. If the key is a single value, it is placed in a list and returned. If the
+     * key does not exist, a 'null' is returned.
+     */
+    public List<String> getList( Object key )
+    {
+        return getCachedWithConvertion( key, LIST_STRING );
+    }
+
+    /**
+     * Returns a Map<Object,Object> under the specified key. If the key does not exist, a Map with the defaultValues (as Key/Value pairs) is returned.
+     */
+    public Map<?, ?> getObjectMapNotNull( Object key, Object... defaultValues )
     {
         Util.assertPairedEntries( "defaultValues", defaultValues );
-        Map<Object, Object> map = getAsMap( key );
-        if ( map == null )
-        {
-            if ( defaultValues != null )
-            {
-                map = new HashMap<Object, Object>();
-                for ( int i = 0; i < defaultValues.length; )
-                {
-                    Object defaultKey = defaultValues[i++];
-                    Object defaultValue = defaultValues[i++];
-                    map.put( defaultKey, defaultValue );
-                }
-            }
-        }
-        return map;
+        Map<?, ?> map = getObjectMap( key );
+        return (map != null) ? map : createMap( defaultValues );
+    }
+
+    /**
+     * Returns a Map<Object,Object> under the specified key. If the key does not exist, a 'null' is returned.
+     */
+    public Map<?, ?> getObjectMap( Object key )
+    {
+        return getCachedWithConvertion( key, MAP_OBJECT );
+    }
+
+    /**
+     * Returns a Map<String,String> under the specified key. If the key does not exist, a Map with the defaultValues (as Key/Value pairs) is returned.
+     */
+    public Map<String, String> getMapNotNull( Object key, String... defaultValues )
+    {
+        Util.assertPairedEntries( "defaultValues", defaultValues );
+        Map<String, String> map = getMap( key );
+        return (map != null) ? map : createMap( defaultValues );
+    }
+
+    /**
+     * Returns a Map<String, String> under the specified key. If the key does not exist, a 'null' is returned.
+     */
+    public Map<String, String> getMap( Object key )
+    {
+        return getCachedWithConvertion( key, MAP_STRING );
     }
 
     /**
      * Uses the strings under the specified key to {@link Paths#glob(String, String...) glob} paths.
      */
     public Paths getPaths( String key )
-            throws IOException
     {
-        Paths paths = new Paths();
-        for ( String dirPattern : getList( key ) )
-        {
-            paths.glob( path( dirPattern ) );
-        }
-        return paths;
+        Paths zPaths = getCachedWithConvertion( key, PATHS );
+        return (zPaths != null) ? zPaths : new Paths();
     }
 
     /**
@@ -344,8 +329,11 @@ public class ProjectParameters extends Util
      * If the specified path is a relative path, it is made absolute relative to this project's directory.
      */
     public String path( String path )
-            throws IOException
     {
+        if ( path == null )
+        {
+            return null;
+        }
         path = format( path );
         String zSuffix = "";
         int pipeIndex = path.indexOf( '|' );
@@ -391,6 +379,45 @@ public class ProjectParameters extends Util
         return buffer.toString();
     }
 
+    public Object[] keys()
+    {
+        return mManager.keys();
+    }
+
+    public File getCanonicalProjectDir()
+    {
+        return mCanonicalProjectDir;
+    }
+
+    public String getName()
+    {
+        return mName;
+    }
+
+    public ProjectParameters( String pName, File pCanonicalProjectDir, Map<Object, Object> pData )
+    {
+        this( pName, pCanonicalProjectDir, new Manager( pData ) );
+    }
+
+    // ---------------------------------------------------- Support ----------------------------------------------------
+
+    protected ProjectParameters( ProjectParameters pParameters )
+    {
+        this( pParameters.getName(), pParameters.getCanonicalProjectDir(), pParameters.mManager );
+    }
+
+    private ProjectParameters( String pName, File pCanonicalProjectDir, Manager pManager )
+    {
+        mCanonicalProjectDir = pCanonicalProjectDir;
+        mManager = pManager;
+        Object zName = mManager.get( NAME.getName() );
+        mManager.put( NAME.getName(), mName = (zName != null) ? zName.toString() : pName );
+    }
+
+    protected final String mName;
+    protected final File mCanonicalProjectDir;
+    protected final Manager mManager;
+
     static private final java.util.regex.Pattern formatPattern = java.util.regex.Pattern.compile( "([^\\$]*)\\$([^\\$]+)\\$([^\\$]*)" );
 
     @SuppressWarnings({"unchecked"})
@@ -399,4 +426,166 @@ public class ProjectParameters extends Util
         Object zValue = getObject( pKey );
         return (zValue instanceof Map) ? (Map<T, T>) zValue : null;
     }
+
+    @Override
+    public String toString()
+    {
+        return getName();
+    }
+
+    protected void deletePath( String pProjectRelativePath )
+    {
+        String zPath = path( pProjectRelativePath );
+        if ( zPath != null )
+        {
+            delete( zPath );
+        }
+    }
+
+    protected void defaultSubDirOptional( Parameter pParameter, String... pOptions )
+    {
+        Object o = mManager.get( pParameter.getName() );
+        if ( o == null )
+        {
+            for ( String zOption : pOptions )
+            {
+                if ( dirExists( zOption ) )
+                {
+                    mManager.put( pParameter.getName(), zOption );
+                    return;
+                }
+            }
+        }
+    }
+
+    protected boolean dirExists( String pPath )
+    {
+        int pipeAt = pPath.indexOf( '|' );
+        if ( pipeAt != -1 )
+        {
+            pPath = pPath.substring( pipeAt );
+        }
+        return new File( getCanonicalProjectDir(), pPath ).isDirectory();
+    }
+
+    protected void defaultKey( Parameter pParameter, String pDefault )
+    {
+        if ( null == get( pParameter.getName() ) )
+        {
+            mManager.put( pParameter.getName(), pDefault );
+        }
+    }
+
+    protected <T> Map<T, T> createMap( T[] defaultValues )
+    {
+        Map<T, T> map = new HashMap<T, T>();
+        if ( defaultValues != null )
+        {
+            for ( int i = 0; i < defaultValues.length; )
+            {
+                T defaultKey = defaultValues[i++];
+                T defaultValue = defaultValues[i++];
+                map.put( defaultKey, defaultValue );
+            }
+        }
+        return map;
+    }
+
+    protected <T> T getCachedWithConvertion( Object pKey, DataConverter<T> pConverter )
+    {
+        Object zValue = mManager.getCachedResponse( pKey = mManager.normalizeKey( pKey ) );
+        if ( zValue != null )
+        {
+            //noinspection unchecked
+            return (T) zValue;
+        }
+        zValue = mManager.get( pKey );
+        if ( zValue == null )
+        {
+            return null;
+        }
+        T zConverted = pConverter.convert( zValue );
+        mManager.addCachedResponse( pKey, zConverted );
+        return zConverted;
+    }
+
+    private static final DataConverter<Integer> INTEGER = new DataConverter<Integer>()
+    {
+        @Override
+        public Integer convert( Object pValue )
+        {
+            return (pValue instanceof Number) ? ((Number) pValue).intValue() : Integer.parseInt( pValue.toString() );
+        }
+    };
+
+    private static final DataConverter<Float> FLOAT = new DataConverter<Float>()
+    {
+        @Override
+        public Float convert( Object pValue )
+        {
+            return (pValue instanceof Number) ? ((Number) pValue).floatValue() : Float.parseFloat( pValue.toString() );
+        }
+    };
+
+    private static final DataConverter<Boolean> BOOLEAN = new DataConverter<Boolean>()
+    {
+        @Override
+        public Boolean convert( Object pValue )
+        {
+            return (pValue instanceof Boolean) ? (Boolean) pValue : Boolean.parseBoolean( pValue.toString() );
+        }
+    };
+
+    private static final DataConverter<List<?>> LIST_OBJECT = new DataConverter<List<?>>()
+    {
+        @Override
+        public List<?> convert( Object pValue )
+        {
+            return (pValue instanceof List) ? (List<?>) pValue : Arrays.asList( pValue );
+        }
+    };
+
+    private static final DataConverter<List<String>> LIST_STRING = new DataConverter<List<String>>()
+    {
+        @Override
+        public List<String> convert( Object pValue )
+        {
+            //noinspection unchecked
+            return (pValue instanceof List) ? (List<String>) pValue : Arrays.asList( pValue.toString() );
+        }
+    };
+
+    private static final DataConverter<Map<?, ?>> MAP_OBJECT = new DataConverter<Map<?, ?>>()
+    {
+        @Override
+        public Map<?, ?> convert( Object pValue )
+        {
+            return (Map<?, ?>) pValue;
+        }
+    };
+
+    private static final DataConverter<Map<String, String>> MAP_STRING = new DataConverter<Map<String, String>>()
+    {
+        @Override
+        public Map<String, String> convert( Object pValue )
+        {
+            //noinspection unchecked
+            return (Map<String, String>) pValue;
+        }
+    };
+
+    private final DataConverter<Paths> PATHS = new DataConverter<Paths>()
+    {
+        @Override
+        public Paths convert( Object pValue )
+        {
+            Paths paths = new Paths();
+            List<String> zList = LIST_STRING.convert( pValue );
+            for ( String dirPattern : zList )
+            {
+                paths.glob( path( dirPattern ) );
+            }
+            return paths;
+        }
+    };
 }

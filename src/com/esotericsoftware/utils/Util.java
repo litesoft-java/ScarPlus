@@ -1,8 +1,5 @@
 package com.esotericsoftware.utils;
 
-import java.io.*;
-import java.nio.channels.*;
-
 import org.litesoft.logger.*;
 
 @SuppressWarnings({"UnusedDeclaration"})
@@ -13,20 +10,6 @@ public class Util
     public static void progress( String pMessage )
     {
         PROGRESS_LINE_SINK.addLine( pMessage );
-    }
-
-    public static final File CANONICAL_USER_DIR;
-
-    static
-    {
-        try
-        {
-            CANONICAL_USER_DIR = new File( System.getProperty( "user.dir" ) ).getCanonicalFile();
-        }
-        catch ( IOException e )
-        {
-            throw new Error( e );
-        }
     }
 
     /**
@@ -42,45 +25,6 @@ public class Util
     public static final String[] EMPTY_STRING_ARRAY = new String[0];
 
     public static final Logger LOGGER = LoggerFactory.getLogger( Util.class );
-
-    private static final IFileSystem FILE_SYSTEM = new IFileSystem()
-    {
-        @Override
-        public boolean isWindows()
-        {
-            return isWindows;
-        }
-
-        @Override
-        public char separatorChar()
-        {
-            return File.separatorChar;
-        }
-
-        @Override
-        public String canonicalCurrentPath()
-        {
-            return CANONICAL_USER_DIR.getPath();
-        }
-
-        @Override
-        public boolean exists( String path )
-        {
-            return new File( path ).exists();
-        }
-
-        @Override
-        public String canonicalizeNormalizedExisting( String path )
-                throws IOException
-        {
-            File zFile = new File( path );
-            if ( zFile.exists() )
-            {
-                return zFile.getCanonicalPath();
-            }
-            throw new FileNotFoundException( path );
-        }
-    };
 
     public static String noEmpty( String pToTest )
     {
@@ -143,16 +87,6 @@ public class Util
         }
     }
 
-    public static File assertExists( String pWhat, File pToTest )
-    {
-        assertNotNull( pWhat, pToTest );
-        if ( !pToTest.exists() )
-        {
-            throw new IllegalArgumentException( pWhat + " not found: " + pToTest.getAbsolutePath() );
-        }
-        return pToTest;
-    }
-
     public static String replace( String pSource, String pOfInterest, String pReplaceWith )
     {
         for ( int at; -1 != (at = pSource.indexOf( pOfInterest )); )
@@ -162,101 +96,8 @@ public class Util
         return pSource;
     }
 
-    /**
-     * Copies one file to another.
-     */
-    @SuppressWarnings({"ResultOfMethodCallIgnored"})
-    public static void copyFile( File in, File out )
-            throws IOException
+    public static String toString( Object o )
     {
-        out.getParentFile().mkdirs();
-        FileChannel sourceChannel = new FileInputStream( in ).getChannel();
-        FileChannel destinationChannel = new FileOutputStream( out ).getChannel();
-        sourceChannel.transferTo( 0, sourceChannel.size(), destinationChannel );
-        sourceChannel.close();
-        destinationChannel.close();
-    }
-
-    /**
-     * Creates the directories in the specified path.
-     */
-    public static String mkdir( String path )
-    {
-        if ( new File( path = assertNotEmpty( "path", path ) ).mkdirs() )
-        {
-            LOGGER.trace.log( "Created directory: ", path );
-        }
-        return path;
-    }
-
-    /**
-     * Deletes a directory and all files and directories it contains.
-     */
-    public static boolean delete( File pFile )
-    {
-        assertNotNull( "File", pFile );
-        if ( pFile.isDirectory() )
-        {
-            File[] zFiles = pFile.listFiles();
-            for ( File zFile : zFiles )
-            {
-                if ( !delete( zFile ) )
-                {
-                    return false;
-                }
-            }
-        }
-        LOGGER.trace.log( "Deleting file: ", pFile );
-        return pFile.delete();
-    }
-
-    /**
-     * Deletes a file or directory and all files and subdirecties under it.
-     */
-    public static boolean delete( String fileName )
-    {
-        return delete( new File( assertNotEmpty( "fileName", fileName ) ) );
-    }
-
-    public static Closeable dispose( Closeable pCloseable )
-    {
-        if ( pCloseable != null )
-        {
-            try
-            {
-                pCloseable.close();
-            }
-            catch ( IOException ignore )
-            {
-                // Whatever!
-            }
-            pCloseable = null;
-        }
-        return pCloseable;
-    }
-
-    public static boolean isAbsolutePath( String path )
-    {
-        assertNotNull( "path", path );
-        return FileSupport.isAbsoluteNormalizedPath( FILE_SYSTEM, CANONICAL_USER_DIR.getPath(), FileSupport.normalizePath( FILE_SYSTEM, path ) );
-    }
-
-    public static String normalizePath( String path )
-    {
-        assertNotNull( "path", path );
-        return FileSupport.normalizePath( FILE_SYSTEM, path );
-    }
-
-    public static File canonicalizePath( String path )
-            throws IOException
-    {
-        return canonicalizePath( CANONICAL_USER_DIR, path );
-    }
-
-    public static File canonicalizePath( File pCanonicalParentDirIfPathRelative, String path )
-            throws IOException
-    {
-        assertNotNull( "path", path );
-        return new File( FileSupport.canonicalizeNormalizedPath( FILE_SYSTEM, pCanonicalParentDirIfPathRelative.getPath(), FileSupport.normalizePath( FILE_SYSTEM, path ) ) );
+        return (o != null) ? o.toString() : null;
     }
 }

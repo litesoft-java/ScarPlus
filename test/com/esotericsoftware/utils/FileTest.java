@@ -22,7 +22,7 @@ public class FileTest
             assertRelative( ".\\Fred" );
             assertRelative( "..\\Fred" );
 
-            String zPath = Util.CANONICAL_USER_DIR.getPath();
+            String zPath = FileUtil.CANONICAL_USER_DIR.getPath();
             System.out.println( "Current User Dir Path: " + zPath );
 
             assertEquals( zPath, new File( zPath + '\\' ).getCanonicalPath() );

@@ -62,7 +62,6 @@ public class Scar extends Utils implements ProjectFactory
      */
     @Override
     public Project project( File pCanonicalCurrentDirectory, String pPath )
-            throws IOException
     {
         Util.assertNotNull( "CurrentDirectory", pCanonicalCurrentDirectory );
         pPath = Util.assertNotEmpty( "Path", pPath );
@@ -71,7 +70,14 @@ public class Scar extends Utils implements ProjectFactory
         {
             zFile = new File( pCanonicalCurrentDirectory, pPath );
         }
-        zFile = zFile.getCanonicalFile();
+        try
+        {
+            zFile = zFile.getCanonicalFile();
+        }
+        catch ( IOException e )
+        {
+            throw new WrappedIOException( e );
+        }
 
         String zPath = zFile.getPath();
         Project zProject = mProjectCache.getByPath( zPath );
@@ -90,9 +96,9 @@ public class Scar extends Utils implements ProjectFactory
                 return mProjectCache.initialize( this, zPath, createProject( findBuildFile( zFile ), zFile, zFile.getName() ) );
             }
         }
-        catch ( IOException e )
+        catch ( WrappedIOException e )
         {
-            throw new IOException( pPath, e );
+            throw new WrappedIOException( pPath, e );
         }
         throw new IllegalArgumentException( "Project is Neither a Project File, nor a Project Directory: " + zFile );
     }
@@ -130,7 +136,6 @@ public class Scar extends Utils implements ProjectFactory
     }
 
     protected Project createProject( File pPossibleBuildFile, File pCanonicalProjectDir )
-            throws IOException
     {
         String zBuildFileName = pPossibleBuildFile.getName();
         int zDotAt = zBuildFileName.lastIndexOf( '.' );
@@ -147,7 +152,6 @@ public class Scar extends Utils implements ProjectFactory
     }
 
     protected Project createProject( File pBuildFile, File pCanonicalProjectDir, String pProjectName )
-            throws IOException
     {
         if ( pBuildFile == null )
         {
@@ -166,7 +170,6 @@ public class Scar extends Utils implements ProjectFactory
     }
 
     protected Project createYamlProject( File zYamlBuildFile, File pCanonicalProjectDir, String pProjectName )
-            throws IOException
     {
         List<String> zLines = readLines( zYamlBuildFile );
         int at = findLine( zLines, "---" );
@@ -190,7 +193,6 @@ public class Scar extends Utils implements ProjectFactory
     }
 
     protected Project createJavaProject( File zJavaBuildFile, File pCanonicalProjectDir, String pProjectName )
-            throws IOException
     {
         String zFile = mergeLines( readLines( zJavaBuildFile ), 0 );
         Class<? extends Project> zClass = createJavaProjectClass();
@@ -249,7 +251,6 @@ public class Scar extends Utils implements ProjectFactory
     }
 
     protected Map<Object, Object> parseYAML( File pProjectDir, String pYAML )
-            throws IOException
     {
         final String zProjectDir = pProjectDir.getPath().replace( '\\', '/' );
 
@@ -272,9 +273,20 @@ public class Scar extends Utils implements ProjectFactory
             //noinspection unchecked
             return yamlReader.read( HashMap.class );
         }
+        catch ( IOException e )
+        {
+            throw new WrappedIOException( e );
+        }
         finally
         {
-            yamlReader.close();
+            try
+            {
+                yamlReader.close();
+            }
+            catch ( IOException e )
+            {
+                throw new WrappedIOException( e );
+            }
         }
     }
 
@@ -306,9 +318,16 @@ public class Scar extends Utils implements ProjectFactory
     }
 
     protected List<String> readLines( File zFile )
-            throws IOException
     {
-        BufferedReader fileReader = new BufferedReader( new FileReader( zFile ) );
+        BufferedReader fileReader;
+        try
+        {
+            fileReader = new BufferedReader( new FileReader( zFile ) );
+        }
+        catch ( FileNotFoundException e )
+        {
+            throw new WrappedIOException( e );
+        }
         try
         {
             List<String> lines = new ArrayList<String>();
@@ -334,7 +353,7 @@ public class Scar extends Utils implements ProjectFactory
                     // Whatever!
                 }
             }
-            throw e;
+            throw new WrappedIOException( e );
         }
     }
 
@@ -381,7 +400,6 @@ public class Scar extends Utils implements ProjectFactory
      */
     @SuppressWarnings({"UnusedDeclaration"})
     public void cleanAll()
-            throws IOException
     {
         progress( "CleanAll" );
         Set<Project> zProjects = mProjectCache.getAllProjects();
@@ -396,7 +414,6 @@ public class Scar extends Utils implements ProjectFactory
      */
     @SuppressWarnings({"UnusedDeclaration"})
     public void build()
-            throws IOException
     {
         mLaunchProject.build();
     }
@@ -420,7 +437,6 @@ public class Scar extends Utils implements ProjectFactory
      * @param path Path to a YAML project file, or a directory containing a "project.yaml" file.
      */
 //    public Project project( String path, Project defaults )
-//            throws IOException
 //    {
 //        Util.assertNotNull( "path", path );
 //        Util.assertNotNull( "defaults", defaults );
@@ -470,13 +486,20 @@ public class Scar extends Utils implements ProjectFactory
      * @return The path to the JAR file.
      */
     public String unsign( String jarFile )
-            throws IOException
     {
         Util.assertNotNull( "jarFile", jarFile );
 
         progress( "Removing signature from JAR: " + jarFile );
 
-        File tempFile = File.createTempFile( "scar", "removejarsig" );
+        File tempFile;
+        try
+        {
+            tempFile = File.createTempFile( "scar", "removejarsig" );
+        }
+        catch ( IOException e )
+        {
+            throw new WrappedIOException( e );
+        }
         JarOutputStream jarOutput = null;
         JarInputStream jarInput = null;
         try
@@ -522,30 +545,12 @@ public class Scar extends Utils implements ProjectFactory
         }
         catch ( IOException ex )
         {
-            throw new IOException( "Error unsigning JAR file: " + jarFile, ex );
+            throw new WrappedIOException( "Error unsigning JAR file: " + jarFile, ex );
         }
         finally
         {
-            try
-            {
-                if ( jarInput != null )
-                {
-                    jarInput.close();
-                }
-            }
-            catch ( Exception ignored )
-            {
-            }
-            try
-            {
-                if ( jarOutput != null )
-                {
-                    jarOutput.close();
-                }
-            }
-            catch ( Exception ignored )
-            {
-            }
+            dispose( jarInput );
+            dispose( jarOutput );
             tempFile.delete();
         }
         return jarFile;
@@ -557,7 +562,6 @@ public class Scar extends Utils implements ProjectFactory
      * @return The path to the JAR.
      */
     public String sign( String jarFile, String keystoreFile, String alias, String password )
-            throws IOException
     {
         Util.assertNotNull( "jarFile", jarFile );
         Util.assertNotNull( "keystoreFile", keystoreFile );
@@ -580,7 +584,6 @@ public class Scar extends Utils implements ProjectFactory
      * @return The path to the encoded file.
      */
     public String pack200( String jarFile )
-            throws IOException
     {
         String packedFile = pack200( jarFile, jarFile + ".pack" );
         delete( jarFile );
@@ -593,7 +596,6 @@ public class Scar extends Utils implements ProjectFactory
      * @return The path to the encoded file.
      */
     public String pack200( String jarFile, String packedFile )
-            throws IOException
     {
         Util.assertNotNull( "jarFile", jarFile );
         Util.assertNotNull( "packedFile", packedFile );
@@ -611,7 +613,6 @@ public class Scar extends Utils implements ProjectFactory
      * @return The path to the decoded file.
      */
     public String unpack200( String packedFile )
-            throws IOException
     {
         Util.assertNotNull( "packedFile", packedFile );
         if ( !packedFile.endsWith( ".pack" ) )
@@ -630,7 +631,6 @@ public class Scar extends Utils implements ProjectFactory
      * @return The path to the decoded file.
      */
     public String unpack200( String packedFile, String jarFile )
-            throws IOException
     {
         Util.assertNotNull( "packedFile", packedFile );
         Util.assertNotNull( "jarFile", jarFile );
@@ -647,7 +647,6 @@ public class Scar extends Utils implements ProjectFactory
      * @return The path to the encoded file.
      */
     public String gzip( String file )
-            throws IOException
     {
         String gzipFile = gzip( file, file + ".gz" );
         delete( file );
@@ -660,27 +659,32 @@ public class Scar extends Utils implements ProjectFactory
      * @return The path to the encoded file.
      */
     public String gzip( String file, String gzipFile )
-            throws IOException
     {
         Util.assertNotNull( "file", file );
         Util.assertNotNull( "gzipFile", gzipFile );
 
         progress( "GZIP encoding: " + file + " -> " + gzipFile );
 
-        InputStream input = new FileInputStream( file );
+        InputStream input;
+        try
+        {
+            input = new FileInputStream( file );
+        }
+        catch ( FileNotFoundException e )
+        {
+            throw new WrappedIOException( e );
+        }
         try
         {
             copyStream( input, new GZIPOutputStream( new FileOutputStream( gzipFile ) ) );
         }
+        catch ( IOException e )
+        {
+            throw new WrappedIOException( e );
+        }
         finally
         {
-            try
-            {
-                input.close();
-            }
-            catch ( Exception ignored )
-            {
-            }
+            dispose( input );
         }
         return gzipFile;
     }
@@ -692,7 +696,6 @@ public class Scar extends Utils implements ProjectFactory
      * @return The path to the decoded file.
      */
     public String ungzip( String gzipFile )
-            throws IOException
     {
         Util.assertNotNull( "gzipFile", gzipFile );
         if ( !gzipFile.endsWith( ".gz" ) )
@@ -711,26 +714,31 @@ public class Scar extends Utils implements ProjectFactory
      * @return The path to the decoded file.
      */
     public String ungzip( String gzipFile, String file )
-            throws IOException
     {
         Util.assertNotNull( "gzipFile", gzipFile );
         Util.assertNotNull( "file", file );
         progress( "GZIP decoding: " + gzipFile + " -> " + file );
 
-        InputStream input = new GZIPInputStream( new FileInputStream( gzipFile ) );
+        InputStream input;
+        try
+        {
+            input = new GZIPInputStream( new FileInputStream( gzipFile ) );
+        }
+        catch ( IOException e )
+        {
+            throw new WrappedIOException( e );
+        }
         try
         {
             copyStream( input, new FileOutputStream( file ) );
         }
+        catch ( FileNotFoundException e )
+        {
+            throw new WrappedIOException( e );
+        }
         finally
         {
-            try
-            {
-                input.close();
-            }
-            catch ( Exception ignored )
-            {
-            }
+            dispose( input );
         }
         return file;
     }
@@ -741,7 +749,6 @@ public class Scar extends Utils implements ProjectFactory
      * @return The path to the encoded file.
      */
     public String zip( Paths paths, String zipFile )
-            throws IOException
     {
         Util.assertNotNull( "paths", paths );
         Util.assertNotNull( "zipFile", zipFile );
@@ -757,18 +764,33 @@ public class Scar extends Utils implements ProjectFactory
      * @return The path to the output directory.
      */
     public String unzip( String zipFile, String outputDir )
-            throws IOException
     {
         Util.assertNotNull( "zipFile", zipFile );
         Util.assertNotNull( "outputDir", outputDir );
         progress( "ZIP decoding: " + zipFile + " -> " + outputDir );
 
-        ZipInputStream input = new ZipInputStream( new FileInputStream( zipFile ) );
+        ZipInputStream input;
+        try
+        {
+            input = new ZipInputStream( new FileInputStream( zipFile ) );
+        }
+        catch ( FileNotFoundException e )
+        {
+            throw new WrappedIOException( e );
+        }
         try
         {
             while ( true )
             {
-                ZipEntry entry = input.getNextEntry();
+                ZipEntry entry;
+                try
+                {
+                    entry = input.getNextEntry();
+                }
+                catch ( IOException e )
+                {
+                    throw new WrappedIOException( e );
+                }
                 if ( entry == null )
                 {
                     break;
@@ -780,7 +802,15 @@ public class Scar extends Utils implements ProjectFactory
                     continue;
                 }
                 mkdir( file.getParent() );
-                FileOutputStream output = new FileOutputStream( file );
+                FileOutputStream output;
+                try
+                {
+                    output = new FileOutputStream( file );
+                }
+                catch ( FileNotFoundException e )
+                {
+                    throw new WrappedIOException( e );
+                }
                 try
                 {
                     byte[] buffer = new byte[4096];
@@ -794,27 +824,19 @@ public class Scar extends Utils implements ProjectFactory
                         output.write( buffer, 0, length );
                     }
                 }
+                catch ( IOException e )
+                {
+                    throw new WrappedIOException( e );
+                }
                 finally
                 {
-                    try
-                    {
-                        output.close();
-                    }
-                    catch ( Exception ignored )
-                    {
-                    }
+                    dispose( output );
                 }
             }
         }
         finally
         {
-            try
-            {
-                input.close();
-            }
-            catch ( Exception ignored )
-            {
-            }
+            dispose( input );
         }
         return outputDir;
     }
@@ -826,7 +848,6 @@ public class Scar extends Utils implements ProjectFactory
      * @return The path to the encoded file.
      */
     public String lzma( String file )
-            throws IOException
     {
         String lzmaFile = lzma( file, file + ".lzma" );
         delete( file );
@@ -839,7 +860,6 @@ public class Scar extends Utils implements ProjectFactory
      * @return The path to the encoded file.
      */
     public String lzma( String file, String lzmaFile )
-            throws IOException
     {
         Util.assertNotNull( "file", file );
         Util.assertNotNull( "lzmaFile", lzmaFile );
@@ -851,7 +871,7 @@ public class Scar extends Utils implements ProjectFactory
         }
         catch ( Exception ex )
         {
-            throw new IOException( "Error lzma compressing file: " + file, ex );
+            throw new WrappedIOException( "Error lzma compressing file: " + file, ex );
         }
         return lzmaFile;
     }
@@ -863,7 +883,6 @@ public class Scar extends Utils implements ProjectFactory
      * @return The path to the decoded file.
      */
     public String unlzma( String lzmaFile )
-            throws IOException
     {
         Util.assertNotNull( "lzmaFile", lzmaFile );
         if ( !lzmaFile.endsWith( ".lzma" ) )
@@ -882,7 +901,6 @@ public class Scar extends Utils implements ProjectFactory
      * @return The path to the decoded file.
      */
     public String unlzma( String lzmaFile, String file )
-            throws IOException
     {
         Util.assertNotNull( "lzmaFile", lzmaFile );
         Util.assertNotNull( "file", file );
@@ -894,7 +912,7 @@ public class Scar extends Utils implements ProjectFactory
         }
         catch ( Exception ex )
         {
-            throw new IOException( "Error lzma decompressing file: " + file, ex );
+            throw new WrappedIOException( "Error lzma decompressing file: " + file, ex );
         }
         return file;
     }
@@ -905,7 +923,6 @@ public class Scar extends Utils implements ProjectFactory
      * GZIP.
      */
     public void jws( Project project, boolean pack, String keystoreFile, String alias, String password )
-            throws IOException
     {
         Util.assertNotNull( "Project", project );
         Util.assertNotNull( "keystoreFile", keystoreFile );
@@ -945,7 +962,6 @@ public class Scar extends Utils implements ProjectFactory
      * JARs and regular JARs, based on capability of the client requesting the JAR.
      */
     public void jwsHtaccess( Project project )
-            throws IOException
     {
         Util.assertNotNull( "Project", project );
 
@@ -956,7 +972,15 @@ public class Scar extends Utils implements ProjectFactory
         {
             String packedFileName = fileName( packedFile );
             String jarFileName = substring( packedFileName, 0, -8 );
-            FileWriter writer = new FileWriter( jwsDir + jarFileName + ".var" );
+            FileWriter writer;
+            try
+            {
+                writer = new FileWriter( jwsDir + jarFileName + ".var" );
+            }
+            catch ( IOException e )
+            {
+                throw new WrappedIOException( e );
+            }
             try
             {
                 writer.write( "URI: packed/" + packedFileName + "\n" );
@@ -965,18 +989,24 @@ public class Scar extends Utils implements ProjectFactory
                 writer.write( "URI: unpacked/" + jarFileName + "\n" );
                 writer.write( "Content-Type: x-java-archive\n" );
             }
+            catch ( IOException e )
+            {
+                throw new WrappedIOException( e );
+            }
             finally
             {
-                try
-                {
-                    writer.close();
-                }
-                catch ( Exception ignored )
-                {
-                }
+                dispose( writer );
             }
         }
-        FileWriter writer = new FileWriter( jwsDir + ".htaccess" );
+        FileWriter writer;
+        try
+        {
+            writer = new FileWriter( jwsDir + ".htaccess" );
+        }
+        catch ( IOException e )
+        {
+            throw new WrappedIOException( e );
+        }
         try
         {
             writer.write( "AddType application/x-java-jnlp-file .jnlp" ); // JNLP mime type.
@@ -989,15 +1019,13 @@ public class Scar extends Utils implements ProjectFactory
             writer.write( "RemoveEncoding .gz\n" ); // Prevent mod_gzip from messing with the Content-Encoding response.
             writer.write( "</Files>\n" );
         }
+        catch ( IOException e )
+        {
+            throw new WrappedIOException( e );
+        }
         finally
         {
-            try
-            {
-                writer.close();
-            }
-            catch ( Exception ignored )
-            {
-            }
+            dispose( writer );
         }
     }
 
@@ -1009,7 +1037,6 @@ public class Scar extends Utils implements ProjectFactory
      * @param splashImage Can be null.
      */
     public void jnlp( Project project, String url, String company, String title, String splashImage )
-            throws IOException
     {
         Util.assertNotNull( "Project", project );
         Util.assertNotNull( "company", company );
@@ -1045,7 +1072,15 @@ public class Scar extends Utils implements ProjectFactory
         String jnlpFile = url.substring( lastSlash + 1 );
 
         String jwsDir = mkdir( project.path( "$target$/jws/" ) );
-        FileWriter writer = new FileWriter( jwsDir + jnlpFile );
+        FileWriter writer;
+        try
+        {
+            writer = new FileWriter( jwsDir + jnlpFile );
+        }
+        catch ( IOException e )
+        {
+            throw new WrappedIOException( e );
+        }
         try
         {
             writer.write( "<?xml version='1.0' encoding='utf-8'?>\n" );
@@ -1121,20 +1156,17 @@ public class Scar extends Utils implements ProjectFactory
             writer.write( "<application-desc main-class='" + project.getMain() + "'/>\n" );
             writer.write( "</jnlp>" );
         }
+        catch ( IOException e )
+        {
+            throw new WrappedIOException( e );
+        }
         finally
         {
-            try
-            {
-                writer.close();
-            }
-            catch ( Exception ignored )
-            {
-            }
+            dispose( writer );
         }
     }
 
     public String lwjglApplet( Project project, String keystoreFile, String alias, String password )
-            throws IOException
     {
         Util.assertNotNull( "Project", project );
         Util.assertNotNull( "keystoreFile", keystoreFile );
@@ -1178,7 +1210,15 @@ public class Scar extends Utils implements ProjectFactory
             return appletDir;
         }
         progress( "Generating: applet.html" );
-        FileWriter writer = new FileWriter( appletDir + "applet.html" );
+        FileWriter writer;
+        try
+        {
+            writer = new FileWriter( appletDir + "applet.html" );
+        }
+        catch ( IOException e )
+        {
+            throw new WrappedIOException( e );
+        }
         try
         {
             writer.write( "<html>\n" );
@@ -1229,15 +1269,13 @@ public class Scar extends Utils implements ProjectFactory
             writer.write( "</applet>\n" );
             writer.write( "</body></html>\n" );
         }
+        catch ( IOException e )
+        {
+            throw new WrappedIOException( e );
+        }
         finally
         {
-            try
-            {
-                writer.close();
-            }
-            catch ( Exception ignored )
-            {
-            }
+            dispose( writer );
         }
         return appletDir;
     }
@@ -1253,7 +1291,6 @@ public class Scar extends Utils implements ProjectFactory
      * @param excludeJARs The names of any JARs to exclude.
      */
     public void oneJAR( Project project, String... excludeJARs )
-            throws IOException
     {
         Util.assertNotNull( "Project", project );
 
@@ -1422,7 +1459,6 @@ public class Scar extends Utils implements ProjectFactory
      * @return true if code was executed.
      */
     public boolean executeDocument( Project project )
-            throws IOException
     {
         String code = null; // todo: was -- project.getDocument();
         if ( code == null || code.trim().isEmpty() )
@@ -1491,7 +1527,6 @@ public class Scar extends Utils implements ProjectFactory
         }
 
         private Project initialize( ProjectFactory pFactory, String pPath, Project pProject )
-                throws IOException
         {
             synchronized ( this )
             {
@@ -1516,7 +1551,6 @@ public class Scar extends Utils implements ProjectFactory
     }
 
     protected Runnable createRunnableFor( String pMethodName )
-            throws IOException
     {
         Runnable zRunnable = createRunnableFor( this, pMethodName );
         return (zRunnable != null) ? zRunnable : createRunnableFor( mLaunchProject, pMethodName );
@@ -1571,13 +1605,11 @@ public class Scar extends Utils implements ProjectFactory
     }
 
     protected void createLaunchProject()
-            throws IOException
     {
         mLaunchProject = project( CANONICAL_USER_DIR, mArgs.get( "file", "." ) );
     }
 
     protected int run()
-            throws IOException
     {
         if ( mArgs.count() == 0 )
         {
@@ -1593,7 +1625,6 @@ public class Scar extends Utils implements ProjectFactory
     }
 
     private ArrayList<Runnable> getArgsBasedRunnables()
-            throws IOException
     {
         ArrayList<Runnable> zRunnables = new ArrayList<Runnable>();
         List<String> zUnrecognizedNames = new ArrayList<String>();

@@ -24,7 +24,8 @@ public class Project extends ProjectParameters
 
     public Project( ProjectParameters pParameters )
     {
-        super( pParameters.getName(), pParameters.getCanonicalProjectDir(), pParameters.mData );
+        super( pParameters );
+        applyDefaults();
     }
 
     public String getTargetJavaVersion()
@@ -32,35 +33,23 @@ public class Project extends ProjectParameters
         return "1.6";
     }
 
-    public synchronized void set( Object key, Object object )
+    public void set( Object key, Object object )
     {
-        mData.put( updatableKey( key ), object );
+        mManager.put( updatableKey( key ), object );
     }
 
-    public synchronized void remove( Object key )
+    public void remove( Object key )
     {
-        mData.remove( updatableKey( key ) );
+        set( key, null );
     }
 
     /**
      * Removes an item from a list or map. If the mData under the specified key is a list, the entry equal to the specified value is
      * removed. If the mData under the specified key is a map, the entry with the key specified by value is removed.
      */
-    public synchronized void remove( Object key, Object value )
+    public void remove( Object key, Object value )
     {
-        Object object = mData.get( key = updatableKey( key ) );
-        if ( object instanceof Map )
-        {
-            ((Map) object).remove( value );
-        }
-        else if ( object instanceof List )
-        {
-            ((List) object).remove( value );
-        }
-        else
-        {
-            mData.remove( key );
-        }
+        mManager.remove( updatableKey( key ), value );
     }
 
     private Object updatableKey( Object pKey )
@@ -82,30 +71,28 @@ public class Project extends ProjectParameters
      * Executes the buildDependencies, clean, compile, jar, and dist utility methods.
      */
     public synchronized boolean build()
-            throws IOException
     {
         if ( mBuilt )
         {
             return false;
         }
+        mBuilt = true;
         if ( !buildDependencies() && !needToBuild() )
         {
             progress( "Build: " + this + " NOT Needed!" );
-            return false;
+            return (null != dist());
         }
         progress( "Build: " + this );
         buildIt();
-        return (mBuilt = true);
+        return true;
     }
 
     public boolean needToBuild()
-            throws IOException
     {
         return true; // todo
     }
 
     protected void buildIt()
-            throws IOException
     {
         clean();
         compile();
@@ -117,10 +104,11 @@ public class Project extends ProjectParameters
      * Deletes the "target" directory and all files and directories under it.
      */
     public void clean()
-            throws IOException
     {
         progress( "Clean: " + this );
-        delete( path( "$target$" ) );
+        deletePath( getAppDir() );
+        deletePath( getJar() );
+        deletePath( getTarget() );
     }
 
     /**
@@ -129,24 +117,18 @@ public class Project extends ProjectParameters
      * <p/>
      * Note: Each dependency project is not built automatically. Each needs to be built before the dependent project.
      *
-     * @return The path to the "classes" directory.
+     * @return The path to the "classes" directory or null if there was no sources to compile
      */
     public String compile()
-            throws IOException
     {
-        Paths classpath = classpath();
         Paths source = getSource();
-
-        String classesDir = mkdir( path( "$target$/classes/" ) );
-
         if ( source.isEmpty() )
         {
-            if ( LOGGER.warn.isEnabled() )
-            {
-                progress( "Compile: " + this + " --- No source files found." );
-            }
-            return classesDir;
+            return null;
         }
+        Paths classpath = classpath();
+
+        String classesDir = mkdir( path( "$target$/classes/" ) );
 
         if ( LOGGER.debug.isEnabled() )
         {
@@ -156,8 +138,6 @@ public class Project extends ProjectParameters
         {
             progress( "Compile: " + this );
         }
-
-        // File tempFile = File.createTempFile( "scar", "compile" );
 
         List<String> zCompileArgs = createCompileJavaArgs( classpath, source, classesDir );
 
@@ -216,32 +196,36 @@ public class Project extends ProjectParameters
      * If the resources don't contain a META-INF/MANIFEST.MF file, one is generated. If the project has a main property, the
      * generated manifest will include "Main-Class" and "Class-Path" entries to allow the main class to be run with "java -jar".
      *
-     * @return The path to the created JAR file.
+     * @return The path to the created JAR file or null if No JAR created.
      */
     public String jar()
-            throws IOException
     {
-        progress( "JAR: " + this );
+        String zJarFile = path( getJar() );
+
+        Paths zClasses = new Paths( path( "$target$/classes/" ), "**/*.class" );
+        Paths zResources = getResources();
+        if ( zClasses.isEmpty() && zResources.isEmpty() )
+        {
+            delete( zJarFile );
+            return null;
+        }
+        progress( "JAR: " + this + " -> " + zJarFile );
 
         String jarDir = mkdir( path( "$target$/jar/" ) );
 
-        String classesDir = path( "$target$/classes/" );
-        new Paths( classesDir, "**/*.class" ).copyTo( jarDir );
-        getResources().copyTo( jarDir );
-
-        String jarFile = path( "$target$/$name$" + (hasVersion() ? "-$version$" : "") + ".jar" );
+        zClasses.copyTo( jarDir );
+        zResources.copyTo( jarDir );
 
         File manifestFile = new File( jarDir, "META-INF/MANIFEST.MF" );
         if ( !manifestFile.exists() )
         {
-            createDefaultManifestFile( jarFile, manifestFile );
+            createDefaultManifestFile( zJarFile, manifestFile );
         }
 
-        return jar( jarFile, new Paths( jarDir ) );
+        return jar( zJarFile, new Paths( jarDir ) );
     }
 
     protected void createDefaultManifestFile( String pJarFile, File pManifestFile )
-            throws IOException
     {
         LOGGER.debug.log( "Generating JAR manifest: ", pManifestFile );
         mkdir( pManifestFile.getParent() );
@@ -262,13 +246,17 @@ public class Project extends ProjectParameters
             }
             manifest.getMainAttributes().putValue( Attributes.Name.CLASS_PATH.toString(), buffer.toString() );
         }
-        OutputStream output = new FileOutputStream( pManifestFile );
+        OutputStream output = createFileOutputStream( pManifestFile );
         try
         {
             manifest.write( output );
             Closeable zCloseable = output;
             output = null;
-            zCloseable.close();
+            close( zCloseable );
+        }
+        catch ( IOException e )
+        {
+            throw new WrappedIOException( e );
         }
         finally
         {
@@ -281,11 +269,15 @@ public class Project extends ProjectParameters
      * (including dependency project classpaths) and places them into a "dist" directory under the "target" directory. This is also
      * done for depenency projects, recursively. This is everything the application needs to be run from JAR files.
      *
-     * @return The path to the "dist" directory.
+     * @return The path to the "dist" directory or null if no distribution (App Dir) is requested for this project.
      */
     public String dist()
-            throws IOException
     {
+        String zAppDir = getAppDir();
+        if ( zAppDir == null )
+        {
+            return null;
+        }
         progress( "Dist: " + this );
 
         if ( !LOGGER.trace.isEnabled() )
@@ -303,7 +295,6 @@ public class Project extends ProjectParameters
     }
 
     private Paths dependencyDistPaths( Paths paths )
-            throws IOException
     {
         for ( String dependency : getDependencies() )
         {
@@ -325,7 +316,6 @@ public class Project extends ProjectParameters
      * @return The path to the JAR file.
      */
     public String jar( String jarFile, Paths paths )
-            throws IOException
     {
         Util.assertNotNull( "jarFile", jarFile );
         Util.assertNotNull( "paths", paths );
@@ -336,10 +326,16 @@ public class Project extends ProjectParameters
         {
             @Override
             public ZipOutputStream createZOS( String pFilePath, List<FilePath> pPaths )
-                    throws IOException
             {
                 putManifestFirst( pPaths );
-                return new JarOutputStream( new BufferedOutputStream( new FileOutputStream( pFilePath ) ) );
+                try
+                {
+                    return new JarOutputStream( new BufferedOutputStream( new FileOutputStream( pFilePath ) ) );
+                }
+                catch ( IOException e )
+                {
+                    throw new WrappedIOException( e );
+                }
             }
 
             @Override
@@ -377,7 +373,6 @@ public class Project extends ProjectParameters
      * Computes the classpath for the specified project and all its dependency projects, recursively.
      */
     public Paths classpath()
-            throws IOException
     {
         Paths classpath = getClasspath();
         for ( Project zProject : mDependantProjects )
@@ -391,7 +386,6 @@ public class Project extends ProjectParameters
      * Computes the classpath for all the dependencies of the specified project, recursively.
      */
     protected void addDependantProjectsClassPaths( Paths pPathsToAddTo, File pMasterProjectDirectory )
-            throws IOException
     {
         return;
 //        for ( String dependency : getDependencies() )
@@ -414,7 +408,6 @@ public class Project extends ProjectParameters
      * Calls {@link #build(Project)} for each dependency project in the specified project.
      */
     public boolean buildDependencies()
-            throws IOException
     {
         boolean anyBuilt = false;
         for ( Project zProject : mDependantProjects )
@@ -430,7 +423,6 @@ public class Project extends ProjectParameters
      * affected.
      */
 //    public void replace( Project project )
-//            throws IOException
 //    {
 //        Util.assertNotNull( "project", project );
 //        mData.putAll( project.mData );
@@ -438,7 +430,6 @@ public class Project extends ProjectParameters
 //        dir = project.dir;
 //    }
     public synchronized void initialize( ProjectFactory pProjectFactory )
-            throws IOException
     {
         List<String> zDependencies = getDependencies();
         if ( zDependencies != null )

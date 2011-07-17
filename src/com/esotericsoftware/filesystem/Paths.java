@@ -12,15 +12,6 @@ import com.esotericsoftware.wildcard.*;
  */
 public class Paths
 {
-    static private final Comparator<FilePath> LONGEST_TO_SHORTEST = new Comparator<FilePath>()
-    {
-        @Override
-        public int compare( FilePath s1, FilePath s2 )
-        {
-            return s2.canonical().length() - s1.canonical().length();
-        }
-    };
-
     static private List<String> sDefaultGlobExcludes = new ArrayList<String>();
 
     /**
@@ -39,7 +30,6 @@ public class Paths
      * Creates a Paths object and calls {@link #glob(String, String[])} with the specified arguments.
      */
     public Paths( String dir, String... patterns )
-            throws IOException
     {
         glob( dir, patterns );
     }
@@ -88,7 +78,6 @@ public class Paths
      */
     @SuppressWarnings({"UnusedDeclaration"})
     public void glob( String dir, List<String> patterns )
-            throws IOException
     {
         glob( dir, (patterns == null) ? Util.EMPTY_STRING_ARRAY : patterns.toArray( new String[patterns.size()] ) );
     }
@@ -116,7 +105,6 @@ public class Paths
      *                 patterns would select the paths.
      */
     public void glob( String dir, String... patterns )
-            throws IOException
     {
         new PathPatterns( dir, patterns ).addTo( mPaths );
     }
@@ -130,7 +118,6 @@ public class Paths
      */
     @SuppressWarnings({"ResultOfMethodCallIgnored"})
     public Paths copyTo( String destDir )
-            throws IOException
     {
         File zDest = new File( destDir );
         zDest.mkdirs();
@@ -139,27 +126,10 @@ public class Paths
         for ( FilePath path : getPaths() )
         {
             String zSubPath = path.getFileSubPath();
-            Util.copyFile( path.file(), new File( destDir, zSubPath ) );
+            FileUtil.copyFile( path.file(), new File( destDir, zSubPath ) );
             newPaths.mPaths.add( new FilePath( zDest, zSubPath ) );
         }
         return newPaths;
-    }
-
-    /**
-     * Deletes all the files, directories, and any files in the directories.
-     *
-     * @return False if any file could not be deleted.
-     */
-    public boolean delete()
-    {
-        boolean success = true;
-        List<FilePath> pathsCopy = getPaths();
-        Collections.sort( pathsCopy, LONGEST_TO_SHORTEST );
-        for ( FilePath zPath : pathsCopy )
-        {
-            success &= Util.delete( zPath.file() );
-        }
-        return success;
     }
 
     /**
@@ -169,13 +139,11 @@ public class Paths
      * @return Files Zipped, 0 means Zip File not even created!
      */
     public int zip( String destFile )
-            throws IOException
     {
         return zip( destFile, ZipFactory.FOR_ZIPS );
     }
 
     public int zip( String destFile, ZipFactory pFactory )
-            throws IOException
     {
         List<FilePath> zPaths = getPaths();
         if ( !zPaths.isEmpty() )
@@ -186,8 +154,15 @@ public class Paths
             {
                 for ( FilePath path : zPaths )
                 {
-                    out.putNextEntry( pFactory.createZE( path.getFileSubPath().replace( '\\', '/' ) ) );
-                    FileInputStream in = new FileInputStream( path.file() );
+                    try
+                    {
+                        out.putNextEntry( pFactory.createZE( path.getFileSubPath().replace( '\\', '/' ) ) );
+                    }
+                    catch ( IOException e )
+                    {
+                        throw new WrappedIOException( e );
+                    }
+                    FileInputStream in = FileUtil.createFileInputStream( path.file() );
                     try
                     {
                         for ( int len; (len = in.read( buf )) > -1; )
@@ -199,15 +174,19 @@ public class Paths
                         }
                         out.closeEntry();
                     }
+                    catch ( IOException e )
+                    {
+                        throw new WrappedIOException( e );
+                    }
                     finally
                     {
-                        in.close();
+                        FileUtil.close( in );
                     }
                 }
             }
             finally
             {
-                out.close();
+                FileUtil.close( out );
             }
         }
         return zPaths.size();
@@ -327,12 +306,12 @@ public class Paths
         }
     }
 
-
     private static class PathPatterns
     {
-        private File mPath;
-        private List<Pattern> mIncludes = new ArrayList<Pattern>();
-        private List<Pattern> mExcludes = new ArrayList<Pattern>();
+        private final File mPath;
+        private final boolean mIsFile;
+        private final List<Pattern> mIncludes = new ArrayList<Pattern>();
+        private final List<Pattern> mExcludes = new ArrayList<Pattern>();
 
         public PathPatterns( String pPath, String[] pPatterns )
         {
@@ -347,19 +326,23 @@ public class Paths
                     pPatterns[i - 1] = split[i].trim();
                 }
             }
-            mPath = new File( pPath );
-            if ( mPath.isFile() )
+            File zPath = new File( pPath );
+            if ( zPath.isFile() )
             {
                 if ( pPatterns.length != 0 )
                 {
-                    throw new IllegalArgumentException( "Files (e.g. " + mPath + ") may NOT have patterns: " + Arrays.asList( pPatterns ) );
+                    throw new IllegalArgumentException( "Files (e.g. " + zPath + ") may NOT have patterns: " + Arrays.asList( pPatterns ) );
                 }
+                mIsFile = true;
+                mPath = FileUtil.getCanonicalFile( zPath );
                 return;
             }
-            if ( !mPath.isDirectory() )
+            if ( !zPath.isDirectory() )
             {
-                throw new IllegalArgumentException( "Path Reference not a File or Directory: " + mPath );
+                throw new IllegalArgumentException( "Path Reference not a File or Directory: " + zPath );
             }
+            mIsFile = false;
+            mPath = FileUtil.getCanonicalFile( zPath );
             List<String> zIncludes = new ArrayList<String>();
             List<String> zExcludes = new ArrayList<String>();
             for ( String zPattern : pPatterns )
@@ -399,42 +382,37 @@ public class Paths
         }
 
         public void addTo( RootedPathsCollection pPaths )
-                throws IOException
         {
-            mPath = mPath.getCanonicalFile();
-            if ( mPath.isFile() )
+            if ( mIsFile )
             {
                 pPaths.add( new FilePath( mPath.getParentFile(), mPath.getName() ) );
                 return;
             }
-            if ( mPath.isDirectory() )
+            // Must be a Directory! (See Above)
+            RootedPaths zPaths = new RootedPaths( mPath );
+            String[] zFileNames = mPath.list();
+            for ( String zFileName : zFileNames )
             {
-                RootedPaths zPaths = new RootedPaths( mPath );
-                String[] zFileNames = mPath.list();
-                for ( String zFileName : zFileNames )
+                File zFile = new File( mPath, zFileName );
+                if ( zFile.isDirectory() )
                 {
-                    File zFile = new File( mPath, zFileName );
-                    if ( zFile.isDirectory() )
+                    if ( !excludedDir( zFileName ) && acceptableDir( zFileName ) )
                     {
-                        if ( !excludedDir( zFileName ) && acceptableDir( zFileName ) )
-                        {
-                            addTo( zPaths, zFileName + "/", zFile );
-                        }
-                    }
-                    else
-                    {
-                        if ( !excludedFile( zFileName ) && acceptableFile( zFileName ) )
-                        {
-                            zPaths.addCanonicalRelativePath( zFileName );
-                        }
+                        addTo( zPaths, zFileName + "/", zFile );
                     }
                 }
-                pPaths.add( zPaths );
+                else
+                {
+                    if ( !excludedFile( zFileName ) && acceptableFile( zFileName ) )
+                    {
+                        zPaths.addCanonicalRelativePath( zFileName );
+                    }
+                }
             }
+            pPaths.add( zPaths );
         }
 
         private void addTo( RootedPaths pPaths, String pAdditionalDirPath, File pDirectory )
-                throws IOException
         {
             String[] zFileNames = pDirectory.list();
             for ( String zFileName : zFileNames )
@@ -453,7 +431,7 @@ public class Paths
                     if ( !excludedFile( zPath ) && acceptableFile( zPath ) )
                     {
 
-                        String zFullCanonicalPath = zFile.getCanonicalPath();
+                        String zFullCanonicalPath = FileUtil.getCanonicalPath( zFile );
                         String zRelativeCanonicalPath = zFullCanonicalPath.substring( mPath.getPath().length() + 1 );
                         pPaths.addCanonicalRelativePath( zRelativeCanonicalPath );
                     }

@@ -60,14 +60,13 @@ public class FileSupportTest
 
         @Override
         public String canonicalizeNormalizedExisting( String path )
-                throws IOException
         {
             String zPath = findCanonicalExistingPath( path );
             if ( zPath != null )
             {
                 return zPath;
             }
-            throw new FileNotFoundException( path );
+            throw new WrappedIOException( new FileNotFoundException( path ) );
         }
 
         private String findCanonicalExistingPath( String pPath )
@@ -154,7 +153,6 @@ public class FileSupportTest
 
     @Test
     public void test_normalizePath()
-            throws IOException
     {
         IFileSystem zFileSystem = new TestFileSystem( true );
 
@@ -244,7 +242,6 @@ public class FileSupportTest
 
     @Test
     public void test_isAbsoluteNormalizedPath()
-            throws IOException
     {
         IFileSystem zFileSystem = new TestFileSystem( true ).setCurrentPath( "C:\\" );
         assertAbsolute( zFileSystem, "C:\\Flintstone", "\\\\TheServer\\Fred" );
@@ -286,7 +283,6 @@ public class FileSupportTest
 
     @Test
     public void test_canonicalizeNormalizedPath()
-            throws IOException
     {
         IFileSystem zFileSystem = new TestFileSystem( false, //
                                                       "/", //

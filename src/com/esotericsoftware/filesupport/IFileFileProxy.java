@@ -2,6 +2,8 @@ package com.esotericsoftware.filesupport;
 
 import java.io.*;
 
+import com.esotericsoftware.utils.*;
+
 public class IFileFileProxy implements IFile
 {
     private final File mFile;
@@ -37,8 +39,7 @@ public class IFileFileProxy implements IFile
 
     @Override
     public IFile getCanonicalFile()
-            throws IOException
     {
-        return new IFileFileProxy( mFile.getCanonicalFile() );
+        return new IFileFileProxy( FileUtil.getCanonicalFile( mFile ) );
     }
 }

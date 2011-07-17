@@ -4,6 +4,8 @@ import java.io.*;
 import java.util.*;
 import java.util.regex.Pattern;
 
+import com.esotericsoftware.utils.*;
+
 class RegexScanner
 {
     private final File rootDir;
@@ -30,7 +32,7 @@ class RegexScanner
         }
         catch ( IOException ex )
         {
-            throw new RuntimeException( "OS error determining canonical path: " + rootDir, ex );
+            throw new WrappedIOException( "OS error determining canonical path: " + rootDir, ex );
         }
         this.rootDir = rootDir;
 

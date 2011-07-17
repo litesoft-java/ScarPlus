@@ -6,66 +6,67 @@ import java.net.*;
 import org.apache.commons.net.ftp.*;
 
 import com.esotericsoftware.filesystem.*;
+import com.esotericsoftware.utils.*;
 
 import static com.esotericsoftware.minlog.Log.*;
 
 public class FTP
 {
     static public boolean upload( String server, String user, String password, String dir, Paths paths, boolean passive )
-            throws IOException
     {
-        FTPClient ftp = new FTPClient();
-        InetAddress address = InetAddress.getByName( server );
-        if ( DEBUG )
+        try
         {
-            debug( "Connecting to FTP server: " + address );
-        }
-        ftp.connect( address );
-        if ( passive )
-        {
-            ftp.enterLocalPassiveMode();
-        }
-        if ( !ftp.login( user, password ) )
-        {
-            if ( ERROR )
+            FTPClient ftp = new FTPClient();
+            InetAddress address = InetAddress.getByName( server );
+            if ( DEBUG )
             {
-                error( "FTP login failed for user: " + user );
+                debug( "Connecting to FTP server: " + address );
             }
-            return false;
-        }
-        if ( !ftp.changeWorkingDirectory( dir ) )
-        {
-            if ( ERROR )
+            ftp.connect( address );
+            if ( passive )
             {
-                error( "FTP directory change failed: " + dir );
+                ftp.enterLocalPassiveMode();
             }
-            return false;
-        }
-        ftp.setFileType( org.apache.commons.net.ftp.FTP.BINARY_FILE_TYPE );
-        for ( String path : paths.getFullPaths() )
-        {
-            if ( INFO )
+            if ( !ftp.login( user, password ) )
             {
-                info( "FTP upload: " + path );
+                if ( ERROR )
+                {
+                    error( "FTP login failed for user: " + user );
+                }
+                return false;
             }
-            BufferedInputStream input = new BufferedInputStream( new FileInputStream( path ) );
-            try
+            if ( !ftp.changeWorkingDirectory( dir ) )
             {
-                ftp.storeFile( new File( path ).getName(), input );
+                if ( ERROR )
+                {
+                    error( "FTP directory change failed: " + dir );
+                }
+                return false;
             }
-            finally
+            ftp.setFileType( org.apache.commons.net.ftp.FTP.BINARY_FILE_TYPE );
+            for ( String path : paths.getFullPaths() )
             {
+                if ( INFO )
+                {
+                    info( "FTP upload: " + path );
+                }
+                BufferedInputStream input = new BufferedInputStream( new FileInputStream( path ) );
                 try
                 {
-                    input.close();
+                    ftp.storeFile( new File( path ).getName(), input );
                 }
-                catch ( Exception ignored )
+                finally
                 {
+                    FileUtil.dispose( input );
                 }
             }
+            ftp.logout();
+            ftp.disconnect();
         }
-        ftp.logout();
-        ftp.disconnect();
+        catch ( IOException e )
+        {
+            throw new WrappedIOException( e );
+        }
         return true;
     }
 }
