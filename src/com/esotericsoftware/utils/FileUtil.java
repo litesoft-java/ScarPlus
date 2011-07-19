@@ -257,7 +257,8 @@ public class FileUtil extends Util
      */
     public static boolean delete( String fileName )
     {
-        return delete( new File( assertNotEmpty( "fileName", fileName ) ) );
+        fileName = noEmpty( fileName );
+        return (fileName != null) && delete( new File( fileName ) );
     }
 
     public static Closeable dispose( Closeable pCloseable )

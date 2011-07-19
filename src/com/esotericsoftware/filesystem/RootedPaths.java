@@ -19,7 +19,7 @@ public final class RootedPaths
     public void addCanonicalRelativePath( String pPath )
     {
         mGreatestLastModified = Math.max( mGreatestLastModified, new File( mCanonicalRootDirectory, pPath = Utils.assertNotEmpty( "Path", pPath ) ).lastModified() );
-        addPathWithDupCheck( pPath );
+        mCanonicalRelativePaths.add( pPath );
     }
 
     public long getGreatestLastModified()
@@ -30,11 +30,6 @@ public final class RootedPaths
     public File getCanonicalRootDirectory()
     {
         return mCanonicalRootDirectory;
-    }
-
-    public String[] getCanonicalRelativePaths()
-    {
-        return mCanonicalRelativePaths.toArray( new String[mCanonicalRelativePaths.size()] );
     }
 
     public int count()
@@ -71,17 +66,6 @@ public final class RootedPaths
     void mergeIn( RootedPaths them ) // Assume only called by the RootedPathsCollection when the mCanonicalRootDirectory(s) are equal!
     {
         this.mGreatestLastModified = Math.max( this.mGreatestLastModified, them.mGreatestLastModified );
-        for ( String zPath : them.getCanonicalRelativePaths() )
-        {
-            addPathWithDupCheck( zPath );
-        }
-    }
-
-    private void addPathWithDupCheck( String zPath )
-    {
-        if ( !mCanonicalRelativePaths.add( zPath ) )
-        {
-            throw new IllegalArgumentException( "Duplicate Entry in (" + mCanonicalRootDirectory.getPath() + "): " + zPath );
-        }
+        this.mCanonicalRelativePaths.addAll( them.mCanonicalRelativePaths );
     }
 }

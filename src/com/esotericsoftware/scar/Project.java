@@ -89,7 +89,7 @@ public class Project extends ProjectParameters
 
     protected boolean needToBuild()
     {
-        File zJarFile = new File( path( getJar() ) );
+        File zJarFile = getJarPathFile();
         if ( !zJarFile.isFile() )
         {
             return true;
@@ -118,9 +118,9 @@ public class Project extends ProjectParameters
     public void clean()
     {
         progress( "Clean: " + this );
-        deletePath( getAppDir() );
-        deletePath( getJar() );
-        deletePath( getTarget() );
+        delete( getAppDirPath() );
+        delete( getJarPath() );
+        delete( getTargetPath() );
     }
 
     /**
@@ -270,16 +270,16 @@ public class Project extends ProjectParameters
      */
     public String jar()
     {
-        String zJarFile = path( getJar() );
+        String zJarPath = getJarPath();
 
-        Paths zClasses = new Paths( path( "$target$/classes/" ), "**/*.class" );
+        Paths zClasses = new Paths( path( "$target$/classes/" ), "**.class" );
         Paths zResources = getResources();
         if ( zClasses.isEmpty() && zResources.isEmpty() )
         {
-            delete( zJarFile );
+            delete( zJarPath );
             return null;
         }
-        progress( "JAR: " + this + " -> " + zJarFile );
+        progress( "JAR: " + this + " -> " + zJarPath );
 
         String jarDir = mkdir( path( "$target$/jar/" ) );
 
@@ -289,10 +289,10 @@ public class Project extends ProjectParameters
         File manifestFile = new File( jarDir, "META-INF/MANIFEST.MF" );
         if ( !manifestFile.exists() )
         {
-            createDefaultManifestFile( zJarFile, manifestFile );
+            createDefaultManifestFile( zJarPath, manifestFile );
         }
 
-        return jar( zJarFile, new Paths( jarDir ) );
+        return jar( zJarPath, new Paths( jarDir ) );
     }
 
     protected void createDefaultManifestFile( String pJarFile, File pManifestFile )
@@ -360,7 +360,7 @@ public class Project extends ProjectParameters
         Paths distPaths = getDist();
         dependencyDistPaths( distPaths );
         distPaths.copyTo( distDir );
-        new Paths( path( "$target$" ), "*.jar" ).copyTo( distDir );
+        new Paths( getTargetPath(), "*.jar" ).copyTo( distDir );
         return distDir;
     }
 
@@ -369,7 +369,7 @@ public class Project extends ProjectParameters
         for ( String dependency : getDependencies() )
         {
             Project dependencyProject = null; // todo: project( null, path( dependency ) );
-            String dependencyTarget = dependencyProject.path( "$target$/" );
+            String dependencyTarget = dependencyProject.getTargetPath();
             if ( !Utils.fileExists( dependencyTarget ) )
             {
                 throw new RuntimeException( "Dependency has not been built: " + dependency );
@@ -457,7 +457,7 @@ public class Project extends ProjectParameters
      */
     protected void addDependantProjectsClassPaths( Paths pPathsToAddTo )
     {
-        File zJarFile = new File( path( getJar() ) );
+        File zJarFile = getJarPathFile();
         if ( !zJarFile.isFile() )
         {
             throw new RuntimeException( "Dependency (" + this + ") Jar not found, not built?" );

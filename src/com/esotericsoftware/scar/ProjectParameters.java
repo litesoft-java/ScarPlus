@@ -118,6 +118,11 @@ public class ProjectParameters extends FileUtil
         return get( TARGET.getName() );
     }
 
+    public String getTargetPath()
+    {
+        return getPath( TARGET.getName() );
+    }
+
     public List<String> getDependencies()
     {
         return getListNotNull( DEPENDENCIES.getName() );
@@ -143,6 +148,16 @@ public class ProjectParameters extends FileUtil
         return get( JAR.getName() );
     }
 
+    public String getJarPath()
+    {
+        return getPath( JAR.getName() );
+    }
+
+    public File getJarPathFile()
+    {
+        return new File( getPath( JAR.getName() ) );
+    }
+
     public Paths getDist()
     {
         return getPaths( DIST.getName() );
@@ -151,6 +166,11 @@ public class ProjectParameters extends FileUtil
     public String getAppDir()
     {
         return get( APPDIR.getName() );
+    }
+
+    public String getAppDirPath()
+    {
+        return getPath( APPDIR.getName() );
     }
 
     // ---------------------------------- Generic accessors for the underlying Data (map) ------------------------------
@@ -325,6 +345,14 @@ public class ProjectParameters extends FileUtil
     }
 
     /**
+     * Uses the strings under the specified key to {@link Paths#glob(String, String...) glob} paths.
+     */
+    public String getPath( String key )
+    {
+        return getCachedWithConvertion( key, PATH );
+    }
+
+    /**
      * Returns a canonicalizePath built from the specified path.
      * If the specified path is a relative path, it is made absolute relative to this project's directory.
      */
@@ -431,15 +459,6 @@ public class ProjectParameters extends FileUtil
     public String toString()
     {
         return getName();
-    }
-
-    protected void deletePath( String pProjectRelativePath )
-    {
-        String zPath = path( pProjectRelativePath );
-        if ( zPath != null )
-        {
-            delete( zPath );
-        }
     }
 
     protected void defaultSubDirOptional( Parameter pParameter, String... pOptions )
