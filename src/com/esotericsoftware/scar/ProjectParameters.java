@@ -574,6 +574,15 @@ public class ProjectParameters extends FileUtil
         }
     };
 
+    private final DataConverter<String> PATH = new DataConverter<String>()
+    {
+        @Override
+        public String convert( Object pValue )
+        {
+            return path( pValue.toString() );
+        }
+    };
+
     private final DataConverter<Paths> PATHS = new DataConverter<Paths>()
     {
         @Override

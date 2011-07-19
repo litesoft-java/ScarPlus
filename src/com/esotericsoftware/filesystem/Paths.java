@@ -34,6 +34,11 @@ public class Paths
         glob( dir, patterns );
     }
 
+    public Long getGreatestLastModified()
+    {
+        return isEmpty() ? null : mPaths.getGreatestLastModified();
+    }
+
     public boolean isEmpty()
     {
         return mPaths.isEmpty();

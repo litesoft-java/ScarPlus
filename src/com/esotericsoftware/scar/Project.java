@@ -87,9 +87,21 @@ public class Project extends ProjectParameters
         return true;
     }
 
-    public boolean needToBuild()
+    protected boolean needToBuild()
     {
-        return true; // todo
+        File zJarFile = new File( path( getJar() ) );
+        if ( !zJarFile.isFile() )
+        {
+            return true;
+        }
+        long zJarTimestamp = zJarFile.lastModified();
+        return checkNewer( zJarTimestamp, classpath() ) || checkNewer( zJarTimestamp, getSource() ) || checkNewer( zJarTimestamp, getResources() );
+    }
+
+    protected boolean checkNewer( long pJarTimestamp, Paths pPaths )
+    {
+        Long zLastModified = pPaths.getGreatestLastModified();
+        return (zLastModified != null) && (zLastModified > pJarTimestamp);
     }
 
     protected void buildIt()
@@ -130,14 +142,16 @@ public class Project extends ProjectParameters
 
         String classesDir = mkdir( path( "$target$/classes/" ) );
 
+        String zMessage = "Compile: " + this;
         if ( LOGGER.debug.isEnabled() )
         {
-            progress( "Compile: " + this + "\nSource: " + source.count() + " files\nClasspath: " + classpath );
+            zMessage += " | " + source.count() + " source files";
+            if ( !classpath.isEmpty() )
+            {
+                zMessage += "\n         Classpath: " + classpath;
+            }
         }
-        else
-        {
-            progress( "Compile: " + this );
-        }
+        progress( zMessage );
 
         List<String> zCompileArgs = createCompileJavaArgs( classpath, source, classesDir );
 
@@ -174,7 +188,7 @@ public class Project extends ProjectParameters
         {
             throw new RuntimeException( "No compiler available. Ensure you are running from a " + getTargetJavaVersion() + "+ JDK, and not a JRE." );
         }
-        int zError = compiler.run( null, null, null, pCompileArgs.toArray( new String[pCompileArgs.size()] ) );
+        int zError = compiler.run( getCompile_in(), getCompile_out(), getCompile_err(), pCompileArgs.toArray( new String[pCompileArgs.size()] ) );
         if ( zError != 0 )
         {
             throw new RuntimeException( "Error (" + zError + ") during compilation of project: " + this + "\nSource: " + pSource.count() + " files\nClasspath: " + pClasspath );
@@ -187,6 +201,62 @@ public class Project extends ProjectParameters
         {
             // Whatever
         }
+    }
+
+    protected InputStream getCompile_in()
+    {
+        return null;
+    }
+
+    protected OutputStream getCompile_out()
+    {
+        return null;
+    }
+
+    protected OutputStream getCompile_err()
+    {
+        return new OutputStream()
+        {
+            private StringBuilder mBuffer = new StringBuilder();
+            private boolean mLastWasCRtreatedAsLF = false;
+
+            private void dumpLine( int pByte )
+            {
+                if ( pByte == 13 )
+                {
+                    mLastWasCRtreatedAsLF = true;
+                    pByte = 10;
+                }
+                else
+                {
+                    boolean zLastWasCRtreatedAsLF = mLastWasCRtreatedAsLF;
+                    mLastWasCRtreatedAsLF = false;
+                    if ( (pByte == 10) && zLastWasCRtreatedAsLF )
+                    {
+                        return;
+                    }
+                }
+                mBuffer.append( (char) pByte ); // Assuming Ascii!
+                String line = mBuffer.toString();
+                mBuffer = new StringBuilder();
+                if ( !line.startsWith( "Note: " ) )
+                {
+                    System.err.print( line );
+                }
+            }
+
+            @Override
+            public void write( int pByte ) // Not a Unicode character, just a BYTE!  --- Asumming Ascii ---
+                    throws IOException
+            {
+                if ( (10 <= pByte) && (pByte <= 13) ) // New Line Indicator
+                {                                        // LF: Line Feed, U+000A
+                    dumpLine( pByte );                   // VT: Vertical Tab, U+000B
+                    return;                              // FF: Form Feed, U+000C
+                }                                        // CR: Carriage Return, U+000D
+                mBuffer.append( (char) pByte ); // Assuming Ascii!
+            }
+        };
     }
 
     /**
@@ -372,12 +442,12 @@ public class Project extends ProjectParameters
     /**
      * Computes the classpath for the specified project and all its dependency projects, recursively.
      */
-    public Paths classpath()
+    protected Paths classpath()
     {
         Paths classpath = getClasspath();
         for ( Project zProject : mDependantProjects )
         {
-            zProject.addDependantProjectsClassPaths( classpath, getCanonicalProjectDir() );
+            zProject.addDependantProjectsClassPaths( classpath );
         }
         return classpath;
     }
@@ -385,23 +455,15 @@ public class Project extends ProjectParameters
     /**
      * Computes the classpath for all the dependencies of the specified project, recursively.
      */
-    protected void addDependantProjectsClassPaths( Paths pPathsToAddTo, File pMasterProjectDirectory )
+    protected void addDependantProjectsClassPaths( Paths pPathsToAddTo )
     {
-        return;
-//        for ( String dependency : getDependencies() )
-//        {
-//            Project dependencyProject = null; // todo: project( null, path( dependency ) );
-//            String dependencyTarget = dependencyProject.path( "$target$/" );
-//            if ( errorIfDependenciesNotBuilt && !Utils.fileExists( dependencyTarget ) )
-//            {
-//                throw new RuntimeException( "Dependency has not been built: " + dependency ); // todo: + "\nAbsolute dependency path: " + canonical( dependency ) + "\nMissing dependency target: " + canonical( dependencyTarget ) );
-//            }
-//            if ( includeDependencyJAR )
-//            {
-//                pPathsToAddTo.glob( dependencyTarget, "*.jar" );
-//            }
-//            pPathsToAddTo.add( classpath() );
-//        }
+        File zJarFile = new File( path( getJar() ) );
+        if ( !zJarFile.isFile() )
+        {
+            throw new RuntimeException( "Dependency (" + this + ") Jar not found, not built?" );
+        }
+        pPathsToAddTo.add( new FilePath( zJarFile.getParentFile(), zJarFile.getName() ) );
+        pPathsToAddTo.add( classpath() );
     }
 
     /**

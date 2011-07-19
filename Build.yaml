@@ -3,3 +3,4 @@ target: build
 main: com.esotericsoftware.scar.Scar
 dependencies:
 - ../core/Anywhere
+- ../core/Server
