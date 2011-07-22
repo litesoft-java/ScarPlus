@@ -80,11 +80,10 @@ public class Project extends ProjectParameters
         if ( !buildDependencies() && !needToBuild() )
         {
             progress( "Build: " + this + " NOT Needed!" );
-            return (null != dist());
+            return packageIt();
         }
         progress( "Build: " + this );
-        buildIt();
-        return true;
+        return buildIt();
     }
 
     protected boolean needToBuild()
@@ -104,12 +103,18 @@ public class Project extends ProjectParameters
         return (zLastModified != null) && (zLastModified > pJarTimestamp);
     }
 
-    protected void buildIt()
+    protected boolean buildIt()
     {
         clean();
         compile();
-        jar();
-        dist();
+        String zJarFile = jar();
+        return packageIt() || (zJarFile != null);
+    }
+
+    protected boolean packageIt()
+    {
+        String zDistDir = dist();
+        return (null != oneJAR()) || (zDistDir != null);
     }
 
     /**
@@ -437,6 +442,147 @@ public class Project extends ProjectParameters
             }
         } );
         return zZipped == 0 ? null : jarFile;
+    }
+
+    /**
+     * Unzips all JARs in the classpath and creates a single JAR containing those files and this Project's JAR (which MUST exist).
+     * The manifest from the project's JAR is used. Putting everything into a single JAR makes it harder to see what libraries are
+     * being used, but makes it easier for end users to distribute the application.
+     * <p/>
+     * Note: Files with the same path in different JARs will be overwritten. Files in the project's JAR will never be overwritten,
+     * but may overwrite other files.
+     *
+     * @param excludeJARs The names of any JARs to exclude.
+     *
+     * @return The path to the "OneJAR" file or null if no OneJar is requested for this project.
+     */
+    public String oneJAR( String... excludeJARs )
+    {
+        progress( "One JAR: " + this );
+
+        String onejarDir = mkdir( path( "$target$/onejar/" ) );
+        String distDir = path( "$target$/dist/" );
+        String projectJarName;
+        if ( hasVersion() )
+        {
+            projectJarName = project.format( "$name$-$version$.jar" );
+        }
+        else
+        {
+            projectJarName = project.format( "$name$.jar" );
+        }
+
+        ArrayList<String> processedJARs = new ArrayList();
+        outer:
+        for ( String jarFile : new Paths( distDir, "*.jar", "!" + projectJarName ).getFullPaths() )
+        {
+            String jarName = fileName( jarFile );
+            for ( String exclude : excludeJARs )
+            {
+                if ( jarName.equals( exclude ) )
+                {
+                    continue outer;
+                }
+            }
+            unzip( jarFile, onejarDir );
+            processedJARs.add( jarFile );
+        }
+        unzip( distDir + projectJarName, onejarDir );
+
+        String onejarFile;
+        if ( project.hasVersion() )
+        {
+            onejarFile = project.path( "$target$/dist/onejar/$name$-$version$-all.jar" );
+        }
+        else
+        {
+            onejarFile = project.path( "$target$/dist/onejar/$name$-all.jar" );
+        }
+        mkdir( parent( onejarFile ) );
+        // todo: jar( onejarFile, new Paths( onejarDir ) );
+    }
+
+    /**
+     * Decodes the specified ZIP file.
+     *
+     * @return The path to the output directory.
+     */
+    public String unzip( String zipFile, String outputDir )
+    {
+        Util.assertNotNull( "zipFile", zipFile );
+        Util.assertNotNull( "outputDir", outputDir );
+        progress( "ZIP decoding: " + zipFile + " -> " + outputDir );
+
+        ZipInputStream input;
+        try
+        {
+            input = new ZipInputStream( new FileInputStream( zipFile ) );
+        }
+        catch ( FileNotFoundException e )
+        {
+            throw new WrappedIOException( e );
+        }
+        try
+        {
+            while ( true )
+            {
+                ZipEntry entry;
+                try
+                {
+                    entry = input.getNextEntry();
+                }
+                catch ( IOException e )
+                {
+                    throw new WrappedIOException( e );
+                }
+                if ( entry == null )
+                {
+                    break;
+                }
+                File file = new File( outputDir, entry.getName() );
+                if ( entry.isDirectory() )
+                {
+                    mkdir( file.getPath() );
+                    continue;
+                }
+                mkdir( file.getParent() );
+                FileOutputStream output;
+                try
+                {
+                    output = new FileOutputStream( file );
+                }
+                catch ( FileNotFoundException e )
+                {
+                    throw new WrappedIOException( e );
+                }
+                try
+                {
+                    byte[] buffer = new byte[4096];
+                    while ( true )
+                    {
+                        int length = input.read( buffer );
+                        if ( length == -1 )
+                        {
+                            break;
+                        }
+                        output.write( buffer, 0, length );
+                    }
+                }
+                catch ( IOException e )
+                {
+                    throw new WrappedIOException( e );
+                }
+                finally
+                {
+                    dispose( output );
+                }
+            }
+        }
+        finally
+        {
+            dispose( input );
+        }
+        return outputDir;
     }
 
     /**

@@ -43,6 +43,8 @@ public class ProjectParameters extends FileUtil
 
     public static final Parameter APPDIR = def( "appdir", Form.STRING, "Directory path to bring together all files (both JARs and 'dist', for this project " + "and all dependencies, recursively) the application needs to be run from JAR files." );
 
+    public static final Parameter ONEJAR = def( "onejar", Form.STRING, "JAR name w/ optional path for the JAR ('.jar' added to the end if does not end with 'jar', case insensitive), that all 'exploded' dependendend JARs and dist files will be JAR into (this should make a single JAR application." );
+
     // ------------------------------------------------ Default Support ------------------------------------------------
 
     protected synchronized void applyDefaults()
@@ -100,7 +102,7 @@ public class ProjectParameters extends FileUtil
 
     public String getVersion()
     {
-        return get( JAR.getName() );
+        return get( VERSION.getName() );
     }
 
     public boolean hasMain()
@@ -155,7 +157,22 @@ public class ProjectParameters extends FileUtil
 
     public File getJarPathFile()
     {
-        return new File( getPath( JAR.getName() ) );
+        return new File( getJarPath() );
+    }
+
+    public String getOneJar()
+    {
+        return get( ONEJAR.getName() );
+    }
+
+    public String getOneJarPath()
+    {
+        return getPath( ONEJAR.getName() );
+    }
+
+    public File getOneJarPathFile()
+    {
+        return new File( getOneJarPath() );
     }
 
     public Paths getDist()

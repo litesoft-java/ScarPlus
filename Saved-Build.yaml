@@ -1,7 +1,9 @@
 source: src|**.java
 target: build
 main: com.esotericsoftware.scar.Scar
-onejar: scar
+onejar: scar.jar
 classpath:
 - ../libs/scar/scar.jar
-- ../logger/LiteSoftLogger.jar
+dependencies:
+- ../core/Anywhere
+- ../core/Server
