@@ -383,13 +383,13 @@
         <root url="jar://$PROJECT_DIR$/../logger/LiteSoftLogger.jar!/" />
       </SOURCES>
     </library>
-    <library name="Scar">
+    <library name="ScarPlusSupport">
       <CLASSES>
-        <root url="jar://$PROJECT_DIR$/../libs/scar/scar.jar!/" />
+        <root url="jar://$PROJECT_DIR$/lib/ScarPlusSupport.jar!/" />
       </CLASSES>
       <JAVADOC />
       <SOURCES>
-        <root url="jar://$PROJECT_DIR$/../libs/scar/scar-src.zip!/" />
+        <root url="jar://$PROJECT_DIR$/lib/ScarPlusSupport-src.zip!/" />
       </SOURCES>
     </library>
   </component>

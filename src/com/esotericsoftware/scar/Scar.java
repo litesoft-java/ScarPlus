@@ -676,7 +676,7 @@ public class Scar extends Utils implements ProjectFactory
         }
         try
         {
-            copyStream( input, new GZIPOutputStream( new FileOutputStream( gzipFile ) ) );
+            copyStreamAndCloseEm( input, new GZIPOutputStream( new FileOutputStream( gzipFile ) ) );
         }
         catch ( IOException e )
         {
@@ -730,7 +730,7 @@ public class Scar extends Utils implements ProjectFactory
         }
         try
         {
-            copyStream( input, new FileOutputStream( file ) );
+            copyStreamAndCloseEm( input, new FileOutputStream( file ) );
         }
         catch ( FileNotFoundException e )
         {

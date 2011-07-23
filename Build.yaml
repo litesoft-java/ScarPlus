@@ -3,5 +3,5 @@ target: build
 main: com.esotericsoftware.scar.Scar
 onejar: scar
 classpath:
-- ../libs/scar/scar.jar
+- lib/ScarPlusSupport.jar
 - ../logger/LiteSoftLogger.jar

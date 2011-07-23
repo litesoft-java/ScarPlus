@@ -71,44 +71,52 @@ public class FileUtil extends Util
     /**
      * Reads to the end of the input stream and writes the bytes to the output stream.
      */
-    public static void copyStream( InputStream input, OutputStream output )
+    public static void copyStreamAndCloseEm( InputStream input, OutputStream output )
     {
-        assertNotNull( "input", input );
-        assertNotNull( "output", output );
         try
         {
-            byte[] buffer = new byte[4096];
-            while ( true )
-            {
-                int length = input.read( buffer );
-                if ( length == -1 )
-                {
-                    break;
-                }
-                output.write( buffer, 0, length );
-            }
+            writeStream( input, output );
+        }
+        finally
+        {
+            dispose( input );
+        }
+    }
+
+    public static void writeStream( InputStream input, OutputStream output )
+    {
+        try
+        {
+            append( input, output );
             Closeable zCloseable = output;
             output = null;
             close( zCloseable );
+        }
+        finally
+        {
+            dispose( output );
+        }
+    }
+
+    public static void append( InputStream input, OutputStream output )
+    {
+        assertNotNull( "input", input );
+        assertNotNull( "output", output );
+        byte[] buf = new byte[1024];
+        try
+        {
+            for ( int len; (len = input.read( buf )) > -1; )
+            {
+                if ( len != 0 )
+                {
+                    output.write( buf, 0, len );
+                }
+            }
         }
         catch ( IOException e )
         {
             throw new WrappedIOException( e );
         }
-        finally
-        {
-            dispose( output );
-            dispose( input );
-        }
-    }
-
-    /**
-     * Copies a file, overwriting any existing file at the destination.
-     */
-    public static String copyFile( String in, String out )
-    {
-        copyFile( new File( assertNotEmpty( "in", in ) ), new File( out = assertNotEmpty( "out", out ) ) );
-        return out;
     }
 
     /**
@@ -148,11 +156,20 @@ public class FileUtil extends Util
     }
 
     /**
+     * Copies a file, overwriting any existing file at the destination.
+     */
+    public static String copyFile( String in, String out )
+    {
+        copyFile( new File( assertNotEmpty( "in", in ) ), new File( out = assertNotEmpty( "out", out ) ) );
+        return out;
+    }
+
+    /**
      * Moves a file, overwriting any existing file at the destination.
      */
     static public String moveFile( String in, String out )
     {
-        copyFile( in = assertNotEmpty( "in", in ), out = assertNotEmpty( "out", out ) );
+        copyFile( in = assertNotEmpty( "in", in ), out );
         delete( in );
         return out;
     }
@@ -185,7 +202,7 @@ public class FileUtil extends Util
 
     public static BufferedOutputStream createBufferedFileOutputStream( String filePath )
     {
-        return createBufferedFileOutputStream( new File(  filePath ) );
+        return createBufferedFileOutputStream( new File( filePath ) );
     }
 
     public static BufferedOutputStream createBufferedFileOutputStream( File out )
@@ -195,7 +212,7 @@ public class FileUtil extends Util
 
     public static FileOutputStream createFileOutputStream( File out )
     {
-        out.getParentFile().mkdirs();
+        mkdir( out.getParentFile() );
         try
         {
             return new FileOutputStream( out );
@@ -233,12 +250,22 @@ public class FileUtil extends Util
     /**
      * Creates the directories in the specified path.
      */
+    public static File mkdir( File path )
+    {
+        assertNotNull( "path", path );
+        if ( path.mkdirs() )
+        {
+            LOGGER.trace.log( "Created directory: ", path.getPath() );
+        }
+        return path;
+    }
+
+    /**
+     * Creates the directories in the specified path.
+     */
     public static String mkdir( String path )
     {
-        if ( new File( path = assertNotEmpty( "path", path ) ).mkdirs() )
-        {
-            LOGGER.trace.log( "Created directory: ", path );
-        }
+        mkdir( new File( path = assertNotEmpty( "path", path ) ) );
         return path;
     }
 

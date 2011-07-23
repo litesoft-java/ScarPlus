@@ -392,10 +392,20 @@ public class Project extends ProjectParameters
      */
     public String jar( String jarFile, Paths paths )
     {
+        return innerJar( "", jarFile, paths );
+    }
+
+    /**
+     * Encodes the specified paths into a JAR file.
+     *
+     * @return The path to the JAR file.
+     */
+    protected String innerJar( String pTypePrefix, String jarFile, Paths paths )
+    {
         Util.assertNotNull( "jarFile", jarFile );
         Util.assertNotNull( "paths", paths );
 
-        progress( "Creating JAR (" + paths.count() + " entries): " + jarFile );
+        progress( "Creating " + pTypePrefix + "JAR (" + paths.count() + " entries): " + jarFile );
 
         int zZipped = paths.zip( jarFile, new ZipFactory()
         {
@@ -487,33 +497,61 @@ public class Project extends ProjectParameters
         }
         progress( "One JAR: " + this );
 
-        String onejarDir = mkdir( path( "$target$/onejar/" ) );
+        File zOnejarDir = mkdir( new File( path( "$target$/onejar/" ) ) );
 
         List<String> zExcludeJARs = Arrays.asList( pExcludeJARs );
-        for ( File jarFile : zClasspath.getFiles() )
+        for ( File jarFile : zClasspath.getFiles() ) // All our Class Path (dependant) JARS
         {
-            if ( !zExcludeJARs.contains( jarFile ) )
+            if ( !zExcludeJARs.contains( jarFile.getName() ) )
             {
-                unzip( jarFile, onejarDir );
+                unzip( jarFile, zOnejarDir );
             }
         }
 
+        unzip( zJarPath, zOnejarDir ); // Our Jar! - Our Manifest will be "the" Manifest
+        return innerJar( "'ONE' ", zOneJarPath.getPath(), new Paths( zOnejarDir.getPath() ) );
+    }
 
-
-        ArrayList<String> processedJARs = new ArrayList();
-        outer:
-        unzip( distDir + projectJarName, onejarDir );
-
-        String onejarFile;
-        if ( hasVersion() )
+    /**
+     * Decodes the specified ZIP file.
+     *
+     * @return The path to the output directory.
+     */
+    protected void quiteUnzip( File zipFile, File outputDir )
+    {
+        ZipInputStream input = new ZipInputStream( createFileInputStream( zipFile ) );
+        try
         {
-            onejarFile = path( "$target$/dist/onejar/$name$-$version$-all.jar" );
+            for ( ZipEntry entry; null != (entry = input.getNextEntry()); )
+            {
+                File file = new File( outputDir, entry.getName() );
+                if ( entry.isDirectory() )
+                {
+                    mkdir( file.getPath() );
+                    continue;
+                }
+                writeStream( input, createFileOutputStream( file ) );
+            }
         }
-        else
+        catch ( IOException e )
         {
-            onejarFile = path( "$target$/dist/onejar/$name$-all.jar" );
+            throw new WrappedIOException( e );
         }
-        return jar( onejarFile, new Paths( onejarDir ) );
+        finally
+        {
+            dispose( input );
+        }
+    }
+
+    /**
+     * Decodes the specified ZIP file.
+     */
+    public void unzip( File zipFile, File outputDir )
+    {
+        Util.assertNotNull( "zipFile", zipFile );
+        Util.assertNotNull( "outputDir", outputDir );
+        progress( "ZIP decoding: " + zipFile.getPath() + " -> " + outputDir.getPath() );
+        quiteUnzip( zipFile, outputDir );
     }
 
     /**
@@ -523,79 +561,10 @@ public class Project extends ProjectParameters
      */
     public String unzip( String zipFile, String outputDir )
     {
-        Util.assertNotNull( "zipFile", zipFile );
-        Util.assertNotNull( "outputDir", outputDir );
+        zipFile = assertNotEmpty( "zipFile", zipFile );
+        outputDir = assertNotEmpty( "outputDir", outputDir );
         progress( "ZIP decoding: " + zipFile + " -> " + outputDir );
-
-        ZipInputStream input;
-        try
-        {
-            input = new ZipInputStream( new FileInputStream( zipFile ) );
-        }
-        catch ( FileNotFoundException e )
-        {
-            throw new WrappedIOException( e );
-        }
-        try
-        {
-            while ( true )
-            {
-                ZipEntry entry;
-                try
-                {
-                    entry = input.getNextEntry();
-                }
-                catch ( IOException e )
-                {
-                    throw new WrappedIOException( e );
-                }
-                if ( entry == null )
-                {
-                    break;
-                }
-                File file = new File( outputDir, entry.getName() );
-                if ( entry.isDirectory() )
-                {
-                    mkdir( file.getPath() );
-                    continue;
-                }
-                mkdir( file.getParent() );
-                FileOutputStream output;
-                try
-                {
-                    output = new FileOutputStream( file );
-                }
-                catch ( FileNotFoundException e )
-                {
-                    throw new WrappedIOException( e );
-                }
-                try
-                {
-                    byte[] buffer = new byte[4096];
-                    while ( true )
-                    {
-                        int length = input.read( buffer );
-                        if ( length == -1 )
-                        {
-                            break;
-                        }
-                        output.write( buffer, 0, length );
-                    }
-                }
-                catch ( IOException e )
-                {
-                    throw new WrappedIOException( e );
-                }
-                finally
-                {
-                    dispose( output );
-                }
-            }
-        }
-        finally
-        {
-            dispose( input );
-        }
+        quiteUnzip( new File( zipFile ), new File( outputDir ) );
         return outputDir;
     }
 

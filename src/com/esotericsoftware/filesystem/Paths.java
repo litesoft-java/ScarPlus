@@ -153,7 +153,6 @@ public class Paths
         List<FilePath> zPaths = getPaths();
         if ( !zPaths.isEmpty() )
         {
-            byte[] buf = new byte[1024];
             ZipOutputStream out = pFactory.createZOS( destFile, zPaths );
             try
             {
@@ -170,13 +169,7 @@ public class Paths
                     FileInputStream in = FileUtil.createFileInputStream( path.file() );
                     try
                     {
-                        for ( int len; (len = in.read( buf )) > -1; )
-                        {
-                            if ( len != 0 )
-                            {
-                                out.write( buf, 0, len );
-                            }
-                        }
+                        FileUtil.append( in, out );
                         out.closeEntry();
                     }
                     catch ( IOException e )

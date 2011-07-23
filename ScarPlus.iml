@@ -8,7 +8,7 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="Scar" level="project" />
+    <orderEntry type="library" name="ScarPlusSupport" level="project" />
     <orderEntry type="library" name="JUnit" level="application" />
     <orderEntry type="library" name="Logger" level="project" />
   </component>
