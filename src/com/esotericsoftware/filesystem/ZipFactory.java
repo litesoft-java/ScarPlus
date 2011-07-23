@@ -17,14 +17,7 @@ public interface ZipFactory
         @Override
         public ZipOutputStream createZOS( String pFilePath, List<FilePath> pPaths )
         {
-            try
-            {
-                return new ZipOutputStream( new BufferedOutputStream( new FileOutputStream( pFilePath ) ) );
-            }
-            catch ( FileNotFoundException e )
-            {
-                throw new WrappedIOException( e );
-            }
+            return new ZipOutputStream( FileUtil.createBufferedFileOutputStream( pFilePath ) );
         }
 
         @Override

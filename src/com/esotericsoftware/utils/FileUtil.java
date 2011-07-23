@@ -183,8 +183,19 @@ public class FileUtil extends Util
         return stringBuffer.toString();
     }
 
+    public static BufferedOutputStream createBufferedFileOutputStream( String filePath )
+    {
+        return createBufferedFileOutputStream( new File(  filePath ) );
+    }
+
+    public static BufferedOutputStream createBufferedFileOutputStream( File out )
+    {
+        return new BufferedOutputStream( createFileOutputStream( out ) );
+    }
+
     public static FileOutputStream createFileOutputStream( File out )
     {
+        out.getParentFile().mkdirs();
         try
         {
             return new FileOutputStream( out );

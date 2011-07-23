@@ -405,7 +405,7 @@ public class Project extends ProjectParameters
                 putManifestFirst( pPaths );
                 try
                 {
-                    return new JarOutputStream( new BufferedOutputStream( new FileOutputStream( pFilePath ) ) );
+                    return new JarOutputStream( FileUtil.createBufferedFileOutputStream( pFilePath ) );
                 }
                 catch ( IOException e )
                 {
@@ -452,54 +452,68 @@ public class Project extends ProjectParameters
      * Note: Files with the same path in different JARs will be overwritten. Files in the project's JAR will never be overwritten,
      * but may overwrite other files.
      *
-     * @param excludeJARs The names of any JARs to exclude.
+     * @param pExcludeJARs The names of any JARs to exclude.
      *
      * @return The path to the "OneJAR" file or null if no OneJar is requested for this project.
      */
-    public String oneJAR( String... excludeJARs )
+    public String oneJAR( String... pExcludeJARs )
     {
+        File zOneJarPath = getOneJarPathFile();
+
+        if ( zOneJarPath == null )
+        {
+            return null;
+        }
+
+        File zJarPath = getJarPathFile();
+        if ( !zJarPath.isFile() )
+        {
+            progress( "One JAR: " + this + " BUT NO jar File produced at: " + zJarPath.getPath() );
+            return null;
+        }
+
+        if ( zOneJarPath.isFile() && (zOneJarPath.lastModified() >= zJarPath.lastModified()) )
+        {
+            progress( "One JAR: " + this + " NOT Needed!" );
+            return null;
+        }
+
+        Paths zClasspath = classpath();
+        if ( zClasspath.isEmpty() )
+        {
+            progress( "One JAR: " + this + " No supporting Jars!  Simply Copying to: " + zOneJarPath.getPath() );
+            copyFile( zJarPath, zOneJarPath );
+            return zOneJarPath.getPath();
+        }
         progress( "One JAR: " + this );
 
         String onejarDir = mkdir( path( "$target$/onejar/" ) );
-        String distDir = path( "$target$/dist/" );
-        String projectJarName;
-        if ( hasVersion() )
+
+        List<String> zExcludeJARs = Arrays.asList( pExcludeJARs );
+        for ( File jarFile : zClasspath.getFiles() )
         {
-            projectJarName = project.format( "$name$-$version$.jar" );
+            if ( !zExcludeJARs.contains( jarFile ) )
+            {
+                unzip( jarFile, onejarDir );
+            }
         }
-        else
-        {
-            projectJarName = project.format( "$name$.jar" );
-        }
+
+
 
         ArrayList<String> processedJARs = new ArrayList();
         outer:
-        for ( String jarFile : new Paths( distDir, "*.jar", "!" + projectJarName ).getFullPaths() )
-        {
-            String jarName = fileName( jarFile );
-            for ( String exclude : excludeJARs )
-            {
-                if ( jarName.equals( exclude ) )
-                {
-                    continue outer;
-                }
-            }
-            unzip( jarFile, onejarDir );
-            processedJARs.add( jarFile );
-        }
         unzip( distDir + projectJarName, onejarDir );
 
         String onejarFile;
-        if ( project.hasVersion() )
+        if ( hasVersion() )
         {
-            onejarFile = project.path( "$target$/dist/onejar/$name$-$version$-all.jar" );
+            onejarFile = path( "$target$/dist/onejar/$name$-$version$-all.jar" );
         }
         else
         {
-            onejarFile = project.path( "$target$/dist/onejar/$name$-all.jar" );
+            onejarFile = path( "$target$/dist/onejar/$name$-all.jar" );
         }
-        mkdir( parent( onejarFile ) );
-        // todo: jar( onejarFile, new Paths( onejarDir ) );
+        return jar( onejarFile, new Paths( onejarDir ) );
     }
 
     /**

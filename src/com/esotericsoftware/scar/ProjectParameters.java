@@ -172,7 +172,17 @@ public class ProjectParameters extends FileUtil
 
     public File getOneJarPathFile()
     {
-        return new File( getOneJarPath() );
+        String zJar = getOneJarPath();
+        if ( zJar == null )
+        {
+            return null;
+        }
+        int at = zJar.lastIndexOf( '.' );
+        if ( at == -1 || !".jar".equalsIgnoreCase( zJar.substring( at ) ) )
+        {
+            zJar += ".jar";
+        }
+        return new File( zJar );
     }
 
     public Paths getDist()
