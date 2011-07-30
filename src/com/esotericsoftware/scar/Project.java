@@ -181,7 +181,7 @@ public class Project extends ProjectParameters
         if ( !pClasspath.isEmpty() )
         {
             args.add( "-classpath" );
-            args.add( pClasspath.toString( ";" ) );
+            args.add( pClasspath.toString( File.pathSeparator ) );
         }
         return args;
     }
