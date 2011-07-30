@@ -189,9 +189,10 @@ public class Project extends ProjectParameters
     protected void compileJava( Paths pClasspath, Paths pSource, List<String> pCompileArgs )
     {
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+
         if ( compiler == null )
         {
-            throw new RuntimeException( "No compiler available. Ensure you are running from a " + getTargetJavaVersion() + "+ JDK, and not a JRE." );
+            throw new RuntimeException( "No compiler available. Ensure you are running from a " + getTargetJavaVersion() + "+ JDK, and not a JRE *and* that your class path includes tools.jar." );
         }
         int zError = compiler.run( getCompile_in(), getCompile_out(), getCompile_err(), pCompileArgs.toArray( new String[pCompileArgs.size()] ) );
         if ( zError != 0 )
@@ -508,7 +509,7 @@ public class Project extends ProjectParameters
             }
         }
 
-        unzip( zJarPath, zOnejarDir ); // Our Jar! - Our Manifest will be "the" Manifest
+        unzip( zJarPath, zOnejarDir ); // Our Jar! - Our Manifest will be "the" Manifest !!!!!! Need to remove class PATH!
         return innerJar( "'ONE' ", zOneJarPath.getPath(), new Paths( zOnejarDir.getPath() ) );
     }
 

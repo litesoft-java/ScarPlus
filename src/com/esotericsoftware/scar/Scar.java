@@ -26,6 +26,8 @@ import com.esotericsoftware.yamlbeans.tokenizer.*;
  */
 public class Scar extends Utils implements ProjectFactory
 {
+    public static final String VERSION = "2.0";
+
     public static final String DEFAULT_PROJECT_FILE_NAME = "Build";
 
     public static final String JAVA_EXTENSION = ".java";
@@ -758,7 +760,6 @@ public class Scar extends Utils implements ProjectFactory
         return zipFile;
     }
 
-
     /**
      * Encodes the specified file with LZMA. The resulting filename is the filename plus ".lzma". The file is deleted after
      * encoding.
@@ -1471,6 +1472,7 @@ public class Scar extends Utils implements ProjectFactory
 
     protected int run()
     {
+        System.out.println( getClass().getSimpleName() + " vs " + VERSION );
         if ( mArgs.count() == 0 )
         {
             mLaunchProject.build();
