@@ -68,6 +68,15 @@ public class FileUtil extends Util
         return pToTest;
     }
 
+    public static File assertIsFile( String pWhat, File pToTest )
+    {
+        if ( !assertExists( pWhat, pToTest ).isFile() )
+        {
+            throw new IllegalArgumentException( pWhat + " not a file: " + pToTest.getAbsolutePath() );
+        }
+        return pToTest;
+    }
+
     /**
      * Reads to the end of the input stream and writes the bytes to the output stream.
      */
@@ -179,8 +188,16 @@ public class FileUtil extends Util
      */
     static public String fileContents( String path )
     {
+        return fileContents( new File( path ) );
+    }
+
+    /**
+     * Returns the textual contents of the specified file.
+     */
+    static public String fileContents( File pFile )
+    {
         StringBuilder stringBuffer = new StringBuilder( 4096 );
-        FileReader reader = createFileReader( new File( path ) );
+        FileReader reader = createFileReader( pFile );
         try
         {
             char[] buffer = new char[2048];

@@ -22,6 +22,12 @@ public class Project extends ProjectParameters
 
     private static final String META_INF_MANIFEST_MF = "META-INF/MANIFEST.MF";
 
+    private static final String VERSIONED_URL_PATTERN_PREFIX = "<url-pattern>/v";
+    private static final String VERSIONED_SCRIPT_PREFIX = "<script src='v";
+    private static final String VERSIONED_SCRIPT_SUFFIX = ".nocache.js'></script>";
+    private static final String VERSIONED_MODULE_PREFIX = "<module rename-to=\"v";
+    private static final String VERSIONED_MODULE_SUFFIX = "\">";
+
     public Project( ProjectParameters pParameters )
     {
         super( pParameters );
@@ -56,7 +62,7 @@ public class Project extends ProjectParameters
     {
         if ( pKey instanceof String )
         {
-            String zStrKey = Util.noEmpty( pKey.toString().toLowerCase() );
+            String zStrKey = noEmpty( pKey.toString().toLowerCase() );
             if ( Parameter.reservedNames().contains( zStrKey ) )
             {
                 throw new IllegalArgumentException( zStrKey + " not updatable!" );
@@ -65,6 +71,84 @@ public class Project extends ProjectParameters
         }
         Util.assertNotNull( "key", pKey );
         return pKey;
+    }
+
+    /**
+     * Assert that this project is currently a 'Versioned' GWT project, and then rev the version number by 1
+     */
+    public void versionGWT()
+    {
+        File zWarWebXmlFile = new File( mCanonicalProjectDir, "war/WEB-INF/web.xml" );
+        String zWarWebXml = fileContents( assertIsFile( "web.xml", zWarWebXmlFile ) );
+
+        int zVersion = extractVersionFromUrlPattern( zWarWebXml );
+
+        File zIndexHtmlFile = new File( mCanonicalProjectDir, "war/v" + zVersion + "/index.html" );
+        String zIndexHtml = assertVersionedIndexHtml( zIndexHtmlFile, zVersion );
+
+        List<File> zVersionedGwtXmlFiles = findVersionedGwtXmlFiles( zVersion );
+
+        System.out.println( "Project.versionGWT: " + zVersion );
+        System.out.println( "    " + zWarWebXmlFile.getPath() );
+        System.out.println( "    " + zIndexHtmlFile.getPath() );
+        for ( File zFile : zVersionedGwtXmlFiles )
+        {
+            System.out.println( "    " + zFile.getPath() );
+        }
+    }
+
+    protected List<File> findVersionedGwtXmlFiles( int pVersion )
+    {
+        String zVersionedModule = VERSIONED_MODULE_PREFIX + pVersion + VERSIONED_MODULE_SUFFIX;
+
+        ArrayList<File> zVersionedFiles = new ArrayList<File>();
+
+        String zSourceString = get( SOURCE.getName() ) + "|";
+        Paths zGwtXml = new Paths(zSourceString.substring( 0, zSourceString.indexOf( '|' ) ), "**.gwt.xml" );
+        for ( File zFile : zGwtXml.getFiles() )
+        {
+            if ( fileContents( zFile ).contains( zVersionedModule ) )
+            {
+                zVersionedFiles.add( zFile );
+            }
+        }
+        if ( zVersionedFiles.isEmpty() )
+        {
+            throw new IllegalStateException( "Project does not appear to contain a 'gwt.xml' file with the current version module definition of: " + zVersionedModule );
+        }
+        return zVersionedFiles;
+    }
+
+    protected String assertVersionedIndexHtml( File pIndexHtmlFile, int pVersion )
+    {
+        String zVersionedScript = VERSIONED_SCRIPT_PREFIX + pVersion + VERSIONED_SCRIPT_SUFFIX;
+
+        String zContents = fileContents( assertIsFile( "Versioned index.html", pIndexHtmlFile ) );
+        if ( !zContents.contains( zVersionedScript ) )
+        {
+            throw new IllegalStateException( "Project's current versioned index.html file (" + pIndexHtmlFile.getPath() + ") does not contain a 'versioned' script element of: " + zVersionedScript );
+        }
+        return zContents;
+    }
+
+    protected int extractVersionFromUrlPattern( String pWarWebXml )
+    {
+        for ( int at, from = 0; -1 != (at = pWarWebXml.indexOf( VERSIONED_URL_PATTERN_PREFIX, from )); from = at + 1 )
+        {
+            int slashAt = pWarWebXml.indexOf( '/', at += VERSIONED_URL_PATTERN_PREFIX.length() );
+            if ( slashAt > 0 )
+            {
+                try
+                {
+                    return Integer.parseInt( pWarWebXml.substring( at, slashAt ) );
+                }
+                catch ( NumberFormatException acceptable )
+                {
+                    // path starts w/ a 'v' but is not of pattern "v####"
+                }
+            }
+        }
+        throw new IllegalStateException( "Project's war/WEB-INF/web.xml does not appear to contain a 'versioned' <url-pattern>." );
     }
 
     /**

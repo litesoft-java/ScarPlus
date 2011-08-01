@@ -420,6 +420,15 @@ public class Scar extends Utils implements ProjectFactory
         mLaunchProject.build();
     }
 
+    /**
+     * Versions the current (GWT) Launch Project - Normally called reflectively
+     */
+    @SuppressWarnings({"UnusedDeclaration"})
+    public void versionGWT()
+    {
+        mLaunchProject.versionGWT();
+    }
+
     /// todo: ==================================================================================================================
     /// todo: ==================================================================================================================
     /// todo: ==================================================================================================================
