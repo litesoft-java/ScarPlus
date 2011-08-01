@@ -88,7 +88,7 @@ public class Project extends ProjectParameters
 
         List<File> zVersionedGwtXmlFiles = findVersionedGwtXmlFiles( zVersion );
 
-        System.out.println( "Project.versionGWT: " + zVersion );
+        System.out.println( "Project.versionGWT: " + zVersion );  // todo...
         System.out.println( "    " + zWarWebXmlFile.getPath() );
         System.out.println( "    " + zIndexHtmlFile.getPath() );
         for ( File zFile : zVersionedGwtXmlFiles )
