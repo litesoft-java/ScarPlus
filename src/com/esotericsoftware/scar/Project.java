@@ -111,11 +111,38 @@ public class Project extends ProjectParameters
             updateFileContents( zFile, updateVersionedGwtXmlFile( fileContents( zFile ), zCurVersion, zNewVersion ) );
         }
         // Update/Create the Current Version's redirect JavaScript file
-        String zCurPathVersion = "/v" + zCurVersion + "/";
+        String zCurPathVersion = "/v" + zCurVersion;
         String redirectScript = "var loc = window.location.href;\n" + //
                                 "var at = loc.indexOf( '" + zCurPathVersion + "' );\n" + //
-                                "window.location.href = loc.substring(0, at) + '/v" + zNewVersion + "/' + loc.substring(at + " + zCurPathVersion.length() + ");\n";
+                                "window.location.href = loc.substring(0, at) + '/v" + zNewVersion + "' + loc.substring(at + " + zCurPathVersion.length() + ");\n";
         updateFileContents( new File( mCanonicalProjectDir, "war/v" + zCurVersion + "/v" + zCurVersion + ".nocache.js" ), redirectScript );
+
+        // Update the "root" html (if it exists)
+        File zRootHtmlFile = new File( mCanonicalProjectDir, "war/index.html" );
+        if ( zRootHtmlFile.isFile() )
+        {
+            updateFileContents( zRootHtmlFile, updateRootHTML( fileContents( zRootHtmlFile ), zCurVersion, zNewVersion ) );
+        }
+    }
+
+    protected String updateRootHTML( String pFileContents, int pCurVersion, int pNewVersion )
+    {
+        // <!DOCTYPE html>
+        // <html>
+        //     <head>
+        //         <meta http-equiv="Refresh" content="1; url=v1/">
+        //     </head>
+        //     <body>
+        //         <script>window.location.href = 'v1/';</script>
+        //     </body>
+        // </html>
+        String zCurPathVersion = "v" + pCurVersion + "/";
+        String zNewPathVersion = "v" + pNewVersion + "/";
+        for ( int at; -1 != (at = pFileContents.indexOf( zCurPathVersion )); )
+        {
+            pFileContents = pFileContents.substring( 0, at ) + zNewPathVersion + pFileContents.substring( at + zCurPathVersion.length() );
+        }
+        return pFileContents;
     }
 
     protected String updateVersionedGwtXmlFile( String pFileContents, int pCurVersion, int pNewVersion )
