@@ -217,6 +217,29 @@ public class FileUtil extends Util
         return stringBuffer.toString();
     }
 
+    /**
+     * Update the File Contents.
+     */
+    static public void updateFileContents( File pFile, String pNewContents )
+    {
+        FileWriter writer = createFileWriter( pFile );
+        try
+        {
+            writer.write( pNewContents );
+            Closeable zCloseable = writer;
+            writer = null;
+            close( zCloseable );
+        }
+        catch ( IOException e )
+        {
+            throw new WrappedIOException( e );
+        }
+        finally
+        {
+            dispose( writer );
+        }
+    }
+
     public static BufferedOutputStream createBufferedFileOutputStream( String filePath )
     {
         return createBufferedFileOutputStream( new File( filePath ) );
@@ -259,6 +282,18 @@ public class FileUtil extends Util
             return new FileReader( in );
         }
         catch ( FileNotFoundException e )
+        {
+            throw new WrappedIOException( e );
+        }
+    }
+
+    public static FileWriter createFileWriter( File out )
+    {
+        try
+        {
+            return new FileWriter( out );
+        }
+        catch ( IOException e )
         {
             throw new WrappedIOException( e );
         }

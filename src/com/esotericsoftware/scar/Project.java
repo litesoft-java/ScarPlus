@@ -81,14 +81,21 @@ public class Project extends ProjectParameters
         File zWarWebXmlFile = new File( mCanonicalProjectDir, "war/WEB-INF/web.xml" );
         String zWarWebXml = fileContents( assertIsFile( "web.xml", zWarWebXmlFile ) );
 
-        int zVersion = extractVersionFromUrlPattern( zWarWebXml );
+        int zCurVersion = extractVersionFromUrlPattern( zWarWebXml );
 
-        File zIndexHtmlFile = new File( mCanonicalProjectDir, "war/v" + zVersion + "/index.html" );
-        String zIndexHtml = assertVersionedIndexHtml( zIndexHtmlFile, zVersion );
+        File zIndexHtmlFile = new File( mCanonicalProjectDir, "war/v" + zCurVersion + "/index.html" );
+        String zIndexHtml = assertVersionedIndexHtml( zIndexHtmlFile, zCurVersion );
 
-        List<File> zVersionedGwtXmlFiles = findVersionedGwtXmlFiles( zVersion );
+        List<File> zVersionedGwtXmlFiles = findVersionedGwtXmlFiles( zCurVersion );
 
-        progress( "versionGWT: " + this + " | " + zVersion + " -> " + (zVersion + 1) );
+        int zNewVersion = zCurVersion + 1;
+
+        if ( new File( mCanonicalProjectDir, "war/v" + zNewVersion ).exists() )
+        {
+            throw new IllegalStateException( "Project already contains a 'war/v" + zNewVersion + "' directory?" );
+        }
+
+        progress( "versionGWT: " + this + " | " + zCurVersion + " -> " + (zCurVersion + 1) );
         progress( "    " + zWarWebXmlFile.getPath() );
         progress( "    " + zIndexHtmlFile.getPath() );
         for ( File zFile : zVersionedGwtXmlFiles )
@@ -96,7 +103,25 @@ public class Project extends ProjectParameters
             progress( "    " + zFile.getPath() );
         }
 
+        new Paths( "war/v" + zCurVersion ).copyTo( "war/v" + zNewVersion );
+        updateFileContents( new File( mCanonicalProjectDir, "war/v" + zNewVersion + "/index.html" ), updateVersionedIndexHtml( zIndexHtml, zCurVersion, zNewVersion ) );
+        updateFileContents( zWarWebXmlFile, updateVersionedWebXml( zWarWebXml, zCurVersion, zNewVersion ) );
+        for ( File zFile : zVersionedGwtXmlFiles )
+        {
+            updateFileContents( zFile, updateVersionedGwtXmlFile( fileContents( zFile ), zCurVersion, zNewVersion ) );
+        }
+        // todo: add new bogus current version JS file
+//        var loc = window.location.href;
+//        var at = loc.indexOf( '/v1/' );
+//        window.location.href = loc.substring(0, at) + '/v2/' + loc.substring(at + 4);
+    }
 
+    protected String updateVersionedGwtXmlFile( String pFileContents, int pCurVersion, int pNewVersion )
+    {
+        String zCurVersionedModule = VERSIONED_MODULE_PREFIX + pCurVersion + VERSIONED_MODULE_SUFFIX;
+        String zNewVersionedModule = VERSIONED_MODULE_PREFIX + pNewVersion + VERSIONED_MODULE_SUFFIX;
+        int at = pFileContents.indexOf( zCurVersionedModule );
+        return pFileContents.substring( 0, at ) + zNewVersionedModule + pFileContents.substring( at + zCurVersionedModule.length() );
     }
 
     protected List<File> findVersionedGwtXmlFiles( int pVersion )
@@ -106,7 +131,7 @@ public class Project extends ProjectParameters
         ArrayList<File> zVersionedFiles = new ArrayList<File>();
 
         String zSourceString = get( SOURCE.getName() ) + "|";
-        Paths zGwtXml = new Paths(zSourceString.substring( 0, zSourceString.indexOf( '|' ) ), "**.gwt.xml" );
+        Paths zGwtXml = new Paths( zSourceString.substring( 0, zSourceString.indexOf( '|' ) ), "**.gwt.xml" );
         for ( File zFile : zGwtXml.getFiles() )
         {
             if ( fileContents( zFile ).contains( zVersionedModule ) )
@@ -121,6 +146,14 @@ public class Project extends ProjectParameters
         return zVersionedFiles;
     }
 
+    protected String updateVersionedIndexHtml( String pFileContents, int pCurVersion, int pNewVersion )
+    {
+        String zCurVersionedScript = VERSIONED_SCRIPT_PREFIX + pCurVersion + VERSIONED_SCRIPT_SUFFIX;
+        String zNewVersionedScript = VERSIONED_SCRIPT_PREFIX + pNewVersion + VERSIONED_SCRIPT_SUFFIX;
+        int at = pFileContents.indexOf( zCurVersionedScript );
+        return pFileContents.substring( 0, at ) + zNewVersionedScript + pFileContents.substring( at + zCurVersionedScript.length() );
+    }
+
     protected String assertVersionedIndexHtml( File pIndexHtmlFile, int pVersion )
     {
         String zVersionedScript = VERSIONED_SCRIPT_PREFIX + pVersion + VERSIONED_SCRIPT_SUFFIX;
@@ -131,6 +164,14 @@ public class Project extends ProjectParameters
             throw new IllegalStateException( "Project's current versioned index.html file (" + pIndexHtmlFile.getPath() + ") does not contain a 'versioned' script element of: " + zVersionedScript );
         }
         return zContents;
+    }
+
+    protected String updateVersionedWebXml( String pFileContents, int pCurVersion, int pNewVersion )
+    {
+        String zCurVersionedUrlPattern = VERSIONED_URL_PATTERN_PREFIX + pCurVersion + "/";
+        String zNewVersionedUrlPattern = VERSIONED_URL_PATTERN_PREFIX + pNewVersion + "/";
+        int at = pFileContents.indexOf( zCurVersionedUrlPattern );
+        return pFileContents.substring( 0, at ) + zNewVersionedUrlPattern + pFileContents.substring( at + zCurVersionedUrlPattern.length() );
     }
 
     protected int extractVersionFromUrlPattern( String pWarWebXml )
