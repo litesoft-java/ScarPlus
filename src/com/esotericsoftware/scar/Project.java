@@ -110,10 +110,12 @@ public class Project extends ProjectParameters
         {
             updateFileContents( zFile, updateVersionedGwtXmlFile( fileContents( zFile ), zCurVersion, zNewVersion ) );
         }
-        // todo: add new bogus current version JS file
-//        var loc = window.location.href;
-//        var at = loc.indexOf( '/v1/' );
-//        window.location.href = loc.substring(0, at) + '/v2/' + loc.substring(at + 4);
+        // Update/Create the Current Version's redirect JavaScript file
+        String zCurPathVersion = "/v" + zCurVersion + "/";
+        String redirectScript = "var loc = window.location.href;\n" + //
+                                "var at = loc.indexOf( '" + zCurPathVersion + "' );\n" + //
+                                "window.location.href = loc.substring(0, at) + '/v" + zNewVersion + "/' + loc.substring(at + " + zCurPathVersion.length() + ");\n";
+        updateFileContents( new File( mCanonicalProjectDir, "war/v" + zCurVersion + "/v" + zCurVersion + ".nocache.js" ), redirectScript );
     }
 
     protected String updateVersionedGwtXmlFile( String pFileContents, int pCurVersion, int pNewVersion )
