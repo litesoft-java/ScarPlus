@@ -39,39 +39,56 @@ public class Project extends ProjectParameters
         return "1.6";
     }
 
-    public void set( Object key, Object object )
-    {
-        mManager.put( updatableKey( key ), object );
-    }
+    // todo: GWT Compile
+    //
+    //    <path id="library.gwt_user.classpath">
+    //      <pathelement location="${GWTpath}/gwt-user.jar"/>
+    //    </path>
+    //
+    //    <path id="library.gwt_dev.classpath">
+    //      <pathelement location="${GWTpath}/gwt-dev.jar"/>
+    //    </path>
+    //
+    //    <path id="module.sourcepath">
+    //      <dirset dir="${basedir}">
+    //        <include name="src"/>
+    //      </dirset>
+    //    </path>
+    //
+    //    <path id="module.classpath">
+    //      <pathelement location="${output.dir}"/>
+    //      <path refid="library.gwt_user.classpath"/>
+    //    </path>
+    //
+    //    <property name="gwt.compiler.output" value="${basedir}/out/GWTCompilerOutput"/>
+    //
+    //    <!-- Run GWT compiler for GWT module ${gwt.module.name} -->
+    //    <target name="run.gwt.compiler" description="Run GWT compiler">
+    //      <java fork="true" classname="com.google.gwt.dev.Compiler">
+    //        <jvmarg line="-Xmx128m"/>
+    //        <classpath>
+    //          <path refid="library.gwt_dev.classpath"/>
+    //          <path refid="module.sourcepath"/>
+    //          <path refid="module.classpath"/>
+    //        </classpath>
+    //        <arg value="-logLevel"/>
+    //        <arg value="WARN"/>
+    //        <arg value="-war"/>
+    //        <arg value="${gwt.compiler.output}"/>
+    //        <arg value="-style"/>
+    //        <arg value="DETAILED"/>
+    //        <arg value="${gwt.module.name}"/>
+    //      </java>
+    //    </target>
+    //
+    //    <target name="compile.gwt" depends="compile.module" description="Compile all GWT modules in module">
+    //      <antcall target="run.gwt.compiler">
+    //        <param name="gwt.module.name" value="org.litesoft.sandbox.csapp.CSapp"/>
+    //      </antcall>
+    //    </target>
+    //
 
-    public void remove( Object key )
-    {
-        set( key, null );
-    }
-
-    /**
-     * Removes an item from a list or map. If the mData under the specified key is a list, the entry equal to the specified value is
-     * removed. If the mData under the specified key is a map, the entry with the key specified by value is removed.
-     */
-    public void remove( Object key, Object value )
-    {
-        mManager.remove( updatableKey( key ), value );
-    }
-
-    private Object updatableKey( Object pKey )
-    {
-        if ( pKey instanceof String )
-        {
-            String zStrKey = noEmpty( pKey.toString().toLowerCase() );
-            if ( Parameter.reservedNames().contains( zStrKey ) )
-            {
-                throw new IllegalArgumentException( zStrKey + " not updatable!" );
-            }
-            pKey = zStrKey;
-        }
-        Util.assertNotNull( "key", pKey );
-        return pKey;
-    }
+    // todo: WAR
 
     /**
      * Assert that this project is currently a 'Versioned' GWT project, and then rev the version number by 1
@@ -269,6 +286,8 @@ public class Project extends ProjectParameters
 
     protected boolean packageIt()
     {
+        // todo: GWT Compile
+        // todo: WAR
         String zDistDir = dist();
         return (null != oneJAR()) || (zDistDir != null);
     }
@@ -765,18 +784,40 @@ public class Project extends ProjectParameters
         return anyBuilt;
     }
 
+    public void set( Object key, Object object )
+    {
+        mManager.put( updatableKey( key ), object );
+    }
+
+    public void remove( Object key )
+    {
+        set( key, null );
+    }
+
     /**
-     * Replaces the Data in this project with the contents of the specified YAML file. If the specified project has Data with the
-     * same key as this project, the value is overwritten. Keys in this project that are not in the specified project are not
-     * affected.
+     * Removes an item from a list or map. If the mData under the specified key is a list, the entry equal to the specified value is
+     * removed. If the mData under the specified key is a map, the entry with the key specified by value is removed.
      */
-//    public void replace( Project project )
-//    {
-//        Util.assertNotNull( "project", project );
-//        mData.putAll( project.mData );
-//        document = project.document;
-//        dir = project.dir;
-//    }
+    public void remove( Object key, Object value )
+    {
+        mManager.remove( updatableKey( key ), value );
+    }
+
+    private Object updatableKey( Object pKey )
+    {
+        if ( pKey instanceof String )
+        {
+            String zStrKey = noEmpty( pKey.toString().toLowerCase() );
+            if ( Parameter.reservedNames().contains( zStrKey ) )
+            {
+                throw new IllegalArgumentException( zStrKey + " not updatable!" );
+            }
+            pKey = zStrKey;
+        }
+        Util.assertNotNull( "key", pKey );
+        return pKey;
+    }
+
     public synchronized void initialize( ProjectFactory pProjectFactory )
     {
         List<String> zDependencies = getDependencies();
