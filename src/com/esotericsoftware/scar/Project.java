@@ -39,54 +39,36 @@ public class Project extends ProjectParameters
         return "1.6";
     }
 
-    // todo: GWT Compile
-    //
-    //    <path id="library.gwt_user.classpath">
-    //      <pathelement location="${GWTpath}/gwt-user.jar"/>
-    //    </path>
-    //
-    //    <path id="library.gwt_dev.classpath">
-    //      <pathelement location="${GWTpath}/gwt-dev.jar"/>
-    //    </path>
-    //
-    //    <path id="module.sourcepath">
-    //      <dirset dir="${basedir}">
-    //        <include name="src"/>
-    //      </dirset>
-    //    </path>
-    //
-    //    <path id="module.classpath">
-    //      <pathelement location="${output.dir}"/>
-    //      <path refid="library.gwt_user.classpath"/>
-    //    </path>
-    //
-    //    <property name="gwt.compiler.output" value="${basedir}/out/GWTCompilerOutput"/>
-    //
-    //    <!-- Run GWT compiler for GWT module ${gwt.module.name} -->
-    //    <target name="run.gwt.compiler" description="Run GWT compiler">
-    //      <java fork="true" classname="com.google.gwt.dev.Compiler">
-    //        <jvmarg line="-Xmx128m"/>
-    //        <classpath>
-    //          <path refid="library.gwt_dev.classpath"/>
-    //          <path refid="module.sourcepath"/>
-    //          <path refid="module.classpath"/>
-    //        </classpath>
-    //        <arg value="-logLevel"/>
-    //        <arg value="WARN"/>
-    //        <arg value="-war"/>
-    //        <arg value="${gwt.compiler.output}"/>
-    //        <arg value="-style"/>
-    //        <arg value="DETAILED"/>
-    //        <arg value="${gwt.module.name}"/>
-    //      </java>
-    //    </target>
-    //
-    //    <target name="compile.gwt" depends="compile.module" description="Compile all GWT modules in module">
-    //      <antcall target="run.gwt.compiler">
-    //        <param name="gwt.module.name" value="org.litesoft.sandbox.csapp.CSapp"/>
-    //      </antcall>
-    //    </target>
-    //
+    public void GWTcompile()
+    {
+        // todo: GWT Compile
+        //
+        // http://stackoverflow.com/questions/502494/execute-a-java-program-from-our-java-program
+        // http://www.javaworld.com/javaworld/jw-12-2000/jw-1229-traps.html
+        // http://www.rgagnon.com/javadetails/java-0014.html
+        //
+        //    <target name="run.gwt.compiler" description="Run GWT compiler">
+        //      <java fork="true" classname="com.google.gwt.dev.Compiler">
+        //        <jvmarg line="-Xmx128m"/>
+        //        <classpath>
+        //          <pathelement location="${GWTpath}/gwt-dev.jar"/>
+        //          <pathelement location="${GWTpath}/gwt-user.jar"/>
+        //          <dirset dir="${basedir}">
+        //              <include name="src"/>
+        //          </dirset>
+        //          <pathelement location="${output.dir}"/>
+        //        </classpath>
+        //        <arg value="-logLevel"/>
+        //        <arg value="WARN"/>
+        //        <arg value="-war"/>
+        //        <arg value="${basedir}/out/GWTCompilerOutput"/>
+        //        <arg value="-style"/>
+        //        <arg value="DETAILED"/>
+        //        <arg value="org.litesoft.sandbox.csapp.CSapp"/>
+        //      </java>
+        //    </target>
+        //
+    }
 
     // todo: WAR
 
