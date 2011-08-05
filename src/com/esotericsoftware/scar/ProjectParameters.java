@@ -48,6 +48,24 @@ public class ProjectParameters extends FileUtil
 
     public static final Parameter ONEJAR = def( "onejar", Form.STRING, "JAR name w/ optional path for the JAR ('.jar' added to the end if does not end with 'jar', case insensitive), that all 'exploded' dependendend JARs and dist files will be JAR into (this should make a single JAR application." );
 
+    // ------------------------------------------------ GWT Parameters -------------------------------------------------
+
+    public static final Parameter GWTat = def( "GWTat", Form.STRING, "JAR name w/ optional path for the JAR." );
+
+    public static final Parameter GWT = def( "GWT", Form.STRING, "JAR name w/ optional path for the JAR." );
+
+    public static final Parameter GWTwar = def( "GWTwar", Form.STRING, "JAR name w/ optional path.", //
+                                             "Default: '$target$/GWTCompilerOutput'." );
+
+    public static final Parameter GWTstyle = def( "GWTwar", Form.STRING, "JAR name w/ optional path. - DETAILED", //
+                                             "Default: 'XXX'." );
+
+    public static final Parameter GWTlogging = def( "GWTwar", Form.STRING, "JAR name w/ optional path.", //
+                                             "Default: 'INFO'." );
+
+    public static final Parameter GWTmx = def( "GWTwar", Form.STRING, "JAR name w/ optional path.", //
+                                             "Default: '128m'." );
+
     // ------------------------------------------------ Default Support ------------------------------------------------
 
     protected synchronized void applyDefaults()

@@ -54,7 +54,7 @@ public class Parameter
 
     private Parameter( String pName, Form pForm, String pDescription, String pDescriptionForDefaulting )
     {
-        mName = Util.assertNotEmpty( "Name", pName );
+        mName = Util.assertNotEmpty( "Name", pName ).toLowerCase();
         mForm = pForm;
         mDescription = pDescription;
         mDescriptionForDefaulting = pDescriptionForDefaulting;
