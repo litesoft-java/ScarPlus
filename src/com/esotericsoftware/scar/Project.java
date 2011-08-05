@@ -249,7 +249,7 @@ public class Project extends ProjectParameters
             return true;
         }
         long zJarTimestamp = zJarFile.lastModified();
-        return checkNewer( zJarTimestamp, compileClasspath() ) || checkNewer( zJarTimestamp, getSource() ) || checkNewer( zJarTimestamp, getResources() );
+        return (mProjectFileLastModified > zJarTimestamp) || checkNewer( zJarTimestamp, compileClasspath() ) || checkNewer( zJarTimestamp, getSource() ) || checkNewer( zJarTimestamp, getResources() );
     }
 
     protected boolean checkNewer( long pJarTimestamp, Paths pPaths )

@@ -456,29 +456,31 @@ public class ProjectParameters extends FileUtil
         return mName;
     }
 
-    public ProjectParameters( String pName, File pCanonicalProjectDir, Map<Object, Object> pData )
+    public ProjectParameters( File pProjectFile, String pName, File pCanonicalProjectDir, Map<Object, Object> pData )
     {
-        this( pName, pCanonicalProjectDir, new Manager( pData ) );
+        this( pProjectFile.lastModified(), pName, pCanonicalProjectDir, new Manager( pData ) );
     }
 
     // ---------------------------------------------------- Support ----------------------------------------------------
 
     protected ProjectParameters( ProjectParameters pParameters )
     {
-        this( pParameters.getName(), pParameters.getCanonicalProjectDir(), pParameters.mManager );
+        this( pParameters.mProjectFileLastModified, pParameters.getName(), pParameters.getCanonicalProjectDir(), pParameters.mManager );
     }
 
-    private ProjectParameters( String pName, File pCanonicalProjectDir, Manager pManager )
+    private ProjectParameters( long pProjectFileLastModified, String pName, File pCanonicalProjectDir, Manager pManager )
     {
+        mProjectFileLastModified = pProjectFileLastModified;
         mCanonicalProjectDir = pCanonicalProjectDir;
         mManager = pManager;
         Object zName = mManager.get( NAME.getName() );
         mManager.put( NAME.getName(), mName = (zName != null) ? zName.toString() : pName );
     }
 
-    protected final String mName;
+    protected final long mProjectFileLastModified;
     protected final File mCanonicalProjectDir;
     protected final Manager mManager;
+    protected final String mName;
 
     static private final java.util.regex.Pattern formatPattern = java.util.regex.Pattern.compile( "([^\\$]*)\\$([^\\$]+)\\$([^\\$]*)" );
 

@@ -171,9 +171,9 @@ public class Scar extends Utils implements ProjectFactory
         throw new IllegalArgumentException( pBuildFile + " was NOT either a '.java' or a '.yaml' file!" );
     }
 
-    protected Project createYamlProject( File zYamlBuildFile, File pCanonicalProjectDir, String pProjectName )
+    protected Project createYamlProject( File pYamlBuildFile, File pCanonicalProjectDir, String pProjectName )
     {
-        List<String> zLines = readLines( zYamlBuildFile );
+        List<String> zLines = readLines( pYamlBuildFile );
         int at = findLine( zLines, "---" );
         String zYAML, zCode = null;
         if ( at == -1 )
@@ -191,20 +191,20 @@ public class Scar extends Utils implements ProjectFactory
         {
             zClass = createYamlCodeProjectClass( zClass, zCode, at + 1 );
         }
-        return instantiate( zClass, pCanonicalProjectDir, pProjectName, zData );
+        return instantiate( pYamlBuildFile, zClass, pCanonicalProjectDir, pProjectName, zData );
     }
 
-    protected Project createJavaProject( File zJavaBuildFile, File pCanonicalProjectDir, String pProjectName )
+    protected Project createJavaProject( File pJavaBuildFile, File pCanonicalProjectDir, String pProjectName )
     {
-        String zFile = mergeLines( readLines( zJavaBuildFile ), 0 );
+        String zFile = mergeLines( readLines( pJavaBuildFile ), 0 );
         Class<? extends Project> zClass = createJavaProjectClass();
         zClass = createJavaCodeProjectClass( zClass, zFile );
-        return instantiate( zClass, pCanonicalProjectDir, pProjectName, null );
+        return instantiate( pJavaBuildFile, zClass, pCanonicalProjectDir, pProjectName, null );
     }
 
-    protected Project instantiate( Class<? extends Project> pClass, File pCanonicalProjectDir, String pProjectName, Map<Object, Object> pData )
+    protected Project instantiate( File zProjectFile, Class<? extends Project> pClass, File pCanonicalProjectDir, String pProjectName, Map<Object, Object> pData )
     {
-        return instantiate( pClass, new ProjectParameters( pProjectName, pCanonicalProjectDir, pData ) );
+        return instantiate( pClass, new ProjectParameters( zProjectFile, pProjectName, pCanonicalProjectDir, pData ) );
     }
 
     protected Project instantiate( Class<? extends Project> pClass, ProjectParameters pParameters )
