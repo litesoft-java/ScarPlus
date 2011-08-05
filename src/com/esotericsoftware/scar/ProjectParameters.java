@@ -50,21 +50,27 @@ public class ProjectParameters extends FileUtil
 
     // ------------------------------------------------ GWT Parameters -------------------------------------------------
 
-    public static final Parameter GWTat = def( "GWTat", Form.STRING, "JAR name w/ optional path for the JAR." );
+    public static final Parameter GWT = def( "GWT", Form.STRING, "The 'package' Name of the 'root' '.gwt.xml' file. e.g. 'org.sample.MyGwtApplication'" );
 
-    public static final Parameter GWT = def( "GWT", Form.STRING, "JAR name w/ optional path for the JAR." );
+    public static final Parameter GWTat = def( "GWTat", Form.STRING, "The directory to find the GWT JARs.  Required if 'GWT' indicated" );
 
-    public static final Parameter GWTwar = def( "GWTwar", Form.STRING, "JAR name w/ optional path.", //
-                                             "Default: '$target$/GWTCompilerOutput'." );
+    public static final Parameter GWTwar = def( "GWTwar", Form.STRING, "The directory to put the GWT Compiler's output in.", //
+                                                "Default: '$target$/GWTCompilerOutput'." );
 
-    public static final Parameter GWTstyle = def( "GWTwar", Form.STRING, "JAR name w/ optional path. - DETAILED", //
-                                             "Default: 'XXX'." );
+    public static final Parameter GWTstyle = def( "GWTstyle", Form.STRING, "GWT Compiler's output 'style'.  Options are: OBF, PRETTY, or DETAILED.  Note: OBF == Obfuscated.", //
+                                                  "Default: 'OBF'." );
 
-    public static final Parameter GWTlogging = def( "GWTwar", Form.STRING, "JAR name w/ optional path.", //
-                                             "Default: 'INFO'." );
+    public static final Parameter GWTlogging = def( "GWTlogging", Form.STRING, "Logging level for the GWT Compiler.  Options are: ERROR, WARN, INFO, TRACE, DEBUG, SPAM, or ALL.", //
+                                                    "Default: 'INFO'." );
 
-    public static final Parameter GWTmx = def( "GWTwar", Form.STRING, "JAR name w/ optional path.", //
-                                             "Default: '128m'." );
+    public static final Parameter GWTmx = def( "GWTmx", Form.STRING, "the -Xmx value for the GWT Compiler.", //
+                                               "Default: '128m'." );
+
+    public static final String GWT_DEV = "gwt-dev.jar";
+    public static final String GWT_USER = "gwt-user.jar";
+    public static final String GWT_SERVLET = "gwt-servlet.jar";
+
+    private static final String[] GWT_JARS = {GWT_DEV, GWT_USER, GWT_SERVLET};
 
     // ------------------------------------------------ Default Support ------------------------------------------------
 
@@ -75,6 +81,40 @@ public class ProjectParameters extends FileUtil
         defaultSOURCE();
         defaultRESOURCES();
         defaultJAR();
+        defaultGWT();
+    }
+
+    protected void defaultGWT()
+    {
+        String zGWT = getGWT();
+        if ( null != zGWT )
+        {
+            verifyGWTlibs( getGWTat() );
+            defaultKey( GWTwar, "$target$/GWTCompilerOutput" );
+            defaultKey( GWTstyle, "OBF" );
+            defaultKey( GWTlogging, "INFO" );
+            defaultKey( GWTmx, "128m" );
+        }
+    }
+
+    protected void verifyGWTlibs( String pRelativeGWTlibsDir )
+    {
+        if ( pRelativeGWTlibsDir == null )
+        {
+            throw new IllegalStateException( "GWT specified, but GWTat!" );
+        }
+        if ( !dirExists( pRelativeGWTlibsDir ) )
+        {
+            throw new IllegalStateException( "GWTat '" + pRelativeGWTlibsDir + "' is not a directory!" );
+        }
+        File zGWTdir = canonicalizePath( getCanonicalProjectDir(), pRelativeGWTlibsDir );
+        for ( String zGwtJar : GWT_JARS )
+        {
+            if ( !new File( zGWTdir, zGwtJar ).isFile() )
+            {
+                throw new IllegalStateException( "GWTat '" + pRelativeGWTlibsDir + "' -> '" + zGWTdir.getPath() + "' did not contain: " + zGwtJar );
+            }
+        }
     }
 
     protected void defaultJAR()
@@ -224,6 +264,36 @@ public class ProjectParameters extends FileUtil
     public String getAppDirPath()
     {
         return getPath( APPDIR.getName() );
+    }
+
+    public String getGWT()
+    {
+        return get( GWT.getName() );
+    }
+
+    public String getGWTat()
+    {
+        return get( GWTat.getName() );
+    }
+
+    public String getGWTwar()
+    {
+        return get( GWTwar.getName() );
+    }
+
+    public String getGWTstyle()
+    {
+        return get( GWTstyle.getName() );
+    }
+
+    public String getGWTlogging()
+    {
+        return get( GWTlogging.getName() );
+    }
+
+    public String getGWTmx()
+    {
+        return get( GWTmx.getName() );
     }
 
     // ---------------------------------- Generic accessors for the underlying Data (map) ------------------------------

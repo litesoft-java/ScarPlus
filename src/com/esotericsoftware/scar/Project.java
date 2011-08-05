@@ -39,8 +39,15 @@ public class Project extends ProjectParameters
         return "1.6";
     }
 
-    public void GWTcompile()
+    public boolean GWTcompile()
     {
+        String zGWT = getGWT();
+        if ( zGWT == null )
+        {
+            return false;
+        }
+        progress( "GWT Compile: " + this );
+
         // todo: GWT Compile
         //
         // http://stackoverflow.com/questions/502494/execute-a-java-program-from-our-java-program
@@ -68,9 +75,20 @@ public class Project extends ProjectParameters
         //      </java>
         //    </target>
         //
+        return false;
     }
 
-    // todo: WAR
+    public boolean war()
+    {
+        //        String zWar = getWar();
+        //        if ( zWar == null )
+        //        {
+        //            return false;
+        //        }
+        //        progress( "WAR: " + this );
+        // todo: WAR
+        return false;
+    }
 
     /**
      * Assert that this project is currently a 'Versioned' GWT project, and then rev the version number by 1
@@ -249,7 +267,10 @@ public class Project extends ProjectParameters
             return true;
         }
         long zJarTimestamp = zJarFile.lastModified();
-        return (mProjectFileLastModified > zJarTimestamp) || checkNewer( zJarTimestamp, compileClasspath() ) || checkNewer( zJarTimestamp, getSource() ) || checkNewer( zJarTimestamp, getResources() );
+        return (mProjectFileLastModified > zJarTimestamp) || //
+               checkNewer( zJarTimestamp, compileClasspath() ) || //
+               checkNewer( zJarTimestamp, getSource() ) || //
+               checkNewer( zJarTimestamp, getResources() );
     }
 
     protected boolean checkNewer( long pJarTimestamp, Paths pPaths )
@@ -268,10 +289,11 @@ public class Project extends ProjectParameters
 
     protected boolean packageIt()
     {
-        // todo: GWT Compile
-        // todo: WAR
-        String zDistDir = dist();
-        return (null != oneJAR()) || (zDistDir != null);
+        boolean zPackaged = GWTcompile();
+        zPackaged |= (null != dist());
+        zPackaged |= (null != oneJAR());
+        zPackaged |= war();
+        return zPackaged;
     }
 
     /**
