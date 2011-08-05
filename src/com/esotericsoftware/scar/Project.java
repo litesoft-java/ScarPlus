@@ -249,7 +249,7 @@ public class Project extends ProjectParameters
             return true;
         }
         long zJarTimestamp = zJarFile.lastModified();
-        return checkNewer( zJarTimestamp, classpath() ) || checkNewer( zJarTimestamp, getSource() ) || checkNewer( zJarTimestamp, getResources() );
+        return checkNewer( zJarTimestamp, compileClasspath() ) || checkNewer( zJarTimestamp, getSource() ) || checkNewer( zJarTimestamp, getResources() );
     }
 
     protected boolean checkNewer( long pJarTimestamp, Paths pPaths )
@@ -300,7 +300,7 @@ public class Project extends ProjectParameters
         {
             return null;
         }
-        Paths classpath = classpath();
+        Paths classpath = compileClasspath();
 
         String classesDir = mkdir( path( "$target$/classes/" ) );
 
@@ -729,6 +729,29 @@ public class Project extends ProjectParameters
     /**
      * Computes the classpath for the specified project and all its dependency projects, recursively.
      */
+    protected Paths compileClasspath()
+    {
+        Paths classpath = getCompileClasspath();
+        classpath.add( getClasspath() );
+        for ( Project zProject : mDependantProjects )
+        {
+            zProject.addDependantProjectsCompileClassPaths( classpath );
+        }
+        return classpath;
+    }
+
+    /**
+     * Computes the classpath for all the dependencies of the specified project, recursively.
+     */
+    protected void addDependantProjectsCompileClassPaths( Paths pPathsToAddTo )
+    {
+        addDependentProjectJar( pPathsToAddTo );
+        pPathsToAddTo.add( compileClasspath() );
+    }
+
+    /**
+     * Computes the classpath for the specified project and all its dependency projects, recursively.
+     */
     protected Paths classpath()
     {
         Paths classpath = getClasspath();
@@ -744,13 +767,18 @@ public class Project extends ProjectParameters
      */
     protected void addDependantProjectsClassPaths( Paths pPathsToAddTo )
     {
+        addDependentProjectJar( pPathsToAddTo );
+        pPathsToAddTo.add( classpath() );
+    }
+
+    protected void addDependentProjectJar( Paths pPathsToAddTo )
+    {
         File zJarFile = getJarPathFile();
         if ( !zJarFile.isFile() )
         {
             throw new RuntimeException( "Dependency (" + this + ") Jar not found, not built?" );
         }
         pPathsToAddTo.add( new FilePath( zJarFile.getParentFile(), zJarFile.getName() ) );
-        pPathsToAddTo.add( classpath() );
     }
 
     /**

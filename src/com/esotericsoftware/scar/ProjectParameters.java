@@ -27,7 +27,10 @@ public class ProjectParameters extends FileUtil
 
     public static final Parameter DEPENDENCIES = def( "dependencies", Form.STRING_LIST, "Relative or absolute path(s) to dependency project directories or YAML files." );
 
-    public static final Parameter CLASSPATH = def( "classpath", Form.PATHS, "Wildcard patterns for the file(s) to include on the classpath.", //
+    public static final Parameter COMPILECLASSPATH = def( "compileclasspath", Form.PATHS, "Wildcard patterns for the file(s) to include on the 'compile' classpath.", //
+                                                          "Note: automatically includes the ClassPath(s)." );
+
+    public static final Parameter CLASSPATH = def( "classpath", Form.PATHS, "Wildcard patterns for the file(s) to include on the classpath (both, compile & runtime/deployment).", //
                                                    "Default: 'lib|**.jar'." );
 
     public static final Parameter SOURCE = def( "source", Form.PATHS, "Wildcard patterns for the Java file(s) to compile.", //
@@ -128,6 +131,11 @@ public class ProjectParameters extends FileUtil
     public List<String> getDependencies()
     {
         return getListNotNull( DEPENDENCIES.getName() );
+    }
+
+    public Paths getCompileClasspath()
+    {
+        return getPaths( COMPILECLASSPATH.getName() );
     }
 
     public Paths getClasspath()
@@ -245,7 +253,7 @@ public class ProjectParameters extends FileUtil
 
     public Integer getInteger( Object key )
     {
-        return getCachedWithConvertion( key, INTEGER );
+        return getCachedWithConvertion( key, INTEGER, null );
     }
 
     public float get_float( Object key )
@@ -265,7 +273,7 @@ public class ProjectParameters extends FileUtil
 
     public Float getFloat( Object key )
     {
-        return getCachedWithConvertion( key, FLOAT );
+        return getCachedWithConvertion( key, FLOAT, null );
     }
 
     public boolean get_boolean( Object key )
@@ -285,7 +293,7 @@ public class ProjectParameters extends FileUtil
 
     public Boolean getBoolean( Object key )
     {
-        return getCachedWithConvertion( key, BOOLEAN );
+        return getCachedWithConvertion( key, BOOLEAN, null );
     }
 
     /**
@@ -304,7 +312,7 @@ public class ProjectParameters extends FileUtil
      */
     public List<?> getObjectList( Object key )
     {
-        return getCachedWithConvertion( key, LIST_OBJECT );
+        return getCachedWithConvertion( key, LIST_OBJECT, null );
     }
 
     /**
@@ -323,7 +331,7 @@ public class ProjectParameters extends FileUtil
      */
     public List<String> getList( Object key )
     {
-        return getCachedWithConvertion( key, LIST_STRING );
+        return getCachedWithConvertion( key, LIST_STRING, null );
     }
 
     /**
@@ -341,7 +349,7 @@ public class ProjectParameters extends FileUtil
      */
     public Map<?, ?> getObjectMap( Object key )
     {
-        return getCachedWithConvertion( key, MAP_OBJECT );
+        return getCachedWithConvertion( key, MAP_OBJECT, null );
     }
 
     /**
@@ -359,7 +367,7 @@ public class ProjectParameters extends FileUtil
      */
     public Map<String, String> getMap( Object key )
     {
-        return getCachedWithConvertion( key, MAP_STRING );
+        return getCachedWithConvertion( key, MAP_STRING, null );
     }
 
     /**
@@ -367,8 +375,7 @@ public class ProjectParameters extends FileUtil
      */
     public Paths getPaths( String key )
     {
-        Paths zPaths = getCachedWithConvertion( key, PATHS );
-        return (zPaths != null) ? zPaths : new Paths();
+        return getCachedWithConvertion( key, PATHS, PATHS_DEFAULTER );
     }
 
     /**
@@ -376,7 +383,7 @@ public class ProjectParameters extends FileUtil
      */
     public String getPath( String key )
     {
-        return getCachedWithConvertion( key, PATH );
+        return getCachedWithConvertion( key, PATH, null );
     }
 
     /**
@@ -537,7 +544,7 @@ public class ProjectParameters extends FileUtil
         return map;
     }
 
-    protected <T> T getCachedWithConvertion( Object pKey, DataConverter<T> pConverter )
+    protected <T> T getCachedWithConvertion( Object pKey, DataConverter<T> pConverter, DataDefaulter<T> pDefaulter )
     {
         Object zValue = mManager.getCachedResponse( pKey = mManager.normalizeKey( pKey ) );
         if ( zValue != null )
@@ -546,12 +553,19 @@ public class ProjectParameters extends FileUtil
             return (T) zValue;
         }
         zValue = mManager.get( pKey );
-        if ( zValue == null )
+        T zConverted = null;
+        if ( zValue != null )
         {
-            return null;
+            zConverted = pConverter.convert( zValue );
         }
-        T zConverted = pConverter.convert( zValue );
-        mManager.addCachedResponse( pKey, zConverted );
+        else if ( pDefaulter != null )
+        {
+            zConverted = pDefaulter.createDefault();
+        }
+        if ( zConverted != null )
+        {
+            mManager.addCachedResponse( pKey, zConverted );
+        }
         return zConverted;
     }
 
@@ -641,6 +655,14 @@ public class ProjectParameters extends FileUtil
                 paths.glob( path( dirPattern ) );
             }
             return paths;
+        }
+    };
+
+    private final DataDefaulter<Paths> PATHS_DEFAULTER = new DataDefaulter<Paths>()
+    {
+        @Override public Paths createDefault()
+        {
+            return new Paths();
         }
     };
 }
