@@ -39,15 +39,20 @@ public class Project extends ProjectParameters
         return "1.6";
     }
 
-    public boolean GWTcompile()
+    public boolean war()
     {
-        String zGWT = getGWT();
-        if ( zGWT == null )
-        {
-            return false;
-        }
-        progress( "GWT Compile: " + this );
+        //        String zWar = getWar();
+        //        if ( zWar == null )
+        //        {
+        //            return false;
+        //        }
+        //        progress( "WAR: " + this );
+        // todo: WAR
+        return false;
+    }
 
+    protected boolean GWTcompileIt()
+    {
         // todo: GWT Compile
         //
         // http://stackoverflow.com/questions/502494/execute-a-java-program-from-our-java-program
@@ -75,19 +80,45 @@ public class Project extends ProjectParameters
         //      </java>
         //    </target>
         //
-        return false;
+        return true;
     }
 
-    public boolean war()
+    protected String getPathJavaJRE()
     {
-        //        String zWar = getWar();
-        //        if ( zWar == null )
-        //        {
-        //            return false;
-        //        }
-        //        progress( "WAR: " + this );
-        // todo: WAR
-        return false;
+        return null; // todo: ...
+    }
+
+    protected File getGeneratedGWT_nocache_jsFile()
+    {
+        return null; // todo: ...
+    }
+
+    protected boolean needToCompileGWT()
+    {
+        File zJarFile = getJarPathFile();
+        if ( !zJarFile.isFile() )
+        {
+            throw new IllegalStateException( this + " Jar Not Built?" );
+        }
+        long zJarTimestamp = zJarFile.lastModified();
+        File zGeneratedGWT_nocache_jsFile = getGeneratedGWT_nocache_jsFile();
+        return (zGeneratedGWT_nocache_jsFile == null) || (zGeneratedGWT_nocache_jsFile.lastModified() < zJarTimestamp);
+    }
+
+    public boolean GWTcompile()
+    {
+        String zGWT = getGWT();
+        if ( zGWT == null )
+        {
+            return false;
+        }
+        if ( !needToCompileGWT() )
+        {
+            progress( "GWT Compile: " + this + " NOT Needed!" );
+            return false;
+        }
+        progress( "GWT Compile: " + this );
+        return GWTcompileIt();
     }
 
     /**
