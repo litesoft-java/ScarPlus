@@ -54,6 +54,11 @@ public class Paths
         return mPaths.collectPaths( new ArrayList<FilePath>() );
     }
 
+    public RootedPaths[] getRootedPaths()
+    {
+        return mPaths.getRootedPaths();
+    }
+
     public void add( FilePath pFilePath )
     {
         mPaths.add( pFilePath );

@@ -77,6 +77,15 @@ public class FileUtil extends Util
         return pToTest;
     }
 
+    public static File assertIsDirectory( String pWhat, File pToTest )
+    {
+        if ( !assertExists( pWhat, pToTest ).isDirectory() )
+        {
+            throw new IllegalArgumentException( pWhat + " not a directory: " + pToTest.getAbsolutePath() );
+        }
+        return pToTest;
+    }
+
     /**
      * Reads to the end of the input stream and writes the bytes to the output stream.
      */

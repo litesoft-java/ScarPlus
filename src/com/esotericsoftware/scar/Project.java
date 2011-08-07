@@ -27,6 +27,7 @@ public class Project extends ProjectParameters
     private static final String VERSIONED_SCRIPT_SUFFIX = ".nocache.js'></script>";
     private static final String VERSIONED_MODULE_PREFIX = "<module rename-to=\"v";
     private static final String VERSIONED_MODULE_SUFFIX = "\">";
+    private static final String JAVA_HOME = "JAVA_HOME";
 
     public Project( ProjectParameters pParameters )
     {
@@ -53,6 +54,7 @@ public class Project extends ProjectParameters
 
     protected boolean GWTcompileIt()
     {
+        System.out.println( "Project.GWTcompileIt: " + getPathJavaJRE() );
         // todo: GWT Compile
         //
         // http://stackoverflow.com/questions/502494/execute-a-java-program-from-our-java-program
@@ -85,12 +87,66 @@ public class Project extends ProjectParameters
 
     protected String getPathJavaJRE()
     {
-        return null; // todo: ...
+        File zJavaHomeDir = assertIsDirectory( JAVA_HOME, new File( assertNotEmpty( JAVA_HOME, System.getenv( JAVA_HOME ) ) ) );
+        File zJavaDir = new File( zJavaHomeDir, "jre/bin" );
+        if ( !zJavaDir.isDirectory() )
+        {
+            if ( !(zJavaDir = new File( zJavaHomeDir, "bin" )).isDirectory() )
+            {
+                throw new IllegalStateException( "Unable to find JAVA_HOME bin directory under: " + zJavaHomeDir );
+            }
+        }
+        File zJavaExecutable = new File( zJavaDir, isWindows ? "java.exe" : "java" );
+        if ( zJavaExecutable.isFile() )
+        {
+            return getCanonicalFile( zJavaExecutable ).getPath();
+        }
+        throw new IllegalStateException( "Unable to find JAVA_HOME based executable at: " + zJavaExecutable );
     }
 
     protected File getGeneratedGWT_nocache_jsFile()
     {
-        return null; // todo: ...
+        String zGWTxmlRelativeFilePath = getGWT().replace( '.', '/' ) + ".gwt.xml"; // e.g. org.litesoft.sandbox.csapp.CSapp
+        RootedPaths[] zRootedPaths = getSource().getRootedPaths();
+        for ( RootedPaths zPath : zRootedPaths )
+        {
+            File zFile = new File( zPath.getCanonicalRootDirectory(), zGWTxmlRelativeFilePath );
+            if ( zFile.isFile() )
+            {
+                String moduleName = extractModuleNameFrom( getGWT(), fileContents( zFile ) );
+                return new File( getGWTwarPath(), moduleName + "/" + moduleName + ".nocache.js" );
+            }
+        }
+        throw new IllegalArgumentException( "Unable to locate GWT module file: " + getGWT() );
+    }
+
+    private String extractModuleNameFrom( String pGWTmoduleReference, String pGWTmoduleFileContents )
+    {
+        int at = pGWTmoduleFileContents.indexOf( " rename-to" );
+        if ( at != -1 ) // . . . . . . . . . . . .01234567890
+        {
+            int upTo = pGWTmoduleFileContents.indexOf( '>', at += 10 );
+            if ( upTo != -1 )
+            {
+                String stuff = pGWTmoduleFileContents.substring( at, upTo ).trim();
+                if ( stuff.startsWith( "=" ) )
+                {
+                    if ( (stuff = stuff.substring( 1 ).trim()).length() > 2 )
+                    {
+                        char c = stuff.charAt( 0 );
+                        if ( (c == '"') || (c == '\'') )
+                        {
+                            if ( -1 != (at = stuff.indexOf( c, 1 )) )
+                            {
+                                return stuff.substring( 1, at );
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        String s = "." + pGWTmoduleReference;
+        return s.substring( s.lastIndexOf( '.' ) + 1 );
     }
 
     protected boolean needToCompileGWT()
@@ -102,7 +158,7 @@ public class Project extends ProjectParameters
         }
         long zJarTimestamp = zJarFile.lastModified();
         File zGeneratedGWT_nocache_jsFile = getGeneratedGWT_nocache_jsFile();
-        return (zGeneratedGWT_nocache_jsFile == null) || (zGeneratedGWT_nocache_jsFile.lastModified() < zJarTimestamp);
+        return (zGeneratedGWT_nocache_jsFile == null) || !zGeneratedGWT_nocache_jsFile.isFile() || (zGeneratedGWT_nocache_jsFile.lastModified() < zJarTimestamp);
     }
 
     public boolean GWTcompile()
