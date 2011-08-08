@@ -619,7 +619,8 @@ public class ProjectParameters extends FileUtil
         {
             for ( String zOption : pOptions )
             {
-                if ( dirExists( zOption ) )
+                int at = zOption.indexOf( '|' );
+                if ( dirExists( (at == -1) ? zOption : zOption.substring( 0, at ) ) )
                 {
                     mManager.put( pParameter.getName(), zOption );
                     return;

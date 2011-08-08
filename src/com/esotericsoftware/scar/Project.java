@@ -81,16 +81,16 @@ public class Project extends ProjectParameters
         }
         //        progress( "WAR: " + this );
         // todo: WAR
-        progress( "WAR: " + this + " -> " + zWarPath );
-
-        String jarDir = mkdir( path( "$target$/war/" ) );
-
-        zClasses.copyTo( jarDir );
-        zResources.copyTo( jarDir );
-
-        Paths zClasspath = classpath();
-
-        return innerJar( "WAR", jarFile, new Paths( jarDir ) );
+//        progress( "WAR: " + this + " -> " + zWarPath );
+//
+//        String jarDir = mkdir( path( "$target$/war/" ) );
+//
+//        zClasses.copyTo( jarDir );
+//        zResources.copyTo( jarDir );
+//
+//        Paths zClasspath = classpath();
+//
+//        return innerJar( "WAR", jarFile, new Paths( jarDir ) );
         return true;
     }
 
