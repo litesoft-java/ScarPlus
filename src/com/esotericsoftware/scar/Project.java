@@ -54,35 +54,35 @@ public class Project extends ProjectParameters
 
     protected boolean GWTcompileIt()
     {
-        System.out.println( "Project.GWTcompileIt: " + getPathJavaJRE() );
-        // todo: GWT Compile
-        //
-        // http://stackoverflow.com/questions/502494/execute-a-java-program-from-our-java-program
-        // http://www.javaworld.com/javaworld/jw-12-2000/jw-1229-traps.html
-        // http://www.rgagnon.com/javadetails/java-0014.html
-        //
-        //    <target name="run.gwt.compiler" description="Run GWT compiler">
-        //      <java fork="true" classname="com.google.gwt.dev.Compiler">
-        //        <jvmarg line="-Xmx128m"/>
-        //        <classpath>
-        //          <pathelement location="${GWTpath}/gwt-dev.jar"/>
-        //          <pathelement location="${GWTpath}/gwt-user.jar"/>
-        //          <dirset dir="${basedir}">
-        //              <include name="src"/>
-        //          </dirset>
-        //          <pathelement location="${output.dir}"/>
-        //        </classpath>
-        //        <arg value="-logLevel"/>
-        //        <arg value="WARN"/>
-        //        <arg value="-war"/>
-        //        <arg value="${basedir}/out/GWTCompilerOutput"/>
-        //        <arg value="-style"/>
-        //        <arg value="DETAILED"/>
-        //        <arg value="org.litesoft.sandbox.csapp.CSapp"/>
-        //      </java>
-        //    </target>
-        //
+        String[] args = // 
+                { //
+                  getPathJavaJRE(), //
+                  "-Xmx" + getGWTmx(), //
+                  "-cp", //
+                  buildGWTcompileClassPath(), //
+                  "com.google.gwt.dev.Compiler", //
+                  "-logLevel", //
+                  getGWTlogging(), //
+                  "-war", //
+                  getGWTwarPath(), //
+                  "-style", //
+                  getGWTstyle(), //
+                  getGWT() //
+                };
+
+        Utils.shell( args );
         return true;
+    }
+
+    private String buildGWTcompileClassPath()
+    {
+        Paths zGWTclassPath = new Paths();
+        File zGWTatDir = getGWTatDir();
+        zGWTclassPath.add( FilePath.canonical( zGWTatDir, GWT_DEV ) );
+        zGWTclassPath.add( FilePath.canonical( zGWTatDir, GWT_USER ) );
+        zGWTclassPath.add( FilePath.canonicalize( getJarPathFile() ) );
+        zGWTclassPath.add( classpath() );
+        return zGWTclassPath.toString( File.pathSeparator );
     }
 
     protected String getPathJavaJRE()

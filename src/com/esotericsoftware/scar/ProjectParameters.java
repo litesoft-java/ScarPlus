@@ -276,6 +276,11 @@ public class ProjectParameters extends FileUtil
         return get( GWTat.getName() );
     }
 
+    public File getGWTatDir()
+    {
+        return new File( getPath( GWTat.getName() ) );
+    }
+
     public String getGWTwar()
     {
         return get( GWTwar.getName() );

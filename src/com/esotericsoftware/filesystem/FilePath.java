@@ -27,6 +27,16 @@ public final class FilePath
         return new FilePath( pSomeParentDir, pFileSubPath, new File( pSomeParentDir, pFileSubPath ) );
     }
 
+    private static FilePath innerAlreadyCanonical( File pFilePath )
+    {
+        return new FilePath( pFilePath.getParentFile(), pFilePath.getName(), pFilePath );
+    }
+
+    public static FilePath canonicalize( File pFilePath )
+    {
+        return innerAlreadyCanonical( Utils.canonical( pFilePath ) );
+    }
+
     public File getSomeParentDir()
     {
         return mSomeParentDir;

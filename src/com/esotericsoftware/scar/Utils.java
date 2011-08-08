@@ -226,7 +226,16 @@ public class Utils extends FileUtil
             StringBuilder buffer = new StringBuilder( 256 );
             for ( String text : command )
             {
-                buffer.append( text );
+                if ( text.contains( " " ) )
+                {
+                    buffer.append( '"' );
+                    buffer.append( text );
+                    buffer.append( '"' );
+                }
+                else
+                {
+                    buffer.append( text );
+                }
                 buffer.append( ' ' );
             }
             LOGGER.trace.log( "Executing command: ", buffer );
