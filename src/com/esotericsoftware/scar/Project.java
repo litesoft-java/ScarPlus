@@ -40,16 +40,58 @@ public class Project extends ProjectParameters
         return "1.6";
     }
 
+    /**
+     * Produce either a 'war' directory or a '.war' file, in theary ready to deploy to a servlet/web container.
+     *
+     * @return true if the 'war' was created.
+     */
     public boolean war()
     {
-        //        String zWar = getWar();
-        //        if ( zWar == null )
-        //        {
-        //            return false;
-        //        }
+        String zWar = getWar();
+        if ( zWar == null )
+        {
+            return false;
+        }
+        File zJarPath = getJarPathFile();
+        if ( !zJarPath.isFile() )
+        {
+            progress( "WAR: " + this + " BUT NO jar File produced at: " + zJarPath.getPath() );
+            return false;
+        }
+
+        Paths zClassPath = new Paths();
+        zClassPath.add( FilePath.canonical( getGWTatDir(), GWT_SERVLET ) );
+        zClassPath.add( FilePath.canonicalize( getJarPathFile() ) );
+        zClassPath.add( classpath() );
+
+        File zWarPathFile = getWarPathFile();
+        if ( zWarPathFile.exists() && (zWarPathFile.lastModified() >= zClassPath.getGreatestLastModified()) )
+        {
+            progress( "WAR: " + this + " NOT Needed!" );
+            return false;
+        }
+
+        if ( zWar.endsWith( ".war" ) )
+        {
+
+        }
+        else
+        {
+
+        }
         //        progress( "WAR: " + this );
         // todo: WAR
-        return false;
+        progress( "WAR: " + this + " -> " + zWarPath );
+
+        String jarDir = mkdir( path( "$target$/war/" ) );
+
+        zClasses.copyTo( jarDir );
+        zResources.copyTo( jarDir );
+
+        Paths zClasspath = classpath();
+
+        return innerJar( "WAR", jarFile, new Paths( jarDir ) );
+        return true;
     }
 
     protected boolean GWTcompileIt()
@@ -659,20 +701,20 @@ public class Project extends ProjectParameters
      */
     public String jar( String jarFile, Paths paths )
     {
-        return innerJar( "", jarFile, paths );
+        return innerJar( "JAR", jarFile, paths );
     }
 
     /**
-     * Encodes the specified paths into a JAR file.
+     * Encodes the specified paths into a JAR/WAR file.
      *
-     * @return The path to the JAR file.
+     * @return The path to the JAR/WAR file.
      */
-    protected String innerJar( String pTypePrefix, String jarFile, Paths paths )
+    protected String innerJar( String pType, String jarFile, Paths paths )
     {
         Util.assertNotNull( "jarFile", jarFile );
         Util.assertNotNull( "paths", paths );
 
-        progress( "Creating " + pTypePrefix + "JAR (" + paths.count() + " entries): " + jarFile );
+        progress( "Creating " + pType + " (" + paths.count() + " entries): " + jarFile );
 
         int zZipped = paths.zip( jarFile, new ZipFactory()
         {
@@ -776,7 +818,7 @@ public class Project extends ProjectParameters
         }
 
         unzip( zJarPath, zOnejarDir ); // Our Jar! - Our Manifest will be "the" Manifest !!!!!! Need to remove class PATH!
-        return innerJar( "'ONE' ", zOneJarPath.getPath(), new Paths( zOnejarDir.getPath() ) );
+        return innerJar( "'ONE' JAR", zOneJarPath.getPath(), new Paths( zOnejarDir.getPath() ) );
     }
 
     /**

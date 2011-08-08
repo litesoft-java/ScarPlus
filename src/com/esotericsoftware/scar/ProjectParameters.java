@@ -46,7 +46,9 @@ public class ProjectParameters extends FileUtil
 
     public static final Parameter APPDIR = def( "appdir", Form.STRING, "Directory path to bring together all files (both JARs and 'dist', for this project " + "and all dependencies, recursively) the application needs to be run from JAR files." );
 
-    public static final Parameter ONEJAR = def( "onejar", Form.STRING, "JAR name w/ optional path for the JAR ('.jar' added to the end if does not end with 'jar', case insensitive), that all 'exploded' dependendend JARs and dist files will be JAR into (this should make a single JAR application." );
+    public static final Parameter ONEJAR = def( "onejar", Form.STRING, "JAR name w/ optional path for the JAR ('.jar' added to the end if does not end with 'jar', case insensitive), that all 'exploded' dependendend JARs and dist files will be JAR'd into (this should make a single JAR application)." );
+
+    public static final Parameter WAR = def( "war", Form.STRING, "Target WAR directory or WAR name (if ends w/ '.war'), produces a war directory (as specified, or a default one if a '.war' is requested) then if a '.war' is requested, packages the war directory into the specified '.war' file." );
 
     // ------------------------------------------------ GWT Parameters -------------------------------------------------
 
@@ -264,6 +266,21 @@ public class ProjectParameters extends FileUtil
     public String getAppDirPath()
     {
         return getPath( APPDIR.getName() );
+    }
+
+    public String getWar()
+    {
+        return get( WAR.getName() );
+    }
+
+    public String getWarPath()
+    {
+        return getPath( WAR.getName() );
+    }
+
+    public File getWarPathFile()
+    {
+        return new File( getWarPath() );
     }
 
     public String getGWT()
