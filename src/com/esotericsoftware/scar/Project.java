@@ -124,20 +124,36 @@ public class Project extends ProjectParameters
         {
             return false;
         }
-        progress( "AppDir: " + this + " -> " + zAppDir );
-        String distDir = mkdir( zAppDir );
+        File zJarPath = getJarPathFile();
+        if ( !zJarPath.isFile() )
+        {
+            progress( "AppDir: " + this + " BUT NO jar File produced at: " + zJarPath.getPath() );
+            return false;
+        }
+        Paths zPaths = new Paths();
+        addDependantProjectsDistPaths( zPaths );
+        zPaths.add( classpath() );
+        zPaths.add( FilePath.canonicalize( getJarPathFile() ) );
 
-        // todo: xxxx
-        classpath().copyTo( distDir );
-        Paths distPaths = getDist();
-        // dependencyDistPaths( distPaths );
-        distPaths.copyTo( distDir );
-        new Paths( getTargetPath(), "*.jar" ).copyTo( distDir );
+        File zAppDirFile = new File( zAppDir );
+        if ( zAppDirFile.exists() )
+        {
+            if ( zAppDirFile.lastModified() >= zPaths.getGreatestLastModified() )
+            {
+                progress( "AppDir: " + this + " NOT Needed!" );
+                return false;
+            }
+            delete( zAppDirFile );
+        }
+
+        progress( "AppDir: " + this + " -> " + zAppDir );
+        String distDir = mkdir( zAppDir ); // Give it a new Timestamp
+        zPaths.copyTo( distDir );
         return true;
     }
 
     /**
-     * Produce either a 'war' directory or a '.war' file, in theary ready to deploy to a servlet/web container.
+     * Produce either a 'war' directory or a '.war' file, in theory ready to deploy to a servlet/web container.
      *
      * @return true if the 'war' was created.
      */
@@ -155,73 +171,63 @@ public class Project extends ProjectParameters
             return false;
         }
 
+        Paths zDistPaths = new Paths();
+        addDependantProjectsDistPaths( zDistPaths );
+        if ( null != getGWT() )
+        {
+            zDistPaths.add( new Paths( getGWTwarPath() ) );
+        }
+
         Paths zClassPath = new Paths();
         zClassPath.add( FilePath.canonical( getGWTatDir(), GWT_SERVLET ) );
-        zClassPath.add( FilePath.canonicalize( getJarPathFile() ) );
         zClassPath.add( classpath() );
+        zClassPath.add( FilePath.canonicalize( getJarPathFile() ) );
 
         File zWarPathFile = getWarPathFile();
-        if ( zWarPathFile.exists() && (zWarPathFile.lastModified() >= zClassPath.getGreatestLastModified()) )
+        if ( zWarPathFile.exists() )
         {
-            progress( "WAR: " + this + " NOT Needed!" );
-            return false;
+            if ( zWarPathFile.lastModified() >= zClassPath.getGreatestLastModified() )
+            {
+                progress( "WAR: " + this + " NOT Needed!" );
+                return false;
+            }
+            delete( zWarPathFile );
         }
 
-        if ( zWar.endsWith( ".war" ) )
-        {
+        boolean zWarIt = zWar.endsWith( ".war" );
 
-        }
-        else
+        File zWarDir = zWarPathFile;
+        if ( zWarIt )
         {
-
+            zWarDir = new File( path( "$target$/war/" ) );
+            delete( zWarDir );
         }
-        //        progress( "WAR: " + this );
-        // todo: WAR
-//        progress( "WAR: " + this + " -> " + zWarPath );
-//
-//        String jarDir = mkdir( path( "$target$/war/" ) );
-//
-//        zClasses.copyTo( jarDir );
-//        zResources.copyTo( jarDir );
-//
-//        Paths zClasspath = classpath();
-//
-//        return innerJar( "WAR", jarFile, new Paths( jarDir ) );
+
+        progress( "WAR: " + this + " -> " + zWarDir.getPath() );
+
+        File zWarDirLibPath = new File( zWarDir, "WEB-INF/lib" );
+        mkdir( zWarDirLibPath );
+
+        zDistPaths.copyTo( zWarDir.getPath() );
+        zClassPath.copyTo( zWarDirLibPath.getPath() );
+
+        if ( zWarIt )
+        {
+            innerJar( "WAR", zWarPathFile.getPath(), new Paths( zWarDir.getPath() ) );
+        }
         return true;
     }
-
-//    private Paths dependencyDistPaths( Paths paths )
-//    {
-//        Paths paths = new Paths();
-//        for ( Project zProject : mDependantProjects )
-//        {
-//            zProject.addDependantProjectsDistPaths( paths );
-//        }
-//        return classpath;
-//        {
-//        }
-//
-//        for ( String dependency : getDependencies() )
-//        {
-//            Project dependencyProject = null; // todo: project( null, path( dependency ) );
-//            String dependencyTarget = dependencyProject.getTargetPath();
-//            if ( !Utils.fileExists( dependencyTarget ) )
-//            {
-//                throw new RuntimeException( "Dependency has not been built: " + dependency );
-//            }
-//            paths.glob( dependencyTarget + "dist", "!*/**.jar" );
-//            paths.add( dependencyDistPaths( paths ) );
-//        }
-//        return paths;
-//    }
 
     /**
      * Computes the classpath for all the dependencies of the specified project, recursively.
      */
     protected void addDependantProjectsDistPaths( Paths pPathsToAddTo )
     {
-        // todo: xxx    addDependentProjectJar( pPathsToAddTo );
-        // todo: xxx    pPathsToAddTo.add( classpath() );
+        for ( Project zProject : mDependantProjects )
+        {
+            zProject.addDependantProjectsDistPaths( pPathsToAddTo );
+        }
+        pPathsToAddTo.add( getDist() );
     }
 
     protected boolean GWTcompileIt()
