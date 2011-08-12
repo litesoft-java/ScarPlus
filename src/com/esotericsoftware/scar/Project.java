@@ -31,13 +31,109 @@ public class Project extends ProjectParameters
 
     public Project( ProjectParameters pParameters )
     {
-        super( pParameters );
+        super( pParameters.validate() );
         applyDefaults();
     }
 
     public String getTargetJavaVersion()
     {
         return "1.6";
+    }
+
+    protected void packageClean()
+    {
+        delete( getAppDirPath() );
+        delete( getOneJarPath() );
+        delete( getWarPath() );
+    }
+
+    protected boolean packageIt()
+    {
+        return appDir() | oneJAR() | war(); // Note: SINGLE '|' ORs to force full execution!
+    }
+
+    /**
+     * Unzips all JARs in the classpath and creates a single JAR containing those files and this Project's JAR (which MUST exist).
+     * The manifest from the project's JAR is used. Putting everything into a single JAR makes it harder to see what libraries are
+     * being used, but makes it easier for end users to distribute the application.
+     * <p/>
+     * Note: Files with the same path in different JARs will be overwritten. Files in the project's JAR will never be overwritten,
+     * but may overwrite other files.
+     *
+     * @param pExcludeJARs The names of any JARs to exclude.
+     *
+     * @return True if the "OneJAR" was created / updated or false if no OneJar is NOT requested for this project or it was not needed.
+     */
+    public boolean oneJAR( String... pExcludeJARs )
+    {
+        File zOneJarPath = getOneJarPathFile();
+
+        if ( zOneJarPath == null )
+        {
+            return false;
+        }
+
+        File zJarPath = getJarPathFile();
+        if ( !zJarPath.isFile() )
+        {
+            throw new IllegalStateException( "One JAR: " + this + " requested, BUT NO jar File produced at: " + zJarPath.getPath() );
+        }
+
+        if ( zOneJarPath.isFile() && (zOneJarPath.lastModified() >= zJarPath.lastModified()) )
+        {
+            progress( "One JAR: " + this + " NOT Needed!" );
+            return false;
+        }
+
+        Paths zClasspath = classpath();
+        if ( zClasspath.isEmpty() )
+        {
+            progress( "One JAR: " + this + " No supporting Jars!  Simply Copying to: " + zOneJarPath.getPath() );
+            copyFile( zJarPath, zOneJarPath );
+            return true;
+        }
+        progress( "One JAR: " + this );
+
+        File zOnejarDir = mkdir( new File( path( "$target$/onejar/" ) ) );
+
+        List<String> zExcludeJARs = Arrays.asList( pExcludeJARs );
+        for ( File jarFile : zClasspath.getFiles() ) // All our Class Path (dependant) JARS
+        {
+            if ( !zExcludeJARs.contains( jarFile.getName() ) )
+            {
+                unzip( jarFile, zOnejarDir );
+            }
+        }
+
+        unzip( zJarPath, zOnejarDir ); // Our Jar! - Our Manifest will be "the" Manifest !!!!!! Need to remove class PATH!
+        innerJar( "'ONE' JAR", zOneJarPath.getPath(), new Paths( zOnejarDir.getPath() ) );
+        return true;
+    }
+
+    /**
+     * Collects the distribution files using the "dist" property, the project's JAR file, and everything on the project's classpath
+     * (including dependency project classpaths) and places them into the specified directory. This is also done for depenency projects,
+     * recursively. This is everything the application needs to be run from JAR files.
+     *
+     * @return True if the AppDir was populated or false if no distribution (App Dir) is requested for this project.
+     */
+    public boolean appDir()
+    {
+        String zAppDir = getAppDirPath();
+        if ( zAppDir == null )
+        {
+            return false;
+        }
+        progress( "AppDir: " + this + " -> " + zAppDir );
+        String distDir = mkdir( zAppDir );
+
+        // todo: xxxx
+        classpath().copyTo( distDir );
+        Paths distPaths = getDist();
+        // dependencyDistPaths( distPaths );
+        distPaths.copyTo( distDir );
+        new Paths( getTargetPath(), "*.jar" ).copyTo( distDir );
+        return true;
     }
 
     /**
@@ -92,6 +188,40 @@ public class Project extends ProjectParameters
 //
 //        return innerJar( "WAR", jarFile, new Paths( jarDir ) );
         return true;
+    }
+
+//    private Paths dependencyDistPaths( Paths paths )
+//    {
+//        Paths paths = new Paths();
+//        for ( Project zProject : mDependantProjects )
+//        {
+//            zProject.addDependantProjectsDistPaths( paths );
+//        }
+//        return classpath;
+//        {
+//        }
+//
+//        for ( String dependency : getDependencies() )
+//        {
+//            Project dependencyProject = null; // todo: project( null, path( dependency ) );
+//            String dependencyTarget = dependencyProject.getTargetPath();
+//            if ( !Utils.fileExists( dependencyTarget ) )
+//            {
+//                throw new RuntimeException( "Dependency has not been built: " + dependency );
+//            }
+//            paths.glob( dependencyTarget + "dist", "!*/**.jar" );
+//            paths.add( dependencyDistPaths( paths ) );
+//        }
+//        return paths;
+//    }
+
+    /**
+     * Computes the classpath for all the dependencies of the specified project, recursively.
+     */
+    protected void addDependantProjectsDistPaths( Paths pPathsToAddTo )
+    {
+        // todo: xxx    addDependentProjectJar( pPathsToAddTo );
+        // todo: xxx    pPathsToAddTo.add( classpath() );
     }
 
     protected boolean GWTcompileIt()
@@ -370,7 +500,7 @@ public class Project extends ProjectParameters
     }
 
     /**
-     * Executes the buildDependencies, clean, compile, jar, and dist utility methods.
+     * Executes the buildDependencies, clean, compile, jar, [GWTcompile], and then "packageIt" utility methods.
      */
     public synchronized boolean build()
     {
@@ -379,13 +509,22 @@ public class Project extends ProjectParameters
             return false;
         }
         mBuilt = true;
+        boolean zAnythingBuilt = false;
         if ( !buildDependencies() && !needToBuild() )
         {
             progress( "Build: " + this + " NOT Needed!" );
-            return packageIt();
         }
-        progress( "Build: " + this );
-        return buildIt();
+        else
+        {
+            progress( "Build: " + this );
+            clean();
+            compile();
+            jar();
+            zAnythingBuilt = true;
+        }
+        zAnythingBuilt |= GWTcompile();
+        zAnythingBuilt |= packageIt();
+        return zAnythingBuilt;
     }
 
     protected boolean needToBuild()
@@ -408,30 +547,14 @@ public class Project extends ProjectParameters
         return (zLastModified != null) && (zLastModified > pJarTimestamp);
     }
 
-    protected boolean buildIt()
-    {
-        clean();
-        compile();
-        String zJarFile = jar();
-        return packageIt() || (zJarFile != null);
-    }
-
-    protected boolean packageIt()
-    {
-        boolean zPackaged = GWTcompile();
-        zPackaged |= (null != dist());
-        zPackaged |= (null != oneJAR());
-        zPackaged |= war();
-        return zPackaged;
-    }
-
     /**
      * Deletes the "target" directory and all files and directories under it.
      */
     public void clean()
     {
         progress( "Clean: " + this );
-        delete( getAppDirPath() );
+        packageClean();
+        delete( getGWTwarPath() );
         delete( getJarPath() );
         delete( getTargetPath() );
     }
@@ -649,52 +772,6 @@ public class Project extends ProjectParameters
     }
 
     /**
-     * Collects the distribution files using the "dist" property, the project's JAR file, and everything on the project's classpath
-     * (including dependency project classpaths) and places them into a "dist" directory under the "target" directory. This is also
-     * done for depenency projects, recursively. This is everything the application needs to be run from JAR files.
-     *
-     * @return The path to the "dist" directory or null if no distribution (App Dir) is requested for this project.
-     */
-    public String dist()
-    {
-        String zAppDir = getAppDir();
-        if ( zAppDir == null )
-        {
-            return null;
-        }
-        progress( "Dist: " + this );
-
-        if ( !LOGGER.trace.isEnabled() )
-        {
-            return null; // todo: ...
-        }
-
-        String distDir = mkdir( path( "$target$/dist/" ) );
-        classpath().copyTo( distDir );
-        Paths distPaths = getDist();
-        dependencyDistPaths( distPaths );
-        distPaths.copyTo( distDir );
-        new Paths( getTargetPath(), "*.jar" ).copyTo( distDir );
-        return distDir;
-    }
-
-    private Paths dependencyDistPaths( Paths paths )
-    {
-        for ( String dependency : getDependencies() )
-        {
-            Project dependencyProject = null; // todo: project( null, path( dependency ) );
-            String dependencyTarget = dependencyProject.getTargetPath();
-            if ( !Utils.fileExists( dependencyTarget ) )
-            {
-                throw new RuntimeException( "Dependency has not been built: " + dependency );
-            }
-            paths.glob( dependencyTarget + "dist", "!*/**.jar" );
-            paths.add( dependencyDistPaths( paths ) );
-        }
-        return paths;
-    }
-
-    /**
      * Encodes the specified paths into a JAR file.
      *
      * @return The path to the JAR file.
@@ -761,64 +838,6 @@ public class Project extends ProjectParameters
             }
         } );
         return zZipped == 0 ? null : jarFile;
-    }
-
-    /**
-     * Unzips all JARs in the classpath and creates a single JAR containing those files and this Project's JAR (which MUST exist).
-     * The manifest from the project's JAR is used. Putting everything into a single JAR makes it harder to see what libraries are
-     * being used, but makes it easier for end users to distribute the application.
-     * <p/>
-     * Note: Files with the same path in different JARs will be overwritten. Files in the project's JAR will never be overwritten,
-     * but may overwrite other files.
-     *
-     * @param pExcludeJARs The names of any JARs to exclude.
-     *
-     * @return The path to the "OneJAR" file or null if no OneJar is requested for this project.
-     */
-    public String oneJAR( String... pExcludeJARs )
-    {
-        File zOneJarPath = getOneJarPathFile();
-
-        if ( zOneJarPath == null )
-        {
-            return null;
-        }
-
-        File zJarPath = getJarPathFile();
-        if ( !zJarPath.isFile() )
-        {
-            progress( "One JAR: " + this + " BUT NO jar File produced at: " + zJarPath.getPath() );
-            return null;
-        }
-
-        if ( zOneJarPath.isFile() && (zOneJarPath.lastModified() >= zJarPath.lastModified()) )
-        {
-            progress( "One JAR: " + this + " NOT Needed!" );
-            return null;
-        }
-
-        Paths zClasspath = classpath();
-        if ( zClasspath.isEmpty() )
-        {
-            progress( "One JAR: " + this + " No supporting Jars!  Simply Copying to: " + zOneJarPath.getPath() );
-            copyFile( zJarPath, zOneJarPath );
-            return zOneJarPath.getPath();
-        }
-        progress( "One JAR: " + this );
-
-        File zOnejarDir = mkdir( new File( path( "$target$/onejar/" ) ) );
-
-        List<String> zExcludeJARs = Arrays.asList( pExcludeJARs );
-        for ( File jarFile : zClasspath.getFiles() ) // All our Class Path (dependant) JARS
-        {
-            if ( !zExcludeJARs.contains( jarFile.getName() ) )
-            {
-                unzip( jarFile, zOnejarDir );
-            }
-        }
-
-        unzip( zJarPath, zOnejarDir ); // Our Jar! - Our Manifest will be "the" Manifest !!!!!! Need to remove class PATH!
-        return innerJar( "'ONE' JAR", zOneJarPath.getPath(), new Paths( zOnejarDir.getPath() ) );
     }
 
     /**

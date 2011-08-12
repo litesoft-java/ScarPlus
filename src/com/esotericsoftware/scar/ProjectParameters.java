@@ -42,7 +42,10 @@ public class ProjectParameters extends FileUtil
     public static final Parameter JAR = def( "jar", Form.STRING, "JAR name w/ optional path for the JAR ('.jar' added to the end if does not end with 'jar', case insensitive).", //
                                              "Default: '$target$[-$version$]'." );
 
-    public static final Parameter DIST = def( "dist", Form.PATHS, "Wildcard patterns for the file(s) to include in the distribution, outside the JAR." );
+    public static final Parameter DIST = def( "dist", Form.PATHS, "Wildcard patterns for the file(s) to include in the distribution, outside the JAR.", //
+                                              "Default: 'war' (if there)." );
+
+    // ------------------------------- Packaging Options, these are mutually exclusive ---------------------------------
 
     public static final Parameter APPDIR = def( "appdir", Form.STRING, "Directory path to bring together all files (both JARs and 'dist', for this project " + "and all dependencies, recursively) the application needs to be run from JAR files." );
 
@@ -74,6 +77,33 @@ public class ProjectParameters extends FileUtil
 
     private static final String[] GWT_JARS = {GWT_DEV, GWT_USER, GWT_SERVLET};
 
+    // -------------------------------------------------- Validation ---------------------------------------------------
+
+    @SuppressWarnings({"PointlessArithmeticExpression"})
+    public ProjectParameters validate()
+    {
+        int zHas = (1 * ((null != getAppDir()) ? 1 : 0)) + //
+                   (2 * ((null != getOneJar()) ? 1 : 0)) + //
+                   (4 * ((null != getWar()) ? 1 : 0));
+        switch ( zHas )
+        {
+            default:
+            case 1:
+            case 2:
+            case 4:
+                break; // Happy Cases
+            case 3:
+                throw new IllegalArgumentException( "May not specify both: AppDir & OneJAR" );
+            case 5:
+                throw new IllegalArgumentException( "May not specify both: AppDir & WAR" );
+            case 6:
+                throw new IllegalArgumentException( "May not specify both: OneJAR & WAR" );
+            case 7:
+                throw new IllegalArgumentException( "May only specify one of: AppDir, OneJAR, or WAR" );
+        }
+        return this;
+    }
+
     // ------------------------------------------------ Default Support ------------------------------------------------
 
     protected synchronized void applyDefaults()
@@ -83,6 +113,7 @@ public class ProjectParameters extends FileUtil
         defaultSOURCE();
         defaultRESOURCES();
         defaultJAR();
+        defaultDIST();
         defaultGWT();
     }
 
@@ -103,7 +134,7 @@ public class ProjectParameters extends FileUtil
     {
         if ( pRelativeGWTlibsDir == null )
         {
-            throw new IllegalStateException( "GWT specified, but GWTat!" );
+            throw new IllegalStateException( "GWT specified, but NO GWTat!" );
         }
         if ( !dirExists( pRelativeGWTlibsDir ) )
         {
@@ -117,6 +148,11 @@ public class ProjectParameters extends FileUtil
                 throw new IllegalStateException( "GWTat '" + pRelativeGWTlibsDir + "' -> '" + zGWTdir.getPath() + "' did not contain: " + zGwtJar );
             }
         }
+    }
+
+    protected void defaultDIST()
+    {
+        defaultSubDirOptional( DIST, "war" );
     }
 
     protected void defaultJAR()
@@ -141,17 +177,17 @@ public class ProjectParameters extends FileUtil
         defaultKey( TARGET, "build" );
     }
 
-    private void defaultCLASSPATH()
+    protected void defaultCLASSPATH()
     {
         defaultSubDirOptional( CLASSPATH, "lib|**.jar" );
     }
 
-    private void defaultRESOURCES()
+    protected void defaultRESOURCES()
     {
         defaultSubDirOptional( RESOURCES, "src/main/resources", "resources" );
     }
 
-    private void defaultSOURCE()
+    protected void defaultSOURCE()
     {
         defaultSubDirOptional( SOURCE, "src/main/java|**.java", "src|**.java" );
     }
@@ -228,6 +264,21 @@ public class ProjectParameters extends FileUtil
         return new File( getJarPath() );
     }
 
+    public Paths getDist()
+    {
+        return getPaths( DIST.getName() );
+    }
+
+    public String getAppDir()
+    {
+        return get( APPDIR.getName() );
+    }
+
+    public String getAppDirPath()
+    {
+        return getPath( APPDIR.getName() );
+    }
+
     public String getOneJar()
     {
         return get( ONEJAR.getName() );
@@ -251,21 +302,6 @@ public class ProjectParameters extends FileUtil
             zJar += ".jar";
         }
         return new File( zJar );
-    }
-
-    public Paths getDist()
-    {
-        return getPaths( DIST.getName() );
-    }
-
-    public String getAppDir()
-    {
-        return get( APPDIR.getName() );
-    }
-
-    public String getAppDirPath()
-    {
-        return getPath( APPDIR.getName() );
     }
 
     public String getWar()
