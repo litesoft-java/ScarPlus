@@ -365,16 +365,19 @@ public class Project extends ProjectParameters
 
         int zCurVersion = extractVersionFromUrlPattern( zWarWebXml );
 
-        File zIndexHtmlFile = new File( mCanonicalProjectDir, "war/v" + zCurVersion + "/index.html" );
+        String zWarResourceRelativePathCurrent = "warResources/v" + zCurVersion;
+
+        File zIndexHtmlFile = new File( mCanonicalProjectDir, zWarResourceRelativePathCurrent + "/index.html" );
         String zIndexHtml = assertVersionedIndexHtml( zIndexHtmlFile, zCurVersion );
 
         List<File> zVersionedGwtXmlFiles = findVersionedGwtXmlFiles( zCurVersion );
 
         int zNewVersion = zCurVersion + 1;
 
-        if ( new File( mCanonicalProjectDir, "war/v" + zNewVersion ).exists() )
+        String zWarResourceRelativePathNew = "warResources/v" + zNewVersion;
+        if ( new File( mCanonicalProjectDir, zWarResourceRelativePathNew ).exists() )
         {
-            throw new IllegalStateException( "Project already contains a 'war/v" + zNewVersion + "' directory?" );
+            throw new IllegalStateException( "Project already contains a 'warResources/v" + zNewVersion + "' directory?" );
         }
 
         progress( "versionGWT: " + this + " | " + zCurVersion + " -> " + (zCurVersion + 1) );
@@ -384,10 +387,14 @@ public class Project extends ProjectParameters
         {
             progress( "    " + zFile.getPath() );
         }
+        progress( "    " + zWarResourceRelativePathCurrent + " -> " + zWarResourceRelativePathNew );
 
-        new Paths( "war/v" + zCurVersion ).copyTo( "war/v" + zNewVersion );
-        updateFileContents( new File( mCanonicalProjectDir, "war/v" + zNewVersion + "/index.html" ), updateVersionedIndexHtml( zIndexHtml, zCurVersion, zNewVersion ) );
+        new Paths( zWarResourceRelativePathCurrent ).copyTo( zWarResourceRelativePathNew );
+
+        updateFileContents( new File( mCanonicalProjectDir, zWarResourceRelativePathNew + "/index.html" ), updateVersionedIndexHtml( zIndexHtml, zCurVersion, zNewVersion ) );
+
         updateFileContents( zWarWebXmlFile, updateVersionedWebXml( zWarWebXml, zCurVersion, zNewVersion ) );
+
         for ( File zFile : zVersionedGwtXmlFiles )
         {
             updateFileContents( zFile, updateVersionedGwtXmlFile( fileContents( zFile ), zCurVersion, zNewVersion ) );
@@ -397,10 +404,10 @@ public class Project extends ProjectParameters
         String redirectScript = "var loc = window.location.href;\n" + //
                                 "var at = loc.indexOf( '" + zCurPathVersion + "' );\n" + //
                                 "window.location.href = loc.substring(0, at) + '/v" + zNewVersion + "' + loc.substring(at + " + zCurPathVersion.length() + ");\n";
-        updateFileContents( new File( mCanonicalProjectDir, "war/v" + zCurVersion + "/v" + zCurVersion + ".nocache.js" ), redirectScript );
+        updateFileContents( new File( mCanonicalProjectDir, zWarResourceRelativePathCurrent + "/v" + zCurVersion + ".nocache.js" ), redirectScript );
 
         // Update the "root" html (if it exists)
-        File zRootHtmlFile = new File( mCanonicalProjectDir, "war/index.html" );
+        File zRootHtmlFile = new File( mCanonicalProjectDir, "warResources/index.html" );
         if ( zRootHtmlFile.isFile() )
         {
             updateFileContents( zRootHtmlFile, updateRootHTML( fileContents( zRootHtmlFile ), zCurVersion, zNewVersion ) );
