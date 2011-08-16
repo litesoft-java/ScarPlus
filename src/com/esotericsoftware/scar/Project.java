@@ -488,8 +488,11 @@ public class Project extends ProjectParameters
     {
         String zCurVersionedUrlPattern = VERSIONED_URL_PATTERN_PREFIX + pCurVersion + "/";
         String zNewVersionedUrlPattern = VERSIONED_URL_PATTERN_PREFIX + pNewVersion + "/";
-        int at = pFileContents.indexOf( zCurVersionedUrlPattern );
-        return pFileContents.substring( 0, at ) + zNewVersionedUrlPattern + pFileContents.substring( at + zCurVersionedUrlPattern.length() );
+        for ( int at; -1 != (at = pFileContents.indexOf( zCurVersionedUrlPattern )); )
+        {
+            pFileContents = pFileContents.substring( 0, at ) + zNewVersionedUrlPattern + pFileContents.substring( at + zCurVersionedUrlPattern.length() );
+        }
+        return pFileContents;
     }
 
     protected int extractVersionFromUrlPattern( String pWarWebXml )
