@@ -100,4 +100,9 @@ public class Util
     {
         return (o != null) ? o.toString() : null;
     }
+
+    public int intForNotNull( int pNotNullIntValue, Object pObjectToCheck )
+    {
+        return (pObjectToCheck != null) ? pNotNullIntValue : 0;
+    }
 }

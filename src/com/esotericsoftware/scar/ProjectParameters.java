@@ -79,12 +79,11 @@ public class ProjectParameters extends FileUtil
 
     // -------------------------------------------------- Validation ---------------------------------------------------
 
-    @SuppressWarnings({"PointlessArithmeticExpression"})
     public ProjectParameters validate()
     {
-        int zHas = (1 * ((null != getAppDir()) ? 1 : 0)) + //
-                   (2 * ((null != getOneJar()) ? 1 : 0)) + //
-                   (4 * ((null != getWar()) ? 1 : 0));
+        int zHas = intForNotNull( 1, getAppDir() ) + //
+                   intForNotNull( 2, getOneJar() ) + //
+                   intForNotNull( 4, getWar() );
         switch ( zHas )
         {
             default:
@@ -115,6 +114,45 @@ public class ProjectParameters extends FileUtil
         defaultJAR();
         defaultDIST();
         defaultGWT();
+        defaultOneJar();
+    }
+
+    protected void defaultOneJar()
+    {
+        enforceJarExtension( ONEJAR.getName() );
+    }
+
+    protected void defaultDIST()
+    {
+        defaultSubDirOptional( DIST, "war" );
+    }
+
+    protected void defaultJAR()
+    {
+        if ( null == enforceJarExtension( JAR.getName() ) )
+        {
+            mManager.put( JAR.getName(), "$target$/$name$" + (hasVersion() ? "-$version$" : "") + ".jar" );
+        }
+    }
+
+    protected void defaultTARGET()
+    {
+        defaultKey( TARGET, "build" );
+    }
+
+    protected void defaultCLASSPATH()
+    {
+        defaultSubDirOptional( CLASSPATH, "lib|**.jar" );
+    }
+
+    protected void defaultRESOURCES()
+    {
+        defaultSubDirOptional( RESOURCES, "src/main/resources", "resources" );
+    }
+
+    protected void defaultSOURCE()
+    {
+        defaultSubDirOptional( SOURCE, "src/main/java|**.java", "src|**.java" );
     }
 
     protected void defaultGWT()
@@ -150,46 +188,18 @@ public class ProjectParameters extends FileUtil
         }
     }
 
-    protected void defaultDIST()
+    protected String enforceJarExtension( String pEntryName )
     {
-        defaultSubDirOptional( DIST, "war" );
-    }
-
-    protected void defaultJAR()
-    {
-        String zJar = getJar();
-        if ( null == zJar )
-        {
-            mManager.put( JAR.getName(), "$target$/$name$" + (hasVersion() ? "-$version$" : "") + ".jar" );
-        }
-        else
+        String zJar = get( pEntryName );
+        if ( null != zJar )
         {
             int at = zJar.lastIndexOf( '.' );
             if ( at == -1 || !".jar".equalsIgnoreCase( zJar.substring( at ) ) )
             {
-                mManager.put( JAR.getName(), zJar + ".jar" );
+                mManager.put( pEntryName, zJar += ".jar" );
             }
         }
-    }
-
-    protected void defaultTARGET()
-    {
-        defaultKey( TARGET, "build" );
-    }
-
-    protected void defaultCLASSPATH()
-    {
-        defaultSubDirOptional( CLASSPATH, "lib|**.jar" );
-    }
-
-    protected void defaultRESOURCES()
-    {
-        defaultSubDirOptional( RESOURCES, "src/main/resources", "resources" );
-    }
-
-    protected void defaultSOURCE()
-    {
-        defaultSubDirOptional( SOURCE, "src/main/java|**.java", "src|**.java" );
+        return zJar;
     }
 
     // ------------------------------------------- Special Property Accessors ------------------------------------------
