@@ -164,7 +164,7 @@ public class ProjectParameters extends FileUtil
             defaultKey( GWTwar, "$target$/GWTCompilerOutput" );
             defaultKey( GWTstyle, "OBF" );
             defaultKey( GWTlogging, "INFO" );
-            defaultKey( GWTmx, "128m" );
+            defaultKey( GWTmx, "512m" );
         }
     }
 
