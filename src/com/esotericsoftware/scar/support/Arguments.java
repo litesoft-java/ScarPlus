@@ -2,6 +2,7 @@ package com.esotericsoftware.scar.support;
 
 import java.util.*;
 
+import com.esotericsoftware.scar.*;
 import com.esotericsoftware.utils.*;
 
 /**
@@ -42,14 +43,17 @@ public class Arguments
     {
         for ( String zArg : pArgs )
         {
-            int at = zArg.indexOf( '=' );
-            if ( at == -1 )
+            if ( null != (zArg = Utils.noEmpty( zArg )) )
             {
-                set( zArg, "" );
-            }
-            else
-            {
-                set( zArg.substring( 0, at ), zArg.substring( at + 1 ).trim() );
+                int at = zArg.indexOf( '=' );
+                if ( at == -1 )
+                {
+                    set( zArg, "" );
+                }
+                else
+                {
+                    set( zArg.substring( 0, at ), zArg.substring( at + 1 ).trim() );
+                }
             }
         }
     }
@@ -61,7 +65,7 @@ public class Arguments
 
     /**
      * Get (and remove if there) the 'Next' Name/Value.
-     *
+     * <p/>
      * Returns null means no more.
      */
     public NameValuePair getNext()
@@ -76,10 +80,10 @@ public class Arguments
 
     /**
      * Get (and remove if there) the value assocciated w/ pName.
-     *
+     * <p/>
      * Returns the value of the argument with the specified Name,
-     *      or "" if the argument was specified without a value,
-     *      or null if it was not specified.
+     * or "" if the argument was specified without a value,
+     * or null if it was not specified.
      */
     public String get( String pName )
     {
@@ -88,10 +92,10 @@ public class Arguments
 
     /**
      * Get (and remove if there) the value assocciated w/ pName.
-     *
+     * <p/>
      * Returns the value of the argument with the specified Name,
-     *      or "" if the argument was specified without a value,
-     *      or pDefaultValue if it was not specified.
+     * or "" if the argument was specified without a value,
+     * or pDefaultValue if it was not specified.
      */
     public String get( String pName, String pDefaultValue )
     {

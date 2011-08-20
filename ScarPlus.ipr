@@ -306,7 +306,7 @@
     <output url="file://$PROJECT_DIR$/out" />
   </component>
   <component name="ProjectRunConfigurationManager">
-    <configuration default="false" name="Versioned Filter" type="Application" factoryName="Application">
+    <configuration default="false" name="Scar clean" type="Application" factoryName="Application">
       <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="emma">
         <pattern>
           <option name="PATTERN" value="com.esotericsoftware.scar.*" />
@@ -315,8 +315,8 @@
       </extension>
       <option name="MAIN_CLASS_NAME" value="com.esotericsoftware.scar.Scar" />
       <option name="VM_PARAMETERS" value="" />
-      <option name="PROGRAM_PARAMETERS" value="Debug" />
-      <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$/../VersionedStaticContentFilter" />
+      <option name="PROGRAM_PARAMETERS" value="Debug clean" />
+      <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$" />
       <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
       <option name="ALTERNATIVE_JRE_PATH" value="" />
       <option name="ENABLE_SWING_INSPECTOR" value="false" />
@@ -325,7 +325,7 @@
       <module name="ScarPlus" />
       <envs />
       <RunnerSettings RunnerId="Debug">
-        <option name="DEBUG_PORT" value="56125" />
+        <option name="DEBUG_PORT" value="4432" />
         <option name="TRANSPORT" value="0" />
         <option name="LOCAL" value="true" />
       </RunnerSettings>
@@ -343,7 +343,7 @@
       </extension>
       <option name="MAIN_CLASS_NAME" value="com.esotericsoftware.scar.Scar" />
       <option name="VM_PARAMETERS" value="" />
-      <option name="PROGRAM_PARAMETERS" value="Debug" />
+      <option name="PROGRAM_PARAMETERS" value="DEBUG" />
       <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$" />
       <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
       <option name="ALTERNATIVE_JRE_PATH" value="" />
@@ -384,7 +384,7 @@
       <ConfigurationWrapper RunnerId="Run" />
       <method />
     </configuration>
-    <configuration default="false" name="Scar clean" type="Application" factoryName="Application">
+    <configuration default="false" name="Versioned Filter" type="Application" factoryName="Application">
       <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="emma">
         <pattern>
           <option name="PATTERN" value="com.esotericsoftware.scar.*" />
@@ -393,8 +393,8 @@
       </extension>
       <option name="MAIN_CLASS_NAME" value="com.esotericsoftware.scar.Scar" />
       <option name="VM_PARAMETERS" value="" />
-      <option name="PROGRAM_PARAMETERS" value="Debug clean" />
-      <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$" />
+      <option name="PROGRAM_PARAMETERS" value="Debug" />
+      <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$/../VersionedStaticContentFilter" />
       <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
       <option name="ALTERNATIVE_JRE_PATH" value="" />
       <option name="ENABLE_SWING_INSPECTOR" value="false" />
@@ -403,7 +403,7 @@
       <module name="ScarPlus" />
       <envs />
       <RunnerSettings RunnerId="Debug">
-        <option name="DEBUG_PORT" value="4432" />
+        <option name="DEBUG_PORT" value="56125" />
         <option name="TRANSPORT" value="0" />
         <option name="LOCAL" value="true" />
       </RunnerSettings>
