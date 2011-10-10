@@ -24,9 +24,10 @@ import com.esotericsoftware.yamlbeans.tokenizer.*;
 /**
  * Provides utility methods for common Java build tasks.
  */
+@SuppressWarnings({"ResultOfMethodCallIgnored"})
 public class Scar extends Utils implements ProjectFactory
 {
-    public static final String VERSION = "2.0";
+    public static final String VERSION = "2.1";
 
     public static final String DEFAULT_PROJECT_FILE_NAME = "Build";
 
@@ -1323,29 +1324,29 @@ public class Scar extends Utils implements ProjectFactory
         }
     }
 
-    /**
-     * Executes Java code in the specified project's document, if any.
-     *
-     * @return true if code was executed.
-     */
-    public boolean executeDocument( Project project )
-    {
-        String code = null; // todo: was -- project.getDocument();
-        if ( code == null || code.trim().isEmpty() )
-        {
-            return false;
-        }
-        HashMap<String, Object> parameters = new HashMap<String, Object>();
-        parameters.put( "project", project );
-        executeCode( project, code, parameters );
-        return true;
-    }
+//    /**
+//     * Executes Java code in the specified project's document, if any.
+//     *
+//     * @return true if code was executed.
+//     */
+//    public boolean executeDocument( Project project )
+//    {
+//        String code = null; // todo: was -- project.getDocument();
+//        if ( code == null || code.trim().isEmpty() )
+//        {
+//            return false;
+//        }
+//        HashMap<String, Object> parameters = new HashMap<String, Object>();
+//        parameters.put( "project", project );
+//        executeCode( project, code, parameters );
+//        return true;
+//    }
 
-    /**
-     * List of project names that have been built. {@link #buildDependencies(Project)} will skip any projects with a matching name.
-     */
-    static public final List<String> builtProjects = new ArrayList<String>();
-
+//    /**
+//     * List of project names that have been built. {@link #buildDependencies(Project)} will skip any projects with a matching name.
+//     */
+//    static public final List<String> builtProjects = new ArrayList<String>();
+//
     static
     {
         Paths.addDefaultGlobExcludes( "**/.svn/**" );

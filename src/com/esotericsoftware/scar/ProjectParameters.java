@@ -160,7 +160,7 @@ public class ProjectParameters extends FileUtil
         String zGWT = getGWT();
         if ( null != zGWT )
         {
-            verifyGWTlibs( getGWTat() );
+            verifyGWTlibs( getGWTatDir() );
             defaultKey( GWTwar, "$target$/GWTCompilerOutput" );
             defaultKey( GWTstyle, "OBF" );
             defaultKey( GWTlogging, "INFO" );
@@ -168,22 +168,21 @@ public class ProjectParameters extends FileUtil
         }
     }
 
-    protected void verifyGWTlibs( String pRelativeGWTlibsDir )
+    protected void verifyGWTlibs( File pGWTdir )
     {
-        if ( pRelativeGWTlibsDir == null )
+        if ( pGWTdir == null )
         {
             throw new IllegalStateException( "GWT specified, but NO GWTat!" );
         }
-        if ( !dirExists( pRelativeGWTlibsDir ) )
+        if ( !pGWTdir.isDirectory() )
         {
-            throw new IllegalStateException( "GWTat '" + pRelativeGWTlibsDir + "' is not a directory!" );
+            throw new IllegalStateException( "GWTat '" + pGWTdir + "' is not a directory!" );
         }
-        File zGWTdir = canonicalizePath( getCanonicalProjectDir(), pRelativeGWTlibsDir );
         for ( String zGwtJar : GWT_JARS )
         {
-            if ( !new File( zGWTdir, zGwtJar ).isFile() )
+            if ( !new File( pGWTdir, zGwtJar ).isFile() )
             {
-                throw new IllegalStateException( "GWTat '" + pRelativeGWTlibsDir + "' -> '" + zGWTdir.getPath() + "' did not contain: " + zGwtJar );
+                throw new IllegalStateException( "GWTat '" + pGWTdir.getPath() + "' did not contain: " + zGwtJar );
             }
         }
     }
