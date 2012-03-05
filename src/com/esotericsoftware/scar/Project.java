@@ -258,6 +258,8 @@ public class Project extends ProjectParameters
         File zGWTatDir = getGWTatDir();
         zGWTclassPath.add( FilePath.canonical( zGWTatDir, GWT_DEV ) );
         zGWTclassPath.add( FilePath.canonical( zGWTatDir, GWT_USER ) );
+        zGWTclassPath.add( FilePath.canonical( zGWTatDir, GWT_VALIDATION ) );
+        zGWTclassPath.add( FilePath.canonical( zGWTatDir, GWT_VALIDATION_SOURCE ) );
         zGWTclassPath.add( FilePath.canonicalize( getJarPathFile() ) );
         zGWTclassPath.add( classpath() );
         return zGWTclassPath.toString( File.pathSeparator );

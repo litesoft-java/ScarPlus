@@ -74,6 +74,8 @@ public class ProjectParameters extends FileUtil
     public static final String GWT_DEV = "gwt-dev.jar";
     public static final String GWT_USER = "gwt-user.jar";
     public static final String GWT_SERVLET = "gwt-servlet.jar";
+    public static final String GWT_VALIDATION = "validation-api-1.0.0.GA.jar";
+    public static final String GWT_VALIDATION_SOURCE = "validation-api-1.0.0.GA-sources.jar";
 
     private static final String[] GWT_JARS = {GWT_DEV, GWT_USER, GWT_SERVLET};
 
