@@ -528,7 +528,17 @@ public class Project extends ProjectParameters
         }
         mBuilt = true;
         boolean zAnythingBuilt = false;
-        if ( !buildDependencies() && !needToBuild() )
+        boolean zBuildIt;
+        try
+        {
+            zBuildIt = !buildDependencies() && !needToBuild();
+        }
+        catch ( RuntimeException e )
+        {
+            progress( "Build: " + this );
+            throw e;
+        }
+        if ( zBuildIt )
         {
             progress( "Build: " + this + " NOT Needed!" );
         }

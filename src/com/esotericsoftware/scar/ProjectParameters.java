@@ -237,7 +237,8 @@ public class ProjectParameters extends FileUtil
 
     public List<String> getDependencies()
     {
-        return getListNotNull( DEPENDENCIES.getName() );
+        List<String> zResult = getCachedWithConvertion( DEPENDENCIES.getName(), FORMATTED_LIST_STRING, null );
+        return (zResult != null) ? zResult : Collections.<String>emptyList();
     }
 
     public Paths getCompileClasspath()
@@ -796,6 +797,21 @@ public class ProjectParameters extends FileUtil
         {
             //noinspection unchecked
             return (Map<String, String>) pValue;
+        }
+    };
+
+    private final DataConverter<List<String>> FORMATTED_LIST_STRING = new DataConverter<List<String>>()
+    {
+        @Override
+        public List<String> convert( Object pValue )
+        {
+            List<String> zList = LIST_STRING.convert( pValue );
+            List<String> zFormattedList = new ArrayList<String>( zList.size() );
+            for ( String zEntry : zList )
+            {
+                zFormattedList.add( format( zEntry ) );
+            }
+            return zFormattedList;
         }
     };
 
