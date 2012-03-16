@@ -186,7 +186,8 @@ public class Project extends ProjectParameters
         File zWarPathFile = getWarPathFile();
         if ( zWarPathFile.exists() )
         {
-            if ( zWarPathFile.lastModified() >= zClassPath.getGreatestLastModified() )
+            long zWarLastModified = zWarPathFile.lastModified();
+            if ( (zWarLastModified >= zClassPath.getGreatestLastModified()) && (zWarLastModified >= zDistPaths.getGreatestLastModified()) )
             {
                 progress( "WAR: " + this + " NOT Needed!" );
                 return false;
