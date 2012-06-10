@@ -88,7 +88,7 @@ call android create project --target 1 --path . --activity PhoneGapActivity --pa
 
 echo .
 
-echo %1 > ProjectName.txt
+echo|set /p=%1 > ProjectName.txt
 
 if exist res\values\strings.xml goto :OK_androided
 
