@@ -35,7 +35,7 @@ function checkExitCode {
 function cleanUp {
 	echo 'Cleaning up...'
 	cd -
-	rm -rf $TEMP_PROJECT_DIR_PATH
+	/bin/rm -rf $TEMP_PROJECT_DIR_PATH
 }
 
 PHONEGAP_TEMPLATE_PATH="$SCAR_HOME/iOSPhoneGapGeneric"
@@ -73,7 +73,7 @@ NEW_PROJECT_PATH=`cd $NEW_PROJECT_PATH; pwd`
 
 # create temporary working directory
 TEMP_PROJECT_DIR_PATH=`mktemp -d -t 'phonegap'`
-trap "{ cd - ; rm -rf $TEMP_PROJECT_DIR_PATH; exit 255; }" SIGINT
+trap "{ cd - ; /bin/rm -rf $TEMP_PROJECT_DIR_PATH; exit 255; }" SIGINT
 cd $TEMP_PROJECT_DIR_PATH
 
 # ##############################################
@@ -112,5 +112,6 @@ checkExitCode
 cp -r "$TEMP_PROJECT_DIR_PATH/" "$NEW_PROJECT_PATH"
 
 checkExitCode
+cleanUp
 
 exit 0
