@@ -1,0 +1,7 @@
+//
+// Prefix header for all source files of the 'iOSPhoneGapGeneric' target in the 'iOSPhoneGapGeneric' project
+//
+
+#ifdef __OBJC__
+    #import <UIKit/UIKit.h>
+#endif
