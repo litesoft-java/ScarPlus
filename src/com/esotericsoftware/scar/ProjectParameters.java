@@ -69,7 +69,7 @@ public class ProjectParameters extends FileUtil
                                                     "Default: 'INFO'." );
 
     public static final Parameter GWTmx = def( "GWTmx", Form.STRING, "the -Xmx value for the GWT Compiler.", //
-                                               "Default: '128m'." );
+                                               "Default: '1024m'." );
 
     public static final String GWT_DEV = "gwt-dev.jar";
     public static final String GWT_USER = "gwt-user.jar";
@@ -166,7 +166,7 @@ public class ProjectParameters extends FileUtil
             defaultKey( GWTwar, "$target$/GWTCompilerOutput" );
             defaultKey( GWTstyle, "OBF" );
             defaultKey( GWTlogging, "INFO" );
-            defaultKey( GWTmx, "512m" );
+            defaultKey( GWTmx, "1024m" );
         }
     }
 
