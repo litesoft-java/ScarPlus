@@ -50,7 +50,7 @@ public final class RootedPathsCollection
 
     public boolean isEmpty()
     {
-        return mPaths.isEmpty();
+        return mPaths.isEmpty() || (count() == 0);
     }
 
     public int count()

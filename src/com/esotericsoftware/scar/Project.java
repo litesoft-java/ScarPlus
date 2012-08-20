@@ -42,6 +42,7 @@ public class Project extends ProjectParameters
 
     protected void packageClean()
     {
+        delete( getPhoneGapDirPath() );
         delete( getAppDirPath() );
         delete( getOneJarPath() );
         delete( getWarPath() );
@@ -49,7 +50,7 @@ public class Project extends ProjectParameters
 
     protected boolean packageIt()
     {
-        return appDir() | oneJAR() | war(); // Note: SINGLE '|' ORs to force full execution!
+        return phoneGapDir() | appDir() | oneJAR() | war(); // Note: SINGLE '|' ORs to force full execution!
     }
 
     /**
@@ -107,6 +108,40 @@ public class Project extends ProjectParameters
 
         unzip( zJarPath, zOnejarDir ); // Our Jar! - Our Manifest will be "the" Manifest !!!!!! Need to remove class PATH!
         innerJar( "'ONE' JAR", zOneJarPath.getPath(), new Paths( zOnejarDir.getPath() ) );
+        return true;
+    }
+
+    /**
+     * Collects the distribution files using the "dist" property, the project's JAR file, and everything on the project's classpath
+     * (including dependency project classpaths) and places them into the specified directory. This is also done for depenency projects,
+     * recursively. This is everything the application needs to be run from JAR files.
+     *
+     * @return True if the PhoneGapDir was populated or false if no distribution (App Dir) is requested for this project.
+     */
+    public boolean phoneGapDir()
+    {
+        String zPhoneGapDir = getPhoneGapDirPath();
+        if ( zPhoneGapDir == null )
+        {
+            return false;
+        }
+        Paths zPaths = new Paths( getGWTwarPath(), "**.js", "**.gif" );
+        zPaths.add( getDist() );
+
+        File zPhoneGapDirFile = new File( zPhoneGapDir );
+        if ( zPhoneGapDirFile.exists() )
+        {
+            if ( zPhoneGapDirFile.lastModified() >= zPaths.getGreatestLastModified() )
+            {
+                progress( "PhoneGapDir: " + this + " NOT Needed!" );
+                return false;
+            }
+            delete( zPhoneGapDirFile );
+        }
+
+        progress( "PhoneGapDir: " + this + " -> " + zPhoneGapDir );
+        String distDir = mkdir( zPhoneGapDir ); // Give it a new Timestamp
+        zPaths.copyTo( distDir );
         return true;
     }
 
@@ -261,7 +296,10 @@ public class Project extends ProjectParameters
         zGWTclassPath.add( FilePath.canonical( zGWTatDir, GWT_USER ) );
         zGWTclassPath.add( FilePath.canonical( zGWTatDir, GWT_VALIDATION ) );
         zGWTclassPath.add( FilePath.canonical( zGWTatDir, GWT_VALIDATION_SOURCE ) );
-        zGWTclassPath.add( FilePath.canonicalize( getJarPathFile() ) );
+        if ( mSources )
+        {
+            zGWTclassPath.add( FilePath.canonicalize( getJarPathFile() ) );
+        }
         zGWTclassPath.add( classpath() );
         return zGWTclassPath.toString( File.pathSeparator );
     }
@@ -288,17 +326,30 @@ public class Project extends ProjectParameters
     protected File getGeneratedGWT_nocache_jsFile()
     {
         String zGWTxmlRelativeFilePath = getGWT().replace( '.', '/' ) + ".gwt.xml"; // e.g. org.litesoft.sandbox.csapp.CSapp
-        RootedPaths[] zRootedPaths = getSource().getRootedPaths();
+        File zFound = getGeneratedGWT_nocache_jsFile( zGWTxmlRelativeFilePath, getSource() );
+        if ( zFound == null )
+        {
+            if ( null == (zFound = getGeneratedGWT_nocache_jsFile( zGWTxmlRelativeFilePath, getResources() )) )
+            {
+                throw new IllegalArgumentException( "Unable to locate GWT module file: " + getGWT() );
+            }
+        }
+        return zFound;
+    }
+
+    private File getGeneratedGWT_nocache_jsFile( String pGWTxmlRelativeFilePath, Paths pPaths )
+    {
+        RootedPaths[] zRootedPaths = pPaths.getRootedPaths();
         for ( RootedPaths zPath : zRootedPaths )
         {
-            File zFile = new File( zPath.getCanonicalRootDirectory(), zGWTxmlRelativeFilePath );
+            File zFile = new File( zPath.getCanonicalRootDirectory(), pGWTxmlRelativeFilePath );
             if ( zFile.isFile() )
             {
                 String moduleName = extractModuleNameFrom( getGWT(), fileContents( zFile ) );
                 return new File( getGWTwarPath(), moduleName + "/" + moduleName + ".nocache.js" );
             }
         }
-        throw new IllegalArgumentException( "Unable to locate GWT module file: " + getGWT() );
+        return null;
     }
 
     private String extractModuleNameFrom( String pGWTmoduleReference, String pGWTmoduleFileContents )
@@ -332,14 +383,9 @@ public class Project extends ProjectParameters
 
     protected boolean needToCompileGWT()
     {
-        File zJarFile = getJarPathFile();
-        if ( !zJarFile.isFile() )
-        {
-            throw new IllegalStateException( this + " Jar Not Built?" );
-        }
-        long zJarTimestamp = zJarFile.lastModified();
         File zGeneratedGWT_nocache_jsFile = getGeneratedGWT_nocache_jsFile();
-        return (zGeneratedGWT_nocache_jsFile == null) || !zGeneratedGWT_nocache_jsFile.isFile() || (zGeneratedGWT_nocache_jsFile.lastModified() < zJarTimestamp);
+        return needToBuild( ((zGeneratedGWT_nocache_jsFile != null) && zGeneratedGWT_nocache_jsFile.isFile()) ?
+                            zGeneratedGWT_nocache_jsFile.lastModified() : forceBuildLastModified() );
     }
 
     public boolean GWTcompile()
@@ -394,7 +440,8 @@ public class Project extends ProjectParameters
 
         new Paths( zWarResourceRelativePathCurrent ).copyTo( zWarResourceRelativePathNew );
 
-        updateFileContents( new File( mCanonicalProjectDir, zWarResourceRelativePathNew + "/index.html" ), updateVersionedIndexHtml( zIndexHtml, zCurVersion, zNewVersion ) );
+        updateFileContents( new File( mCanonicalProjectDir, zWarResourceRelativePathNew + "/index.html" ),
+                            updateVersionedIndexHtml( zIndexHtml, zCurVersion, zNewVersion ) );
 
         updateFileContents( zWarWebXmlFile, updateVersionedWebXml( zWarWebXml, zCurVersion, zNewVersion ) );
 
@@ -462,7 +509,8 @@ public class Project extends ProjectParameters
         }
         if ( zVersionedFiles.isEmpty() )
         {
-            throw new IllegalStateException( "Project does not appear to contain a 'gwt.xml' file with the current version module definition of: " + zVersionedModule );
+            throw new IllegalStateException(
+                    "Project does not appear to contain a 'gwt.xml' file with the current version module definition of: " + zVersionedModule );
         }
         return zVersionedFiles;
     }
@@ -482,7 +530,9 @@ public class Project extends ProjectParameters
         String zContents = fileContents( assertIsFile( "Versioned index.html", pIndexHtmlFile ) );
         if ( !zContents.contains( zVersionedScript ) )
         {
-            throw new IllegalStateException( "Project's current versioned index.html file (" + pIndexHtmlFile.getPath() + ") does not contain a 'versioned' script element of: " + zVersionedScript );
+            throw new IllegalStateException(
+                    "Project's current versioned index.html file (" + pIndexHtmlFile.getPath() + ") does not contain a 'versioned' script element of: " +
+                    zVersionedScript );
         }
         return zContents;
     }
@@ -528,18 +578,19 @@ public class Project extends ProjectParameters
             return false;
         }
         mBuilt = true;
+        mSources = !getSource().isEmpty();
         boolean zAnythingBuilt = false;
         boolean zBuildIt;
         try
         {
-            zBuildIt = !buildDependencies() && !needToBuild();
+            zBuildIt = buildDependencies() || needToBuild();
         }
         catch ( RuntimeException e )
         {
             progress( "Build: " + this );
             throw e;
         }
-        if ( zBuildIt )
+        if ( !zBuildIt )
         {
             progress( "Build: " + this + " NOT Needed!" );
         }
@@ -547,9 +598,12 @@ public class Project extends ProjectParameters
         {
             progress( "Build: " + this );
             clean();
-            compile();
-            jar();
-            zAnythingBuilt = true;
+            if ( mSources )
+            {
+                compile();
+                jar();
+                zAnythingBuilt = true;
+            }
         }
         zAnythingBuilt |= GWTcompile();
         zAnythingBuilt |= packageIt();
@@ -558,22 +612,57 @@ public class Project extends ProjectParameters
 
     protected boolean needToBuild()
     {
-        File zJarFile = getJarPathFile();
-        if ( !zJarFile.isFile() )
-        {
-            return true;
-        }
-        long zJarTimestamp = zJarFile.lastModified();
-        return (mProjectFileLastModified > zJarTimestamp) || //
-               checkNewer( zJarTimestamp, compileClasspath() ) || //
-               checkNewer( zJarTimestamp, getSource() ) || //
-               checkNewer( zJarTimestamp, getResources() );
+        return needToBuild( determineOutputLastModified() );
     }
 
-    protected boolean checkNewer( long pJarTimestamp, Paths pPaths )
+    protected boolean needToBuild( long pOutputLastModified )
+    {
+        return (mProjectFileLastModified > pOutputLastModified) || //
+               checkNewer( pOutputLastModified, "ClassPath", compileClasspath() ) || //
+               checkNewer( pOutputLastModified, "Source", getSource() ) || //
+               checkNewer( pOutputLastModified, "Resources", getResources() ) || //
+               checkNewer( pOutputLastModified, "Dist", getDist() );
+    }
+
+    protected boolean checkNewer( long pOutputLastModified, String pWhat, Paths pPaths )
     {
         Long zLastModified = pPaths.getGreatestLastModified();
-        return (zLastModified != null) && (zLastModified > pJarTimestamp);
+        if ( (zLastModified != null) && (zLastModified > pOutputLastModified) )
+        {
+            System.out.println( this + ": " + pWhat + " newer by " + (zLastModified - pOutputLastModified) + "ms" );
+            return true;
+        }
+        return false;
+    }
+
+    protected long forceBuildLastModified()
+    {
+        return (mProjectFileLastModified - 1);
+    }
+
+    protected long determineOutputLastModified()
+    {
+        if ( mSources )
+        {
+            File zJarFile = getJarPathFile();
+            if ( zJarFile.isFile() )
+            {
+                return zJarFile.lastModified();
+            }
+        }
+        else
+        {
+            String zPhoneGapDir = getPhoneGapDirPath();
+            if ( zPhoneGapDir != null )
+            {
+                File zPhoneGapDirFile = new File( zPhoneGapDir );
+                if ( zPhoneGapDirFile.isDirectory() )
+                {
+                    return zPhoneGapDirFile.lastModified();
+                }
+            }
+        }
+        return forceBuildLastModified();
     }
 
     /**
@@ -652,12 +741,14 @@ public class Project extends ProjectParameters
 
         if ( compiler == null )
         {
-            throw new RuntimeException( "No compiler available. Ensure you are running from a " + getTargetJavaVersion() + "+ JDK, and not a JRE *and* that your class path includes tools.jar." );
+            throw new RuntimeException( "No compiler available. Ensure you are running from a " + getTargetJavaVersion() +
+                                        "+ JDK, and not a JRE *and* that your class path includes tools.jar." );
         }
         int zError = compiler.run( getCompile_in(), getCompile_out(), getCompile_err(), pCompileArgs.toArray( new String[pCompileArgs.size()] ) );
         if ( zError != 0 )
         {
-            throw new RuntimeException( "Error (" + zError + ") during compilation of project: " + this + "\nSource: " + pSource.count() + " files\nClasspath: " + pClasspath );
+            throw new RuntimeException(
+                    "Error (" + zError + ") during compilation of project: " + this + "\nSource: " + pSource.count() + " files\nClasspath: " + pClasspath );
         }
         try
         {
@@ -972,12 +1063,15 @@ public class Project extends ProjectParameters
 
     protected void addDependentProjectJar( Paths pPathsToAddTo )
     {
-        File zJarFile = getJarPathFile();
-        if ( !zJarFile.isFile() )
+        if ( mSources )
         {
-            throw new RuntimeException( "Dependency (" + this + ") Jar not found, not built?" );
+            File zJarFile = getJarPathFile();
+            if ( !zJarFile.isFile() )
+            {
+                throw new RuntimeException( "Dependency (" + this + ") Jar not found, not built?" );
+            }
+            pPathsToAddTo.add( new FilePath( zJarFile.getParentFile(), zJarFile.getName() ) );
         }
-        pPathsToAddTo.add( new FilePath( zJarFile.getParentFile(), zJarFile.getName() ) );
     }
 
     /**
@@ -1103,5 +1197,6 @@ public class Project extends ProjectParameters
     }
 
     protected boolean mBuilt = false;
+    protected boolean mSources = false;
     protected List<Project> mDependantProjects = new ArrayList<Project>();
 }

@@ -25,13 +25,16 @@ public class ProjectParameters extends FileUtil
     public static final Parameter TARGET = def( "target", Form.STRING, "The directory to output build artifacts.", //
                                                 "Default: The directory containing the project YAML file, plus 'build'." );
 
-    public static final Parameter DEPENDENCIES = def( "dependencies", Form.STRING_LIST, "Relative or absolute path(s) to dependency project directories or YAML files." );
+    public static final Parameter DEPENDENCIES =
+            def( "dependencies", Form.STRING_LIST, "Relative or absolute path(s) to dependency project directories or YAML files." );
 
-    public static final Parameter COMPILECLASSPATH = def( "compileclasspath", Form.PATHS, "Wildcard patterns for the file(s) to include on the 'compile' classpath.", //
-                                                          "Note: automatically includes the ClassPath(s)." );
+    public static final Parameter COMPILECLASSPATH =
+            def( "compileclasspath", Form.PATHS, "Wildcard patterns for the file(s) to include on the 'compile' classpath.", //
+                 "Note: automatically includes the ClassPath(s)." );
 
-    public static final Parameter CLASSPATH = def( "classpath", Form.PATHS, "Wildcard patterns for the file(s) to include on the classpath (both, compile & runtime/deployment).", //
-                                                   "Default: 'lib|**.jar'." );
+    public static final Parameter CLASSPATH =
+            def( "classpath", Form.PATHS, "Wildcard patterns for the file(s) to include on the classpath (both, compile & runtime/deployment).", //
+                 "Default: 'lib|**.jar'." );
 
     public static final Parameter SOURCE = def( "source", Form.PATHS, "Wildcard patterns for the Java file(s) to compile.", //
                                                 "Default: 'src|**.java' or 'src/main/java|**.java'." );
@@ -39,19 +42,30 @@ public class ProjectParameters extends FileUtil
     public static final Parameter RESOURCES = def( "resources", Form.PATHS, "Wildcard patterns for the file(s) to include in the JAR.", //
                                                    "Default: 'resources' or 'src/main/resources'." );
 
-    public static final Parameter JAR = def( "jar", Form.STRING, "JAR name w/ optional path for the JAR ('.jar' added to the end if does not end with 'jar', case insensitive).", //
-                                             "Default: '$target$[-$version$]'." );
+    public static final Parameter JAR =
+            def( "jar", Form.STRING, "JAR name w/ optional path for the JAR ('.jar' added to the end if does not end with 'jar', case insensitive).", //
+                 "Default: '$target$[-$version$]'." );
 
     public static final Parameter DIST = def( "dist", Form.PATHS, "Wildcard patterns for the file(s) to include in the distribution, outside the JAR.", //
                                               "Default: 'war' (if there)." );
 
     // ------------------------------- Packaging Options, these are mutually exclusive ---------------------------------
 
-    public static final Parameter APPDIR = def( "appdir", Form.STRING, "Directory path to bring together all files (both JARs and 'dist', for this project " + "and all dependencies, recursively) the application needs to be run from JAR files." );
+    public static final Parameter PHONEGAPDIR = def( "phonegapdir", Form.STRING, "Directory path to bring together all the files needed for a PgoneGap app", //
+                                                     "('dist', for this project and all dependencies, recursively)." );
 
-    public static final Parameter ONEJAR = def( "onejar", Form.STRING, "JAR name w/ optional path for the JAR ('.jar' added to the end if does not end with 'jar', case insensitive), that all 'exploded' dependendend JARs and dist files will be JAR'd into (this should make a single JAR application)." );
+    public static final Parameter APPDIR = def( "appdir", Form.STRING, "Directory path to bring together all files (both JARs and 'dist', for this project", //
+                                                "and all dependencies, recursively) the application needs to be run from JAR files." );
 
-    public static final Parameter WAR = def( "war", Form.STRING, "Target WAR directory or WAR name (if ends w/ '.war'), produces a war directory (as specified, or a default one if a '.war' is requested) then if a '.war' is requested, packages the war directory into the specified '.war' file." );
+    public static final Parameter ONEJAR =
+            def( "onejar", Form.STRING, "JAR name w/ optional path for the JAR ('.jar' added to the end if does not end with 'jar', case insensitive),", //
+                 "that all 'exploded' dependendend JARs and dist files will be JAR'd into (this should make a single JAR application)." );
+
+    public static final Parameter WAR = def( "war", Form.STRING,
+                                             "Target WAR directory or WAR name (if ends w/ '.war'), produces a war directory (as specified, " +
+                                             "or a default one if a '.war' is requested)",
+//
+                                             "then if a '.war' is requested, packages the war directory into the specified '.war' file." );
 
     // ------------------------------------------------ GWT Parameters -------------------------------------------------
 
@@ -62,11 +76,13 @@ public class ProjectParameters extends FileUtil
     public static final Parameter GWTwar = def( "GWTwar", Form.STRING, "The directory to put the GWT Compiler's output in.", //
                                                 "Default: '$target$/GWTCompilerOutput'." );
 
-    public static final Parameter GWTstyle = def( "GWTstyle", Form.STRING, "GWT Compiler's output 'style'.  Options are: OBF, PRETTY, or DETAILED.  Note: OBF == Obfuscated.", //
-                                                  "Default: 'OBF'." );
+    public static final Parameter GWTstyle =
+            def( "GWTstyle", Form.STRING, "GWT Compiler's output 'style'.  Options are: OBF, PRETTY, or DETAILED.  Note: OBF == Obfuscated.", //
+                 "Default: 'OBF'." );
 
-    public static final Parameter GWTlogging = def( "GWTlogging", Form.STRING, "Logging level for the GWT Compiler.  Options are: ERROR, WARN, INFO, TRACE, DEBUG, SPAM, or ALL.", //
-                                                    "Default: 'INFO'." );
+    public static final Parameter GWTlogging =
+            def( "GWTlogging", Form.STRING, "Logging level for the GWT Compiler.  Options are: ERROR, WARN, INFO, TRACE, DEBUG, SPAM, or ALL.", //
+                 "Default: 'INFO'." );
 
     public static final Parameter GWTmx = def( "GWTmx", Form.STRING, "the -Xmx value for the GWT Compiler.", //
                                                "Default: '1024m'." );
@@ -83,26 +99,34 @@ public class ProjectParameters extends FileUtil
 
     public ProjectParameters validate()
     {
-        int zHas = intForNotNull( 1, getAppDir() ) + //
-                   intForNotNull( 2, getOneJar() ) + //
-                   intForNotNull( 4, getWar() );
-        switch ( zHas )
+        List<String> zPackaging = new ArrayList<String>();
+        check( zPackaging, "AppDir", getAppDir() );
+        check( zPackaging, "OneJAR", getOneJar() );
+        check( zPackaging, "WAR", getWar() );
+        check( zPackaging, "PhoneGapDir", getPhoneGapDir() );
+        switch ( zPackaging.size() )
         {
-            default:
+            case 0:
             case 1:
+                return this;
             case 2:
-            case 4:
-                break; // Happy Cases
-            case 3:
-                throw new IllegalArgumentException( "May not specify both: AppDir & OneJAR" );
-            case 5:
-                throw new IllegalArgumentException( "May not specify both: AppDir & WAR" );
-            case 6:
-                throw new IllegalArgumentException( "May not specify both: OneJAR & WAR" );
-            case 7:
-                throw new IllegalArgumentException( "May only specify one of: AppDir, OneJAR, or WAR" );
+                throw new IllegalArgumentException( "May not specify both: " + zPackaging.get( 0 ) + " & " + zPackaging.get( 1 ) );
+            default:
+                String zMsg = "May only specify one of:";
+                while ( zPackaging.size() > 1 )
+                {
+                    zMsg += " " + zPackaging.remove( 0 ) + ",";
+                }
+                throw new IllegalArgumentException( zMsg + " or " + zPackaging.get( 0 ) );
         }
-        return this;
+    }
+
+    private void check( List<String> pPackaging, String pLabel, Object pObjectToCheck )
+    {
+        if ( pObjectToCheck != null )
+        {
+            pPackaging.add( pLabel );
+        }
     }
 
     // ------------------------------------------------ Default Support ------------------------------------------------
@@ -279,6 +303,16 @@ public class ProjectParameters extends FileUtil
     public Paths getDist()
     {
         return getPaths( DIST.getName() );
+    }
+
+    public String getPhoneGapDir()
+    {
+        return get( PHONEGAPDIR.getName() );
+    }
+
+    public String getPhoneGapDirPath()
+    {
+        return getPath( PHONEGAPDIR.getName() );
     }
 
     public String getAppDir()
