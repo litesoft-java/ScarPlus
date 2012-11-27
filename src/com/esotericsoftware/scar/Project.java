@@ -748,7 +748,7 @@ public class Project extends ProjectParameters
         if ( zError != 0 )
         {
             throw new RuntimeException(
-                    "Error (" + zError + ") during compilation of project: " + this + "\nSource: " + pSource.count() + " files\nClasspath: " + pClasspath );
+                    "Error (" + zError + ") during compilation of project: " + this + "\nSource: " + pSource.count() + " files\nClasspath: " + pClasspath + "\nCompilerArgs: " + pCompileArgs + "\nSource: " + pSource.toString( " " ) );
         }
         try
         {

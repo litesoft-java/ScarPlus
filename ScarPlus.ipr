@@ -307,7 +307,7 @@
     <output url="file://$PROJECT_DIR$/out" />
   </component>
   <component name="ProjectRunConfigurationManager">
-    <configuration default="false" name="Versioned Filter clean" type="Application" factoryName="Application">
+    <configuration default="false" name="CS_IDEA" type="Application" factoryName="Application">
       <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="emma">
         <pattern>
           <option name="PATTERN" value="com.esotericsoftware.scar.*" />
@@ -316,8 +316,8 @@
       </extension>
       <option name="MAIN_CLASS_NAME" value="com.esotericsoftware.scar.Scar" />
       <option name="VM_PARAMETERS" value="" />
-      <option name="PROGRAM_PARAMETERS" value="Debug clean" />
-      <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$/../VersionedStaticContentFilter" />
+      <option name="PROGRAM_PARAMETERS" value="Debug" />
+      <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$/../../GWT_Sandbox/CS_IDEA" />
       <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
       <option name="ALTERNATIVE_JRE_PATH" value="" />
       <option name="ENABLE_SWING_INSPECTOR" value="false" />
@@ -329,7 +329,7 @@
       <ConfigurationWrapper RunnerId="Run" />
       <method />
     </configuration>
-    <configuration default="false" name="Scar clean" type="Application" factoryName="Application">
+    <configuration default="false" name="Prioritizer" type="Application" factoryName="Application">
       <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="emma">
         <pattern>
           <option name="PATTERN" value="com.esotericsoftware.scar.*" />
@@ -338,8 +338,8 @@
       </extension>
       <option name="MAIN_CLASS_NAME" value="com.esotericsoftware.scar.Scar" />
       <option name="VM_PARAMETERS" value="" />
-      <option name="PROGRAM_PARAMETERS" value="Debug clean" />
-      <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$" />
+      <option name="PROGRAM_PARAMETERS" value="Debug" />
+      <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$/../../GWT_Sandbox/Prioritizer" />
       <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
       <option name="ALTERNATIVE_JRE_PATH" value="" />
       <option name="ENABLE_SWING_INSPECTOR" value="false" />
@@ -348,7 +348,7 @@
       <module name="ScarPlus" />
       <envs />
       <RunnerSettings RunnerId="Debug">
-        <option name="DEBUG_PORT" value="" />
+        <option name="DEBUG_PORT" value="52132" />
         <option name="TRANSPORT" value="0" />
         <option name="LOCAL" value="true" />
       </RunnerSettings>
@@ -385,7 +385,7 @@
       <ConfigurationWrapper RunnerId="Run" />
       <method />
     </configuration>
-    <configuration default="false" name="Prioritizer" type="Application" factoryName="Application">
+    <configuration default="false" name="Scar clean" type="Application" factoryName="Application">
       <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="emma">
         <pattern>
           <option name="PATTERN" value="com.esotericsoftware.scar.*" />
@@ -394,8 +394,8 @@
       </extension>
       <option name="MAIN_CLASS_NAME" value="com.esotericsoftware.scar.Scar" />
       <option name="VM_PARAMETERS" value="" />
-      <option name="PROGRAM_PARAMETERS" value="Debug" />
-      <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$/../../GWT_Sandbox/Prioritizer" />
+      <option name="PROGRAM_PARAMETERS" value="Debug clean" />
+      <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$" />
       <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
       <option name="ALTERNATIVE_JRE_PATH" value="" />
       <option name="ENABLE_SWING_INSPECTOR" value="false" />
@@ -404,7 +404,7 @@
       <module name="ScarPlus" />
       <envs />
       <RunnerSettings RunnerId="Debug">
-        <option name="DEBUG_PORT" value="52132" />
+        <option name="DEBUG_PORT" value="" />
         <option name="TRANSPORT" value="0" />
         <option name="LOCAL" value="true" />
       </RunnerSettings>
@@ -441,7 +441,29 @@
       <ConfigurationWrapper RunnerId="Run" />
       <method />
     </configuration>
-    <configuration default="false" name="CS_IDEA" type="Application" factoryName="Application">
+    <configuration default="false" name="Versioned Filter clean" type="Application" factoryName="Application">
+      <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="emma">
+        <pattern>
+          <option name="PATTERN" value="com.esotericsoftware.scar.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="MAIN_CLASS_NAME" value="com.esotericsoftware.scar.Scar" />
+      <option name="VM_PARAMETERS" value="" />
+      <option name="PROGRAM_PARAMETERS" value="Debug clean" />
+      <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$/../VersionedStaticContentFilter" />
+      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
+      <option name="ALTERNATIVE_JRE_PATH" value="" />
+      <option name="ENABLE_SWING_INSPECTOR" value="false" />
+      <option name="ENV_VARIABLES" />
+      <option name="PASS_PARENT_ENVS" value="true" />
+      <module name="ScarPlus" />
+      <envs />
+      <RunnerSettings RunnerId="Run" />
+      <ConfigurationWrapper RunnerId="Run" />
+      <method />
+    </configuration>
+    <configuration default="false" name="MobilePPE" type="Application" factoryName="Application">
       <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="emma">
         <pattern>
           <option name="PATTERN" value="com.esotericsoftware.scar.*" />
@@ -451,7 +473,7 @@
       <option name="MAIN_CLASS_NAME" value="com.esotericsoftware.scar.Scar" />
       <option name="VM_PARAMETERS" value="" />
       <option name="PROGRAM_PARAMETERS" value="Debug" />
-      <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$/../../GWT_Sandbox/CS_IDEA" />
+      <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$/../../../PartyPhotoEvents/Mobile" />
       <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
       <option name="ALTERNATIVE_JRE_PATH" value="" />
       <option name="ENABLE_SWING_INSPECTOR" value="false" />
