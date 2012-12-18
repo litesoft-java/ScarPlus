@@ -866,7 +866,7 @@ public class Project extends ProjectParameters
             buffer.append( Utils.fileName( pJarFile ) );
             buffer.append( " ." );
             Paths classpath = classpath();
-            for ( String name : classpath.getRelativePaths() )
+            for ( String name : classpath.getRelativePaths( pJarFile ) )
             {
                 buffer.append( ' ' );
                 buffer.append( name );

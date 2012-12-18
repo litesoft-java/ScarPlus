@@ -1,8 +1,10 @@
 package com.esotericsoftware.filesystem;
 
-import java.io.*;
+import com.esotericsoftware.scar.Utils;
+import com.esotericsoftware.utils.FileSupport;
+import com.esotericsoftware.utils.FileUtil;
 
-import com.esotericsoftware.scar.*;
+import java.io.File;
 
 public final class FilePath
 {
@@ -57,18 +59,56 @@ public final class FilePath
         return mCanonicalPath;
     }
 
+    public String relativeFromDir(File pCanonicalJarDir)
+    {
+        File zCommonDirPath = Utils.findCommonDirPathFromCanonicalDirPaths(pCanonicalJarDir, mCanonicalPath.getParentFile());
+        if ( zCommonDirPath == null )
+        {
+            throw new IllegalStateException( "Unable to create Relative path from '" + pCanonicalJarDir + "' to: " + this );
+        }
+        String zJarDir = normalize(pCanonicalJarDir, zCommonDirPath);
+        String zFilePath = normalize(mCanonicalPath, zCommonDirPath);
+        while ( zJarDir.length() != 0 )
+        {
+            zFilePath = "../" + zFilePath;
+            int zAt = zJarDir.lastIndexOf("/");
+            if ( zAt == -1 )
+            {
+                zJarDir = "";
+            }
+            else
+            {
+                zJarDir = zJarDir.substring(0,zAt);
+            }
+        }
+        return zFilePath;
+    }
+
+    private String normalize(File pPath, File pCommonDirPath) {
+        String zPath = pPath.getPath().substring(pCommonDirPath.getPath().length()).replace('\\', '/');
+        return zPath.startsWith("/") ? zPath.substring(1) : zPath;
+    }
+
     public boolean equals( FilePath them )
     {
         return this == them || ((them != null) && this.canonical().equals( them.canonical() ));
     }
 
+    @Override
     public boolean equals( Object obj )
     {
         return (this == obj) || ((obj instanceof FilePath) && equals( (FilePath) obj ));
     }
 
+    @Override
     public int hashCode()
     {
         return canonical().hashCode();
+    }
+
+    @Override
+    public String toString()
+    {
+        return canonical();
     }
 }

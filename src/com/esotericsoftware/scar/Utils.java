@@ -8,6 +8,7 @@ import javax.tools.*;
 
 import com.esotericsoftware.utils.*;
 
+@SuppressWarnings("UnusedDeclaration")
 public class Utils extends FileUtil
 {
     /**
@@ -65,6 +66,48 @@ public class Utils extends FileUtil
             return foundFile;
         }
         return fileName;
+    }
+
+    static public File findCommonDirPathFromCanonicalDirPaths( File pPath1, File pPath2 )
+    {
+        String zPath1 = pPath1.getPath();
+        String zPath2 = pPath2.getPath();
+        if (zPath2.startsWith(zPath1)) // Check the Happy Cases
+        {
+            return pPath1;
+        }
+        if (zPath1.startsWith(zPath2))
+        {
+            return pPath2;
+        }
+        String zSharedPath = findSharedPath( zPath1, zPath2 );
+        if ( zSharedPath.length() != 0 )
+        {
+            for ( File zShared = new File( zSharedPath ); zShared != null; zShared = zShared.getParentFile() )
+            {
+                if ( zShared.isDirectory() )
+                {
+                    return zShared;
+                }
+            }
+        }
+        return null;
+    }
+
+    static private String findSharedPath( String pPath1, String pPath2 )
+    {
+        int zLength = Math.min(pPath1.length(), pPath2.length());
+        if ( (zLength == 0) || (pPath1.charAt(0) != pPath2.charAt(0)) )
+        {
+            return "";
+        }
+        for (int i = 1; i < zLength; i++) {
+            if ( pPath1.charAt( i ) != pPath2.charAt( i ) )
+            {
+                return pPath1.substring( 0, i ); // i == Exclusive
+            }
+        }
+        return pPath1.substring( 0, zLength );
     }
 
     /**
@@ -295,8 +338,9 @@ public class Utils extends FileUtil
         LOGGER.debug.log( "Creating keystore (", alias, ":", password, ", ", company, ", ", title, "): ", keystoreFile );
 
         File file = new File( keystoreFile );
+        //noinspection ResultOfMethodCallIgnored
         file.delete();
-        Process process = null;
+        Process process;
         try
         {
             process = Runtime.getRuntime().exec( new String[]{resolvePath( "keytool" ), "-genkey", "-keystore", keystoreFile, "-alias", alias} );

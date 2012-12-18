@@ -4,6 +4,7 @@ import java.io.*;
 import java.util.*;
 import java.util.zip.*;
 
+import com.esotericsoftware.scar.Utils;
 import com.esotericsoftware.utils.*;
 import com.esotericsoftware.wildcard.*;
 
@@ -250,13 +251,14 @@ public class Paths
     /**
      * Returns the portion of the path after the root directory where the path was collected.
      */
-    public List<String> getRelativePaths()
+    public List<String> getRelativePaths( String pCanonicalJarPath )
     {
+        File zCanonicalJarDir = new File(pCanonicalJarPath).getParentFile();
         List<FilePath> zPaths = getPaths();
         List<String> rv = new ArrayList<String>( zPaths.size() );
         for ( FilePath path : zPaths )
         {
-            rv.add( path.getFileSubPath() );
+            rv.add(path.relativeFromDir(zCanonicalJarDir));
         }
         return rv;
     }
