@@ -1,0 +1,1 @@
+"%JAVA_HOME%\bin\keytool" -genkey -alias %1.keystore -keyalg RSA -validity 20000 -keystore keys/%1.keystore
