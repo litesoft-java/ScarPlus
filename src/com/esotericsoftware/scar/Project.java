@@ -1,16 +1,30 @@
 package com.esotericsoftware.scar;
 
+import com.esotericsoftware.filesystem.FilePath;
+import com.esotericsoftware.filesystem.Paths;
+import com.esotericsoftware.filesystem.RootedPaths;
+import com.esotericsoftware.filesystem.ZipFactory;
+import com.esotericsoftware.scar.support.Parameter;
+import com.esotericsoftware.scar.support.ProjectFactory;
+import com.esotericsoftware.utils.FileUtil;
+import com.esotericsoftware.utils.Util;
+import com.esotericsoftware.utils.WrappedIOException;
+import org.litesoft.logger.Logger;
+import org.litesoft.logger.LoggerFactory;
+
+import javax.tools.JavaCompiler;
+import javax.tools.ToolProvider;
 import java.io.*;
-import java.util.*;
-import java.util.jar.*;
-import java.util.zip.*;
-import javax.tools.*;
-
-import org.litesoft.logger.*;
-
-import com.esotericsoftware.filesystem.*;
-import com.esotericsoftware.scar.support.*;
-import com.esotericsoftware.utils.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.jar.Attributes;
+import java.util.jar.JarEntry;
+import java.util.jar.JarOutputStream;
+import java.util.jar.Manifest;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 
 /**
  * Generic Data structure that contains information needed to perform tasks.
@@ -18,6 +32,8 @@ import com.esotericsoftware.utils.*;
 @SuppressWarnings("UnusedDeclaration")
 public class Project extends ProjectParameters
 {
+    private static final String JAVA_SOURCE_TARGET_VERSION = "1.6";
+
     protected static final Logger LOGGER = LoggerFactory.getLogger( Project.class );
 
     private static final String META_INF_MANIFEST_MF = "META-INF/MANIFEST.MF";
@@ -35,9 +51,14 @@ public class Project extends ProjectParameters
         applyDefaults();
     }
 
+    public String getSourceJavaVersion()
+    {
+        return JAVA_SOURCE_TARGET_VERSION;
+    }
+
     public String getTargetJavaVersion()
     {
-        return "1.6";
+        return JAVA_SOURCE_TARGET_VERSION;
     }
 
     protected void packageClean()
@@ -724,8 +745,8 @@ public class Project extends ProjectParameters
         args.add( "-d" );
         args.add( pClassesDir );
         args.add( "-g:source,lines" );
-        args.add( "-target" );
-        args.add( getTargetJavaVersion() );
+        args.add( "-source" );
+        args.add( getSourceJavaVersion() );
         args.addAll( pSource.getFullPaths() );
         if ( !pClasspath.isEmpty() )
         {
@@ -747,8 +768,13 @@ public class Project extends ProjectParameters
         int zError = compiler.run( getCompile_in(), getCompile_out(), getCompile_err(), pCompileArgs.toArray( new String[pCompileArgs.size()] ) );
         if ( zError != 0 )
         {
-            throw new RuntimeException(
-                    "Error (" + zError + ") during compilation of project: " + this + "\nSource: " + pSource.count() + " files\nClasspath: " + pClasspath + "\nCompilerArgs: " + pCompileArgs + "\nSource: " + pSource.toString( " " ) );
+            String zMessage = "Error (" + zError + ") during compilation of project: " + this +
+                    "\nSource: " + pSource.count() + " files\nCompilerArgs: " + pCompileArgs;
+            if (LOGGER.debug.isEnabled())
+            {
+                zMessage += "\nClasspath: " + pClasspath + "\nSource: " + pSource.toString(" ");
+            }
+            throw new RuntimeException(zMessage);
         }
         try
         {
