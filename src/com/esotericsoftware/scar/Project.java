@@ -1,30 +1,16 @@
 package com.esotericsoftware.scar;
 
-import com.esotericsoftware.filesystem.FilePath;
-import com.esotericsoftware.filesystem.Paths;
-import com.esotericsoftware.filesystem.RootedPaths;
-import com.esotericsoftware.filesystem.ZipFactory;
-import com.esotericsoftware.scar.support.Parameter;
-import com.esotericsoftware.scar.support.ProjectFactory;
-import com.esotericsoftware.utils.FileUtil;
-import com.esotericsoftware.utils.Util;
-import com.esotericsoftware.utils.WrappedIOException;
-import org.litesoft.logger.Logger;
-import org.litesoft.logger.LoggerFactory;
-
-import javax.tools.JavaCompiler;
-import javax.tools.ToolProvider;
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.jar.Attributes;
-import java.util.jar.JarEntry;
-import java.util.jar.JarOutputStream;
-import java.util.jar.Manifest;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
-import java.util.zip.ZipOutputStream;
+import java.util.*;
+import java.util.jar.*;
+import java.util.zip.*;
+import javax.tools.*;
+
+import org.litesoft.logger.*;
+
+import com.esotericsoftware.filesystem.*;
+import com.esotericsoftware.scar.support.*;
+import com.esotericsoftware.utils.*;
 
 /**
  * Generic Data structure that contains information needed to perform tasks.
@@ -289,7 +275,7 @@ public class Project extends ProjectParameters
 
     protected boolean GWTcompileIt()
     {
-        String[] args = // 
+        String[] args = //
                 { //
                   getPathJavaJRE(), //
                   "-Xmx" + getGWTmx(), //
@@ -650,7 +636,7 @@ public class Project extends ProjectParameters
         Long zLastModified = pPaths.getGreatestLastModified();
         if ( (zLastModified != null) && (zLastModified > pOutputLastModified) )
         {
-            System.out.println( this + ": " + pWhat + " newer by " + (zLastModified - pOutputLastModified) + "ms" );
+            System.out.println( this + ": " + pWhat + " - " + new NewerBy( pOutputLastModified, zLastModified ) );
             return true;
         }
         return false;
@@ -769,12 +755,12 @@ public class Project extends ProjectParameters
         if ( zError != 0 )
         {
             String zMessage = "Error (" + zError + ") during compilation of project: " + this +
-                    "\nSource: " + pSource.count() + " files\nCompilerArgs: " + pCompileArgs;
-            if (LOGGER.debug.isEnabled())
+                              "\nSource: " + pSource.count() + " files\nCompilerArgs: " + pCompileArgs;
+            if ( LOGGER.debug.isEnabled() )
             {
-                zMessage += "\nClasspath: " + pClasspath + "\nSource: " + pSource.toString(" ");
+                zMessage += "\nClasspath: " + pClasspath + "\nSource: " + pSource.toString( " " );
             }
-            throw new RuntimeException(zMessage);
+            throw new RuntimeException( zMessage );
         }
         try
         {
