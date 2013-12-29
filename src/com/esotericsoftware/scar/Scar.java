@@ -27,7 +27,7 @@ import com.esotericsoftware.yamlbeans.tokenizer.*;
 @SuppressWarnings({"ResultOfMethodCallIgnored"})
 public class Scar extends Utils implements ProjectFactory
 {
-    public static final String VERSION = "2.8";
+    public static final String VERSION = "2.9 - 1.7";
 
     public static final String DEFAULT_PROJECT_FILE_NAME = "Build";
 

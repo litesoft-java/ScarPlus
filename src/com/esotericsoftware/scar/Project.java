@@ -18,7 +18,7 @@ import com.esotericsoftware.utils.*;
 @SuppressWarnings("UnusedDeclaration")
 public class Project extends ProjectParameters
 {
-    private static final String JAVA_SOURCE_TARGET_VERSION = "1.6";
+    private static final String JAVA_SOURCE_TARGET_VERSION = "1.7";
 
     protected static final Logger LOGGER = LoggerFactory.getLogger( Project.class );
 
